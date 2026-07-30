@@ -21,6 +21,7 @@ export function EndSequenceEditor({
   homeStep,
   allMenus,
   allStories,
+  packStartReturnLabel = 'Retour à la couverture du pack',
   onUpdate,
 }) {
   const { t } = useTranslation();
@@ -227,6 +228,7 @@ export function EndSequenceEditor({
                     allStories={allStories}
                     currentStoryId={node.id}
                     includeNone
+                    noneLabel={packStartReturnLabel}
                     emptyLabel={t('editorsStory.endSequence.sameAsEndOfStory')}
                     includeStoryPlay={false}
                   />
@@ -335,6 +337,7 @@ export function EndSequenceEditor({
               allStories={allStories}
               currentStoryId={node.id}
               includeNone
+              noneLabel={packStartReturnLabel}
               emptyLabel={t('editorsStory.endSequence.sameAsEndOfStory')}
               includeStoryPlay={false}
             />

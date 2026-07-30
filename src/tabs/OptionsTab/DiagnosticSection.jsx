@@ -52,7 +52,7 @@ export function DiagnosticSection({
             {resolvedLogPath ? (
               <><code>{resolvedLogPath}</code> — {t('options.diagnostic.logFolderCurrentFile')} <code>story-studio.log</code></>
             ) : (
-              <>{t('options.diagnostic.logFolderFallbackPrefix')} <code>%LOCALAPPDATA%\com.hugs11.story-studio\logs\</code>. {t('options.diagnostic.logFolderFallbackSuffix')} <code>story-studio.log</code>.</>
+              <>{t('options.diagnostic.logFolderFallbackGeneric')} {t('options.diagnostic.logFolderCurrentFile')} <code>story-studio.log</code></>
             )}
             {copiedLogPath ? (
               <span style={{ color: 'var(--accent-2-text)', marginLeft: 6 }}>{t('options.diagnostic.copiedTag')}</span>

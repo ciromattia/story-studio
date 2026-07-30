@@ -17,6 +17,7 @@ import {
 import {
   getDefaultPackEntryDestination,
   getEffectiveEndBehavior,
+  getPackStartReturnLabel,
 } from '../../../store/generatedNavigation';
 import {
   getControlDefs,
@@ -141,6 +142,7 @@ export function AfterPlaySection({
   const { onImportFile } = useProjectContext();
   const controlDefs = getControlDefs(t);
   const autoNextEnabled = !!project?.globalOptions?.autoNext;
+  const packStartReturnLabel = getPackStartReturnLabel(project);
   const hasEndNode = !!(!autoNextEnabled && (project?.nightModeAudio || project?.globalOptions?.nightMode || project?.globalOptions?.endNode));
   const rawHasPrompt = !!node?.afterPlaybackPromptAudio;
   const hasPrompt = rawHasPrompt && !autoNextEnabled;
@@ -404,6 +406,7 @@ export function AfterPlaySection({
               allStories={allStories}
               currentStoryId={node.id}
               includeNone
+              noneLabel={packStartReturnLabel}
               includeStoryPlay={false}
               emptyLabel={t('editorsStory.afterPlay.sameAsOk')}
             />
@@ -494,6 +497,7 @@ export function AfterPlaySection({
             homeStep={afterPlaybackHomeStep}
             allMenus={allMenus}
             allStories={allStories}
+            packStartReturnLabel={packStartReturnLabel}
             onUpdate={onUpdate}
           />
         )}
@@ -595,6 +599,7 @@ export function AfterPlaySection({
                   allStories={allStories}
                   currentStoryId={node.id}
                   includeNone
+                  noneLabel={packStartReturnLabel}
                   emptyLabel={t('editorsStory.afterPlay.sameAsOk')}
                   includeStoryPlay={false}
                 />
