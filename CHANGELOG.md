@@ -10,6 +10,10 @@ public version; this file stays as the concise project history.
 
 ## [Unreleased]
 
+### Added
+
+- Added i18n support with English and Italian translations.
+
 ---
 
 ## [0.9.6] - 2026-07-30

@@ -84,16 +84,16 @@ files and illustrations are not covered by Story Studio's MIT license.
 
 ## At a Glance
 
-| | |
-|---|---|
-| **Status** | Beta |
-| **Target platforms** | Windows x64, Linux x86_64 and macOS Apple Silicon |
-| **Interface language** | French only for now |
-| **Project format** | `.mbah` |
-| **Export format** | Lunii-compatible ZIP packs |
-| **Main stack** | React 19, Vite, Tauri 2, Rust |
+| |                                                                                                                   |
+|---|-------------------------------------------------------------------------------------------------------------------|
+| **Status** | Beta                                                                                                              |
+| **Target platforms** | Windows x64, Linux x86_64 and macOS Apple Silicon                                                                 |
+| **Interface language** | French, English and Italian                                                                    |
+| **Project format** | `.mbah`                                                                                                           |
+| **Export format** | Lunii-compatible ZIP packs                                                                                        |
+| **Main stack** | React 19, Vite, Tauri 2, Rust                                                                                     |
 | **Workflow** | Guided home workflows, visual tree editor, ZIP pack aggregation, node-based navigation, media explorer, simulator |
-| **Privacy model** | Local app, no hosted backend, no telemetry |
+| **Privacy model** | Local app, no hosted backend, no telemetry                                                                        |
 
 ## From first import to finished pack
 
