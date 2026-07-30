@@ -11,7 +11,7 @@ import {
   getCompleteMetrics,
   getCompleteNavigationEdges,
   END_NODE_ID,
-  TYPE_LABELS,
+  getTypeLabels,
 } from './flowDiagramLayout';
 import { buildFocusProject } from './fullDiagramFocus.js';
 import { FullDiagramNode } from './FullDiagramNode.jsx';
@@ -47,6 +47,7 @@ import { StructureFocusBar } from './diagram/StructureFocusBar';
 import { StructureLevelSummaryNode } from './diagram/StructureLevelSummaryNode';
 import { StructureDiagramLayer } from './diagram/StructureDiagramLayer';
 import { IconMoon, IconStop } from '../TreePanel/TreeIcons';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function CompleteDiagramTree({
   project,
@@ -96,6 +97,7 @@ export function CompleteDiagramTree({
     onRemoveEndNode,
     onOpenMediaAudioTool,
   } = useProjectActions();
+  const { t } = useTranslation();
   const [showReturns, setShowReturns] = useState(() => read(KEYS.FLOW_DIAGRAM_SHOW_RETURNS, { defaultValue: 'true' }) !== 'false');
   const [hoveredNavigationEdgeId, setHoveredNavigationEdgeId] = useState(null);
   const [pinnedNavigationEdgeId, setPinnedNavigationEdgeId] = useState(null);
@@ -171,7 +173,8 @@ export function CompleteDiagramTree({
   }, [project, projectIndex, selectedId]);
   const layout = useMemo(() => getStructureLevelLayout(visibleProject, getCompleteMetrics(compactMode), {
     expandedStoryGroupIds,
-  }), [visibleProject, compactMode, expandedStoryGroupIds]);
+    t,
+  }), [visibleProject, compactMode, expandedStoryGroupIds, t]);
   const viewportLayoutKey = useMemo(() => getDiagramViewportLayoutKey(layout, {
     compactMode,
     focusMode,
@@ -184,8 +187,8 @@ export function CompleteDiagramTree({
     d: `M ${edge.x1} ${edge.y1} L ${edge.x1} ${edge.midY} L ${edge.x2} ${edge.midY} L ${edge.x2} ${edge.y2}`,
   })), [layout.edges]);
   const rawNavigationEdges = useMemo(
-    () => getCompleteNavigationEdges(visibleProject, layout),
-    [visibleProject, layout],
+    () => getCompleteNavigationEdges(visibleProject, layout, t),
+    [visibleProject, layout, t],
   );
   const navigationPresentation = useMemo(
     () => presentLocalEndSteps(layout, rawNavigationEdges),
@@ -204,18 +207,19 @@ export function CompleteDiagramTree({
   const homeEdges = useMemo(() => navigationEdges.filter((edge) => edge.kind === 'home'), [navigationEdges]);
   const afterEndEdges = useMemo(() => navigationEdges.filter((edge) => edge.kind === 'after-end'), [navigationEdges]);
   const referenceEdges = useMemo(() => navigationEdges.filter((edge) => edge.kind === 'reference'), [navigationEdges]);
+  const typeLabels = useMemo(() => getTypeLabels(t), [t]);
   const nodeLabelById = useMemo(() => new Map([
     ...(projectIndex?.entryById ? [...projectIndex.entryById].map(([id, entry]) => [
       id,
-      entry.name || TYPE_LABELS[entry.type] || id,
+      entry.name || typeLabels[entry.type] || id,
     ]) : []),
     ...layout.nodes.map((node) => [
       node.entry.id,
-      node.entry.name || TYPE_LABELS[node.entry.type] || node.entry.id,
+      node.entry.name || typeLabels[node.entry.type] || node.entry.id,
     ]),
     ...localEndNodes.map((node) => [node.id, node.label]),
-    ...(layout.groups ?? []).map((group) => [group.id, `${group.storyCount} histoires`]),
-  ]), [layout.groups, layout.nodes, localEndNodes, projectIndex]);
+    ...(layout.groups ?? []).map((group) => [group.id, t('diagram.tree.groupFallback', { count: group.storyCount })]),
+  ]), [layout.groups, layout.nodes, localEndNodes, projectIndex, t, typeLabels]);
   const nodeById = useMemo(() => new Map([
     ...layout.nodes.map((node) => [node.entry.id, node]),
     ...localEndNodes.map((node) => [node.id, node]),
@@ -359,17 +363,17 @@ export function CompleteDiagramTree({
       const localNodeId = pathEdges.find((pathEdge) => pathEdge.localEndLeg === 'start')?.to
         ?? exitEdge?.from;
       const source = nodeLabelById.get(edge.localEndStoryId) ?? edge.localEndStoryId;
-      const localStep = nodeLabelById.get(localNodeId) ?? 'message ou scénario de fin';
+      const localStep = nodeLabelById.get(localNodeId) ?? t('diagram.navigation.endStepFallback');
       const targetId = exitEdge?.displayTo ?? exitEdge?.to;
       const target = nodeLabelById.get(targetId) ?? targetId;
-      return `À la fin de « ${source} » → « ${localStep} » → « ${target} »`;
+      return t('diagram.navigation.localEndPath', { source, step: localStep, target });
     }
     const incomingEndEdge = pathEdges.find((pathEdge) => pathEdge.to === END_NODE_ID);
     if (edge.from === END_NODE_ID && incomingEndEdge) {
       const source = nodeLabelById.get(incomingEndEdge.from) ?? incomingEndEdge.from;
       const targetId = edge.displayTo ?? edge.to;
       const target = nodeLabelById.get(targetId) ?? targetId;
-      return `À la fin de « ${source} » → message de fin → « ${target} »`;
+      return t('diagram.navigation.contextualEndPath', { source, target });
     }
     const from = nodeLabelById.get(edge.from) ?? edge.from;
     const targetId = edge.displayTo ?? edge.to;
@@ -377,32 +381,38 @@ export function CompleteDiagramTree({
     if (edge.to === END_NODE_ID) {
       const finalTarget = edge.endNodeTargetId ? (nodeLabelById.get(edge.endNodeTargetId) ?? edge.endNodeTargetId) : null;
       return finalTarget
-        ? `À la fin de « ${from} » → message de fin → « ${finalTarget} »`
-        : `À la fin de « ${from} » → message de fin`;
+        ? t('diagram.navigation.endWithFinalTarget', { from, target: finalTarget })
+        : t('diagram.navigation.endNoTarget', { from });
     }
     const kindLabel = edge.kind === 'home'
-      ? 'Retour Home'
+      ? t('diagram.navigation.kindHome')
       : edge.kind === 'after-end' || edge.kind === 'sequence'
-        ? 'Séquence de fin'
+        ? t('diagram.navigation.kindSequence')
         : edge.kind === 'reference'
-          ? 'Lien'
-          : 'Retour';
-    if (edge.kind === 'home') return `Bouton Home pendant « ${from} » → « ${to} »`;
+          ? t('diagram.navigation.kindLink')
+          : t('diagram.navigation.kindReturn');
+    if (edge.kind === 'home') return t('diagram.navigation.homeButton', { from, to });
     if (edge.kind === 'after-end' || edge.kind === 'sequence') {
       const prefix = edge.source === 'prompt-chain'
-        ? `Parcours de ${edge.chainStoryIds?.length ?? 0} histoires, après le message de fin`
-        : edge.to === END_NODE_ID ? 'Après la lecture → message de fin' : 'Après la séquence ou le message de fin';
-      return `${prefix} : « ${from} » → « ${to} »`;
+        ? t('diagram.navigation.chainPrefix', { count: edge.chainStoryIds?.length ?? 0 })
+        : edge.to === END_NODE_ID ? t('diagram.navigation.afterReadingPrefix') : t('diagram.navigation.afterSequencePrefix');
+      return t('diagram.navigation.prefixedRoute', { prefix, from, to });
     }
-    if (edge.kind === 'reference') return `Lien vers un nœud existant : « ${from} » → « ${to} »`;
-    return edge.label ? `${edge.label} : ${from} → ${to}` : `${kindLabel} : « ${from} » → « ${to} »`;
+    if (edge.kind === 'reference') return t('diagram.navigation.referenceRoute', { from, to });
+    return edge.label
+      ? t('diagram.navigation.labeledRoute', { label: edge.label, from, to })
+      : t('diagram.navigation.kindRoute', { kind: kindLabel, from, to });
   }
   function updateNavigationTooltip(event, edge) {
     const node = containerRef.current;
     if (!node) return;
     const rect = node.getBoundingClientRect();
+    const description = describeNavigationEdge(edge);
+    const suffixKey = pinnedNavigationEdgeId === edgeKey(edge)
+      ? 'diagram.navigation.tooltipSuffixUnpin'
+      : 'diagram.navigation.tooltipSuffixPin';
     setNavigationTooltip({
-      text: `${describeNavigationEdge(edge)}. Clique pour ${pinnedNavigationEdgeId === edgeKey(edge) ? 'désépingler' : 'épingler'} ce trajet.`,
+      text: t(suffixKey, { description }),
       left: event.clientX - rect.left + 12,
       top: event.clientY - rect.top + 12,
     });
@@ -549,6 +559,7 @@ export function CompleteDiagramTree({
 
   function buildActions(nodeId, nodeType) {
     return buildDiagramContextActions({
+      t,
       project,
       projectIndex,
       selectedIds,
@@ -805,7 +816,7 @@ export function CompleteDiagramTree({
                   event.stopPropagation();
                   handleOpenLocalEnd(node.storyId);
                 }}
-                title={`Ouvrir les réglages : ${node.label}`}
+                title={t('diagram.tree.openLocalEndSettings', { label: node.label })}
               >
                 <span className="fd-local-end-node-icon">
                   {node.kind === 'sequence' ? <IconStop /> : <IconMoon />}
@@ -826,7 +837,7 @@ export function CompleteDiagramTree({
             className="fd-complete-drag-ghost"
             style={{ left: dragPointer.x + 14, top: dragPointer.y + 14 }}
           >
-            Deplacer
+            {t('diagram.tree.dragGhost')}
           </div>
         ) : null}
         {navigationTooltip ? (
@@ -839,7 +850,7 @@ export function CompleteDiagramTree({
         ) : null}
         {showHint ? (
           <div className="fd-diagram-hint">
-            Clique un nœud pour ouvrir ses réglages à gauche
+            {t('diagram.tree.hint')}
           </div>
         ) : null}
       </div>

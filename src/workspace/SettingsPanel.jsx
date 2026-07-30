@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '../i18n/I18nContext';
 import { NodeEditorContent } from '../components/editors/NodeEditorContent';
 import { EndNodeEditor } from '../components/editors/EndNodeEditor';
 import { END_NODE_ID } from '../components/TreePanel/TreePanel';
@@ -18,6 +19,7 @@ export function SettingsPanel({
   onAfterPlayFocusConsumed,
   header = null,
 }) {
+  const { t } = useTranslation();
   const {
     onUpdateRoot,
     onUpdateMedia,
@@ -49,7 +51,7 @@ export function SettingsPanel({
   if (!isMultiSelect && selectedId === END_NODE_ID) {
     content = (
       <EndNodeEditor
-        endNodeName={project.endNodeName || 'Message de fin'}
+        endNodeName={project.endNodeName || t('workspace.settingsPanel.endNodeFallback')}
         nightModeAudio={project.nightModeAudio}
         nightModeActive={!!project.globalOptions?.nightMode}
         nightModeReturn={project.nightModeReturn ?? null}
@@ -73,7 +75,7 @@ export function SettingsPanel({
     const count = selectedIds.size;
     content = (
       <>
-        <div className="multiselect-hint">{count} éléments sélectionnés — modification groupée</div>
+        <div className="multiselect-hint">{t('workspace.settingsPanel.multiSelectHint', { count })}</div>
         <NodeEditorContent
           node={node}
           selectedIds={selectedIds}

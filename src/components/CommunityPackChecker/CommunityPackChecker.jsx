@@ -29,197 +29,204 @@ import {
 } from './packCheckerMeasures';
 import { ConformingSection } from './CommunityPackConforming';
 import { formatPackAudioEdgeSilence } from '../../config/audioProcessing';
+import { useTranslation } from '../../i18n/I18nContext';
 import './CommunityPackChecker.css';
 
 const EDGE_SILENCE_LABEL = formatPackAudioEdgeSilence();
 
-const PROBLEM_SECTIONS = [
-  {
-    id: 'quality',
-    title: 'Audio de mauvaise qualité (source saturée)',
-    badge: 'Source',
-    bucket: 'listen',
-    Icon: TriangleAlert,
-    explanation: "La saturation est présente dans le fichier d'origine : aucune correction ne la rattrape. Reprends le pack depuis une meilleure source.",
-    action: 'Reprends le pack depuis une meilleure source.',
-    match: (issue) => (
-      issue.category === 'audio'
-      && !issue.autoFixAvailable
-      && (issue.message || '').toLowerCase().includes('satur')
-    ),
-  },
-  {
-    id: 'listen',
-    title: 'À écouter',
-    badge: 'Manuel',
-    bucket: 'listen',
-    Icon: Info,
-    explanation: "L'outil ne sait pas corriger ce point tout seul.",
-    action: "Écoute ou vérifie ces fichiers avant de valider le pack.",
-    match: (issue) => !issue.autoFixAvailable && issue.category !== 'structure' && issue.category !== 'title',
-  },
-  {
-    id: 'silence',
-    title: 'Silence début / fin incorrect',
-    badge: 'Auto',
-    bucket: 'fix',
-    Icon: Scissors,
-    explanation: 'Le blanc avant ou après la voix sort de la fenêtre attendue.',
-    action: `On ajuste le silence vers ${EDGE_SILENCE_LABEL}.`,
-    match: (issue) => issue.autoFixAvailable && issue.category === 'audio' && issue.message.toLowerCase().includes('silence'),
-  },
-  {
-    id: 'volume',
-    title: 'Niveau sonore incorrect',
-    badge: 'Auto',
-    bucket: 'fix',
-    Icon: Music,
-    explanation: 'Le niveau moyen est trop faible ou trop fort par rapport au reste.',
-    action: 'On normalise le volume au bon niveau.',
-    match: (issue) => issue.autoFixAvailable && issue.category === 'audio' && issue.message.toLowerCase().includes('volume'),
-  },
-  {
-    id: 'audioFormat',
-    title: 'Format audio à convertir',
-    badge: 'Auto',
-    bucket: 'fix',
-    Icon: Wrench,
-    explanation: "L'audio n'est pas dans le format attendu.",
-    action: 'On reconvertit en MP3 mono 44,1 kHz.',
-    match: (issue) => {
-      const message = issue.message.toLowerCase();
-      return issue.autoFixAvailable && issue.category === 'audio' && (
-        message.includes('format') || message.includes('fréquence') || message.includes('mono')
-      );
+function buildProblemSections(t) {
+  return [
+    {
+      id: 'quality',
+      title: t('packChecker.sections.quality.title'),
+      badge: t('packChecker.sections.quality.badge'),
+      bucket: 'listen',
+      Icon: TriangleAlert,
+      explanation: t('packChecker.sections.quality.explanation'),
+      action: t('packChecker.sections.quality.action'),
+      match: (issue) => (
+        issue.category === 'audio'
+        && !issue.autoFixAvailable
+        && (issue.message || '').toLowerCase().includes('satur')
+      ),
     },
-  },
-  {
-    id: 'image',
-    title: 'Image à corriger',
-    badge: 'Auto',
-    bucket: 'fix',
-    Icon: Image,
-    explanation: "L'image n'a pas le format ou la taille attendue.",
-    action: 'On convertit ou redimensionne en 320×240.',
-    match: (issue) => issue.autoFixAvailable && issue.category === 'image',
-  },
-  {
-    id: 'title',
-    title: 'Nom du pack à corriger',
-    badge: 'Assisté',
-    bucket: 'fix',
-    Icon: FilePen,
-    explanation: 'Le nom ou la convention du pack demande une correction.',
-    action: 'On ouvre les métadonnées avant de créer le ZIP corrigé.',
-    match: (issue) => issue.category === 'title',
-  },
-  {
-    id: 'structure',
-    title: 'Structure à vérifier',
-    badge: 'Manuel',
-    bucket: 'listen',
-    Icon: Network,
-    explanation: 'Un lien, une référence ou un champ du pack demande une vérification.',
-    action: 'Vérifie la navigation ou les fichiers référencés.',
-    match: (issue) => issue.category === 'structure',
-  },
-];
+    {
+      id: 'listen',
+      title: t('packChecker.sections.listen.title'),
+      badge: t('packChecker.sections.listen.badge'),
+      bucket: 'listen',
+      Icon: Info,
+      explanation: t('packChecker.sections.listen.explanation'),
+      action: t('packChecker.sections.listen.action'),
+      match: (issue) => !issue.autoFixAvailable && issue.category !== 'structure' && issue.category !== 'title',
+    },
+    {
+      id: 'silence',
+      title: t('packChecker.sections.silence.title'),
+      badge: t('packChecker.sections.silence.badge'),
+      bucket: 'fix',
+      Icon: Scissors,
+      explanation: t('packChecker.sections.silence.explanation'),
+      action: t('packChecker.sections.silence.action', { label: EDGE_SILENCE_LABEL }),
+      match: (issue) => issue.autoFixAvailable && issue.category === 'audio' && issue.message.toLowerCase().includes('silence'),
+    },
+    {
+      id: 'volume',
+      title: t('packChecker.sections.volume.title'),
+      badge: t('packChecker.sections.volume.badge'),
+      bucket: 'fix',
+      Icon: Music,
+      explanation: t('packChecker.sections.volume.explanation'),
+      action: t('packChecker.sections.volume.action'),
+      match: (issue) => issue.autoFixAvailable && issue.category === 'audio' && issue.message.toLowerCase().includes('volume'),
+    },
+    {
+      id: 'audioFormat',
+      title: t('packChecker.sections.audioFormat.title'),
+      badge: t('packChecker.sections.audioFormat.badge'),
+      bucket: 'fix',
+      Icon: Wrench,
+      explanation: t('packChecker.sections.audioFormat.explanation'),
+      action: t('packChecker.sections.audioFormat.action'),
+      match: (issue) => {
+        const message = issue.message.toLowerCase();
+        return issue.autoFixAvailable && issue.category === 'audio' && (
+          message.includes('format') || message.includes('fréquence') || message.includes('mono')
+        );
+      },
+    },
+    {
+      id: 'image',
+      title: t('packChecker.sections.image.title'),
+      badge: t('packChecker.sections.image.badge'),
+      bucket: 'fix',
+      Icon: Image,
+      explanation: t('packChecker.sections.image.explanation'),
+      action: t('packChecker.sections.image.action'),
+      match: (issue) => issue.autoFixAvailable && issue.category === 'image',
+    },
+    {
+      id: 'title',
+      title: t('packChecker.sections.title.title'),
+      badge: t('packChecker.sections.title.badge'),
+      bucket: 'fix',
+      Icon: FilePen,
+      explanation: t('packChecker.sections.title.explanation'),
+      action: t('packChecker.sections.title.action'),
+      match: (issue) => issue.category === 'title',
+    },
+    {
+      id: 'structure',
+      title: t('packChecker.sections.structure.title'),
+      badge: t('packChecker.sections.structure.badge'),
+      bucket: 'listen',
+      Icon: Network,
+      explanation: t('packChecker.sections.structure.explanation'),
+      action: t('packChecker.sections.structure.action'),
+      match: (issue) => issue.category === 'structure',
+    },
+  ];
+}
 
 function IconFrame({ Icon }) {
   return <Icon className="checker-icon" aria-hidden="true" strokeWidth={2} absoluteStrokeWidth />;
 }
 
-function severityLabel(severity) {
+function severityLabel(t, severity) {
   switch (severity) {
     case 'error':
-      return 'Erreur';
+      return t('packChecker.common.severityError');
     case 'warning':
-      return 'Avertissement';
+      return t('packChecker.common.severityWarning');
     case 'info':
-      return 'Info';
+      return t('packChecker.common.severityInfo');
     case 'ok':
-      return 'OK';
+      return t('packChecker.common.severityOk');
     default:
-      return severity || 'Info';
+      return severity || t('packChecker.common.severityInfo');
   }
 }
 
-function measuredIssueSummary(issue, item, kind) {
+function measuredIssueSummary(t, issue, item, kind) {
   const message = issue.message || '';
   const lower = message.toLowerCase();
   if (kind === 'audio') {
     if (lower.includes('silence')) {
-      const sides = silenceSummaryParts([issue], item);
+      const sides = silenceSummaryParts(t, [issue], item);
       return sides.length ? sides.join(' | ') : message;
     }
     if (lower.includes('volume')) {
       const lufs = item?.integratedLufs;
-      const direction = typeof lufs === 'number' && lufs > -10
-        ? 'trop haut'
-        : 'trop bas';
-      return `Niveau sonore ${direction} (${formatLufs(lufs)})`;
+      return typeof lufs === 'number' && lufs > -10
+        ? t('packChecker.findings.volumeTooHigh', { value: formatLufs(t, lufs) })
+        : t('packChecker.findings.volumeTooLow', { value: formatLufs(t, lufs) });
     }
     if (lower.includes('fréquence')) {
-      return `Échantillonnage incorrect (${item?.sampleRate ? `${item.sampleRate} Hz` : 'non mesuré'})`;
+      return t('packChecker.findings.sampleRateBad', {
+        value: item?.sampleRate ? `${item.sampleRate} Hz` : t('packChecker.findings.sampleRateNotMeasured'),
+      });
     }
     if (lower.includes('mono')) {
-      return `Audio non mono (${item?.channels || 'canaux non mesurés'})`;
+      return t('packChecker.findings.notMono', { value: item?.channels || t('packChecker.findings.channelsNotMeasured') });
     }
     if (lower.includes('format')) {
-      return `Mauvais format audio (${item?.codec || 'format non mesuré'})`;
+      return t('packChecker.findings.audioFormatBad', { value: item?.codec || t('packChecker.findings.formatNotMeasured') });
     }
   }
   if (kind === 'image') {
-    const dimensions = item?.width && item?.height ? `${item.width}×${item.height}` : 'dimensions non mesurées';
-    const format = item?.format || 'format non mesuré';
-    if (lower.includes('format')) return `Mauvais format image (${format})`;
-    if (lower.includes('dimension') || lower.includes('taille')) return `Dimensions incorrectes (${dimensions})`;
-    return `Image incorrecte (${dimensions} · ${format})`;
+    const dimensions = item?.width && item?.height ? `${item.width}×${item.height}` : t('packChecker.findings.dimensionsNotMeasured');
+    const format = item?.format || t('packChecker.findings.formatNotMeasured');
+    if (lower.includes('format')) return t('packChecker.findings.imageFormatBad', { value: format });
+    if (lower.includes('dimension') || lower.includes('taille')) return t('packChecker.findings.dimensionsBad', { value: dimensions });
+    return t('packChecker.findings.imageBad', { dimensions, format });
   }
   return message;
 }
 
-function silenceSummaryParts(issues, item) {
+function silenceSummaryParts(t, issues, item) {
   const hasStart = issues.some((issue) => {
     const message = (issue.message || '').toLowerCase();
     return message.includes('début') || message.includes('debut');
   });
   const hasEnd = issues.some((issue) => (issue.message || '').toLowerCase().includes('fin'));
   const parts = [];
-  if (hasStart) parts.push(`Silence début = ${formatSeconds(item?.leadingSilenceSecs)}`);
-  if (hasEnd) parts.push(`Silence fin = ${formatSeconds(item?.trailingSilenceSecs)}`);
+  if (hasStart) parts.push(t('packChecker.findings.silenceStart', { value: formatSeconds(t, item?.leadingSilenceSecs) }));
+  if (hasEnd) parts.push(t('packChecker.findings.silenceEnd', { value: formatSeconds(t, item?.trailingSilenceSecs) }));
   return parts;
 }
 
-function recordProblemSummary(record) {
+function recordProblemSummary(t, record) {
   const scopedIssues = record.sectionIssues?.length ? record.sectionIssues : [record.issue];
   if (record.kind === 'audio') {
     if (scopedIssues.some((issue) => (issue.message || '').toLowerCase().includes('satur'))) {
       const peak = record.item?.truePeakDb;
-      return typeof peak === 'number' ? `Saturé · crête ${formatPeak(peak)}` : 'Saturé (source)';
+      return typeof peak === 'number'
+        ? t('packChecker.findings.saturatedWithPeak', { value: formatPeak(t, peak) })
+        : t('packChecker.findings.saturatedSource');
     }
     const silenceIssues = scopedIssues.filter((issue) => (issue.message || '').toLowerCase().includes('silence'));
     if (silenceIssues.length > 0) {
-      const parts = silenceSummaryParts(silenceIssues, record.item);
+      const parts = silenceSummaryParts(t, silenceIssues, record.item);
       if (parts.length > 0) return parts.join(' | ');
     }
 
     if (scopedIssues.some((issue) => (issue.message || '').toLowerCase().includes('volume'))) {
       const lufs = record.item?.integratedLufs;
-      const direction = typeof lufs === 'number' && lufs > -10 ? 'trop haut' : 'trop bas';
-      return `Niveau sonore ${direction} (${formatLufs(lufs)})`;
+      return typeof lufs === 'number' && lufs > -10
+        ? t('packChecker.findings.volumeTooHigh', { value: formatLufs(t, lufs) })
+        : t('packChecker.findings.volumeTooLow', { value: formatLufs(t, lufs) });
     }
   }
 
   if (record.kind === 'image') {
     return scopedIssues
-      .map((issue) => measuredIssueSummary(issue, record.item, record.kind))
+      .map((issue) => measuredIssueSummary(t, issue, record.item, record.kind))
       .filter(Boolean)
       .join(' · ');
   }
 
   return scopedIssues
-    .map((issue) => measuredIssueSummary(issue, record.item, record.kind))
+    .map((issue) => measuredIssueSummary(t, issue, record.item, record.kind))
     .filter(Boolean)
     .join(' · ');
 }
@@ -254,10 +261,10 @@ function hasMeasureIssue(record, key) {
   }
 }
 
-function roleLabel(record) {
-  const raw = record.item?.itemType || record.issue?.itemType || record.issue?.category || 'Fichier';
-  if (raw === 'image') return 'Image';
-  if (raw === 'audio') return 'Audio';
+function roleLabel(t, record) {
+  const raw = record.item?.itemType || record.issue?.itemType || record.issue?.category || t('packChecker.common.roleFile');
+  if (raw === 'image') return t('packChecker.common.roleImage');
+  if (raw === 'audio') return t('packChecker.common.roleAudio');
   return raw;
 }
 
@@ -286,7 +293,7 @@ function uniqueIssueKey(issue) {
   return issue.filePath || `${issue.category}:${issue.label}:${issue.message}`;
 }
 
-function buildProblemGroups(report) {
+function buildProblemGroups(t, report) {
   if (!report) return [];
   const itemMap = buildItemMap(report);
   const used = new Set();
@@ -294,7 +301,7 @@ function buildProblemGroups(report) {
     issue.severity === 'error' || issue.severity === 'warning'
   ));
 
-  return PROBLEM_SECTIONS.map((section) => {
+  return buildProblemSections(t).map((section) => {
     const records = [];
     const seen = new Set();
     for (const issue of relevantIssues) {
@@ -333,7 +340,7 @@ function saturatedFileCount(groups) {
     .reduce((sum, group) => sum + group.count, 0);
 }
 
-function summarizeGroups(groups, report) {
+function summarizeGroups(t, groups, report) {
   const listenCount = groups
     .filter((group) => group.bucket === 'listen')
     .reduce((sum, group) => sum + group.count, 0);
@@ -349,8 +356,8 @@ function summarizeGroups(groups, report) {
     return {
       tone: 'ok',
       Icon: CircleCheck,
-      title: 'Pack conforme',
-      subtitle: 'Aucun problème automatique ou manuel détecté.',
+      title: t('packChecker.summary.okTitle'),
+      subtitle: t('packChecker.summary.okSubtitle'),
       listenCount,
       fixCount,
     };
@@ -359,8 +366,8 @@ function summarizeGroups(groups, report) {
     return {
       tone: 'listen',
       Icon: TriangleAlert,
-      title: 'Pack à vérifier avant export',
-      subtitle: 'Certains points demandent une vérification manuelle.',
+      title: t('packChecker.summary.blockingTitle'),
+      subtitle: t('packChecker.summary.blockingSubtitle'),
       listenCount,
       fixCount,
     };
@@ -372,10 +379,10 @@ function summarizeGroups(groups, report) {
     return {
       tone: 'quality',
       Icon: TriangleAlert,
-      title: fixCount > 0 ? 'Pack corrigeable, mais audio déjà saturé' : 'Audio déjà saturé',
+      title: fixCount > 0 ? t('packChecker.summary.qualityTitleWithFix') : t('packChecker.summary.qualityTitleNoFix'),
       subtitle: fixCount > 0
-        ? "Le reste sera corrigé ; l'audio saturé doit être repris depuis une source propre."
-        : 'Nous conseillons de refaire le pack depuis une source audio propre.',
+        ? t('packChecker.summary.qualitySubtitleWithFix')
+        : t('packChecker.summary.qualitySubtitleNoFix'),
       listenCount,
       fixCount,
     };
@@ -385,9 +392,9 @@ function summarizeGroups(groups, report) {
       tone: 'listen',
       Icon: Info,
       title: listenCount === 1
-        ? 'Pack corrigeable, avec un fichier à écouter'
-        : `Pack corrigeable, avec ${listenCount} fichiers à écouter`,
-      subtitle: 'Le reste peut être corrigé automatiquement.',
+        ? t('packChecker.summary.listenTitleOne')
+        : t('packChecker.summary.listenTitleOther', { count: listenCount }),
+      subtitle: t('packChecker.summary.listenSubtitle'),
       listenCount,
       fixCount,
     };
@@ -395,8 +402,8 @@ function summarizeGroups(groups, report) {
   return {
     tone: 'fix',
     Icon: Wrench,
-    title: 'Pack corrigeable en un clic',
-    subtitle: 'Aucun point manuel détecté.',
+    title: t('packChecker.summary.fixTitle'),
+    subtitle: t('packChecker.summary.fixSubtitle'),
     listenCount,
     fixCount,
   };
@@ -428,18 +435,18 @@ function SummaryTile({ title, Icon, tone = 'neutral', children }) {
   );
 }
 
-function SplitStat({ ok, needsFix }) {
+function SplitStat({ t, ok, needsFix }) {
   return (
     <div className="checker-split-stat">
-      <span className="checker-split-stat-ok"><strong>{ok}</strong> OK</span>
+      <span className="checker-split-stat-ok"><strong>{ok}</strong> {t('packChecker.tiles.ok')}</span>
       <span className={`checker-split-stat-fix ${needsFix === 0 ? 'is-clean' : ''}`}>
-        <strong>{needsFix}</strong> à corriger
+        <strong>{needsFix}</strong> {t('packChecker.tiles.needsFix')}
       </span>
     </div>
   );
 }
 
-function SummaryTiles({ report, saturatedCount = 0 }) {
+function SummaryTiles({ t, report, saturatedCount = 0 }) {
   const audio = categoryStats(report.audioSummary);
   const images = categoryStats(report.imageSummary);
   const title = categoryStats(report.titleSummary);
@@ -447,43 +454,43 @@ function SummaryTiles({ report, saturatedCount = 0 }) {
   const structureOk = report.structureSummary?.luniiCompatible && report.structureSummary?.storyStudioEditable;
   const nightMode = Boolean(report.nightMode?.detected);
   return (
-    <div className="checker-summary-tiles" aria-label="Résumé du pack">
-      <SummaryTile title="Audio" Icon={Music} tone={saturatedCount > 0 ? 'danger' : (audio.needsFix > 0 ? 'fix' : 'ok')}>
-        <SplitStat ok={audio.ok} needsFix={audio.needsFix} />
+    <div className="checker-summary-tiles" aria-label={t('packChecker.summary.ariaLabel')}>
+      <SummaryTile title={t('packChecker.tiles.audio')} Icon={Music} tone={saturatedCount > 0 ? 'danger' : (audio.needsFix > 0 ? 'fix' : 'ok')}>
+        <SplitStat t={t} ok={audio.ok} needsFix={audio.needsFix} />
       </SummaryTile>
-      <SummaryTile title="Images" Icon={Image} tone={images.needsFix ? 'fix' : 'ok'}>
-        <SplitStat ok={images.ok} needsFix={images.needsFix} />
+      <SummaryTile title={t('packChecker.tiles.images')} Icon={Image} tone={images.needsFix ? 'fix' : 'ok'}>
+        <SplitStat t={t} ok={images.ok} needsFix={images.needsFix} />
       </SummaryTile>
-      <SummaryTile title="Nom du pack" Icon={FilePen} tone={titleOk ? 'ok' : 'fix'}>
+      <SummaryTile title={t('packChecker.tiles.packTitle')} Icon={FilePen} tone={titleOk ? 'ok' : 'fix'}>
         <div className="checker-single-stat">
-          <strong>{titleOk ? 'Valide' : 'À corriger'}</strong>
-          <span>{titleOk ? 'Convention OK' : 'Métadonnées'}</span>
+          <strong>{titleOk ? t('packChecker.tiles.valid') : t('packChecker.tiles.toFix')}</strong>
+          <span>{titleOk ? t('packChecker.tiles.conventionOk') : t('packChecker.tiles.metadata')}</span>
         </div>
       </SummaryTile>
-      <SummaryTile title="Structure" Icon={Network} tone={structureOk ? 'ok' : 'listen'}>
+      <SummaryTile title={t('packChecker.tiles.structure')} Icon={Network} tone={structureOk ? 'ok' : 'listen'}>
         <div className="checker-single-stat">
-          <strong>{structureOk ? 'Correcte' : 'Vérification manuelle'}</strong>
-          <span>{report.structureSummary?.stageCount ?? 0} étapes</span>
+          <strong>{structureOk ? t('packChecker.tiles.correct') : t('packChecker.tiles.manualCheck')}</strong>
+          <span>{t('packChecker.tiles.stagesCount', { count: report.structureSummary?.stageCount ?? 0 })}</span>
         </div>
       </SummaryTile>
-      <SummaryTile title="Mode nuit" Icon={Moon} tone={nightMode ? 'ok' : 'neutral'}>
+      <SummaryTile title={t('packChecker.tiles.nightMode')} Icon={Moon} tone={nightMode ? 'ok' : 'neutral'}>
         <div className="checker-single-stat">
-          <strong>{nightMode ? 'Disponible' : 'Absent'}</strong>
-          <span>{nightMode ? 'Détecté dans le pack' : 'Non bloquant'}</span>
+          <strong>{nightMode ? t('packChecker.tiles.available') : t('packChecker.tiles.absent')}</strong>
+          <span>{nightMode ? t('packChecker.tiles.detectedInPack') : t('packChecker.tiles.nonBlocking')}</span>
         </div>
       </SummaryTile>
     </div>
   );
 }
 
-function TechnicalDetail({ record }) {
+function TechnicalDetail({ t, record }) {
   const item = record.item;
   return (
     <div className="checker-tech-detail">
       <div>
-        <div className="checker-tech-title">Mesures</div>
+        <div className="checker-tech-title">{t('packChecker.detail.measuresTitle')}</div>
         {record.kind === 'audio' ? (
-          audioMeasureRows(item).map((row) => (
+          audioMeasureRows(t, item).map((row) => (
             <Measure
               key={row.key}
               label={row.label}
@@ -493,7 +500,7 @@ function TechnicalDetail({ record }) {
           ))
         ) : record.kind === 'image' ? (
           <>
-            {imageMeasureRows(item).map((row) => (
+            {imageMeasureRows(t, item).map((row) => (
               <Measure
                 key={row.key}
                 label={row.label}
@@ -501,14 +508,14 @@ function TechnicalDetail({ record }) {
                 status={hasMeasureIssue(record, row.key) ? 'bad' : 'ok'}
               />
             ))}
-            <Measure label="Attendu" value="320×240" status={expectedImageOk(item) ? 'ok' : 'bad'} />
+            <Measure label={t('packChecker.measures.expected')} value="320×240" status={expectedImageOk(item) ? 'ok' : 'bad'} />
           </>
         ) : (
-          <Measure label="Catégorie" value={record.issue.category} status={record.issue.severity === 'ok' ? 'ok' : 'bad'} />
+          <Measure label={t('packChecker.measures.category')} value={record.issue.category} status={record.issue.severity === 'ok' ? 'ok' : 'bad'} />
         )}
       </div>
       <div>
-        <div className="checker-tech-title">Ce qu'on va faire</div>
+        <div className="checker-tech-title">{t('packChecker.detail.actionsTitle')}</div>
         {record.issues.map((issue, index) => (
           <div className="checker-tech-action" key={`${issue.message}-${index}`}>
             <IconFrame Icon={issue.autoFixAvailable ? Wrench : Info} />
@@ -523,33 +530,33 @@ function TechnicalDetail({ record }) {
   );
 }
 
-function MiniFile({ record, open, onToggle }) {
+function MiniFile({ t, record, open, onToggle }) {
   const firstIssue = record.issue;
-  const issueSummary = recordProblemSummary(record);
+  const issueSummary = recordProblemSummary(t, record);
   return (
     <div className="checker-mini-file">
       <button type="button" className="checker-mini-file-button" onClick={onToggle}>
-        <span className="checker-role">{roleLabel(record)}</span>
+        <span className="checker-role">{roleLabel(t, record)}</span>
         <span className="checker-mini-name" title={firstIssue.filePath || firstIssue.label}>
-          {cleanLabel(firstIssue.label)}
+          {cleanLabel(t, firstIssue.label)}
         </span>
         <span className="checker-mini-problem" title={issueSummary}>
           {issueSummary}
         </span>
         <span className={`checker-mini-severity checker-mini-severity--${firstIssue.severity}`}>
-          {severityLabel(firstIssue.severity)}
+          {severityLabel(t, firstIssue.severity)}
         </span>
         <ChevronDown className={`checker-mini-chevron ${open ? 'is-open' : ''}`} aria-hidden="true" />
       </button>
-      {open ? <TechnicalDetail record={record} /> : null}
+      {open ? <TechnicalDetail t={t} record={record} /> : null}
     </div>
   );
 }
 
-function ProblemGroupCard({ group, expanded, onToggle, countValue = group.count, countLabel = null }) {
+function ProblemGroupCard({ t, group, expanded, onToggle, countValue = group.count, countLabel = null }) {
   const [openFile, setOpenFile] = useState(null);
   const Icon = group.Icon;
-  const displayedCountLabel = countLabel || (countValue > 1 ? 'fichiers' : 'fichier');
+  const displayedCountLabel = countLabel || (countValue > 1 ? t('packChecker.common.fileOther') : t('packChecker.common.fileOne'));
   return (
     <div className={`checker-group checker-group--${group.bucket} checker-group--${group.id} ${expanded ? 'is-expanded' : ''}`}>
       <button type="button" className="checker-group-head" onClick={onToggle}>
@@ -573,6 +580,7 @@ function ProblemGroupCard({ group, expanded, onToggle, countValue = group.count,
             {group.records.map((record) => (
               <MiniFile
                 key={record.id}
+                t={t}
                 record={record}
                 open={openFile === record.id}
                 onToggle={() => setOpenFile(openFile === record.id ? null : record.id)}
@@ -582,7 +590,7 @@ function ProblemGroupCard({ group, expanded, onToggle, countValue = group.count,
           {group.bucket === 'listen' ? (
             <div className="checker-group-help">
               <IconFrame Icon={Info} />
-              Ces fichiers ne sont pas corrigés automatiquement.
+              {t('packChecker.groupHelp')}
             </div>
           ) : null}
         </div>
@@ -592,16 +600,17 @@ function ProblemGroupCard({ group, expanded, onToggle, countValue = group.count,
 }
 
 export function FixableCorrectionsList({ report }) {
+  const { t } = useTranslation();
   const groups = useMemo(
-    () => buildProblemGroups(report).filter((group) => group.bucket === 'fix'),
-    [report],
+    () => buildProblemGroups(t, report).filter((group) => group.bucket === 'fix'),
+    [t, report],
   );
 
   if (!groups.length) {
     return (
       <div className="checker-empty checker-empty--success">
         <IconFrame Icon={Check} />
-        Aucune correction automatique à appliquer.
+        {t('packChecker.emptyFixable')}
       </div>
     );
   }
@@ -611,11 +620,12 @@ export function FixableCorrectionsList({ report }) {
       {groups.map((group) => (
         <ProblemGroupCard
           key={group.id}
+          t={t}
           group={group}
           expanded
           onToggle={() => {}}
           countValue={group.fixCount}
-          countLabel={group.fixCount > 1 ? 'corrections' : 'correction'}
+          countLabel={group.fixCount > 1 ? t('packChecker.common.correctionOther') : t('packChecker.common.correctionOne')}
         />
       ))}
     </div>
@@ -623,8 +633,9 @@ export function FixableCorrectionsList({ report }) {
 }
 
 export function ReportView({ report, busy, canFix, onExportReport, onFixPack, onStartFix, showFixButton = true }) {
-  const groups = useMemo(() => buildProblemGroups(report), [report]);
-  const summary = useMemo(() => summarizeGroups(groups, report), [groups, report]);
+  const { t } = useTranslation();
+  const groups = useMemo(() => buildProblemGroups(t, report), [t, report]);
+  const summary = useMemo(() => summarizeGroups(t, groups, report), [t, groups, report]);
   const saturatedCount = useMemo(() => saturatedFileCount(groups), [groups]);
   const [expanded, setExpanded] = useState(groups[0]?.id || null);
   const [metadataOpen, setMetadataOpen] = useState(false);
@@ -650,22 +661,23 @@ export function ReportView({ report, busy, canFix, onExportReport, onFixPack, on
         </div>
         <div className="checker-report-callout">
           <Info className="checker-icon" aria-hidden="true" />
-          <span><strong>{summary.listenCount}</strong> à écouter · <strong>{summary.fixCount}</strong> corrections proposées</span>
+          <span><strong>{summary.listenCount}</strong> {t('packChecker.summary.toListenLabel')} · <strong>{summary.fixCount}</strong> {t('packChecker.summary.proposedFixesLabel')}</span>
         </div>
       </div>
 
-      <SummaryTiles report={report} saturatedCount={saturatedCount} />
+      <SummaryTiles t={t} report={report} saturatedCount={saturatedCount} />
 
       {groups.length === 0 ? (
         <div className="checker-empty checker-empty--success">
           <IconFrame Icon={Check} />
-          Tout est conforme dans ce rapport.
+          {t('packChecker.emptyReport')}
         </div>
       ) : (
         <div className="checker-groups">
           {groups.map((group) => (
             <ProblemGroupCard
               key={group.id}
+              t={t}
               group={group}
               expanded={expanded === group.id}
               onToggle={() => setExpanded(expanded === group.id ? null : group.id)}
@@ -677,10 +689,10 @@ export function ReportView({ report, busy, canFix, onExportReport, onFixPack, on
       <ConformingSection report={report} />
 
       <div className="checker-report-footer">
-        <span><strong>{summary.fixCount}</strong> corrections prêtes.</span>
+        <span>{t('packChecker.footer.correctionsReady', { count: summary.fixCount })}</span>
         <Button size="sm" onClick={() => onExportReport('report')}>
           <Download className="checker-button-icon" aria-hidden="true" />
-          Exporter le rapport
+          {t('packChecker.footer.exportReport')}
         </Button>
         {showFixButton ? (
           <button
@@ -689,7 +701,7 @@ export function ReportView({ report, busy, canFix, onExportReport, onFixPack, on
             onClick={startFixFlow}
             disabled={!canFix || busy}
           >
-            {busy ? 'Correction...' : 'Corriger le pack'}
+            {busy ? t('packChecker.footer.correcting') : t('packChecker.footer.correctPack')}
           </button>
         ) : null}
       </div>
@@ -710,14 +722,15 @@ export function ReportView({ report, busy, canFix, onExportReport, onFixPack, on
 }
 
 export function TechnicalLog({ report, onCopyLog, onExportLog, onExportJson }) {
+  const { t } = useTranslation();
   if (!report) return null;
   return (
     <details className="checker-log">
-      <summary>Journal technique</summary>
+      <summary>{t('packChecker.technicalLog.summary')}</summary>
       <div className="checker-log-actions">
-        <Button size="sm" onClick={onCopyLog}>Copier le log</Button>
-        <Button size="sm" onClick={() => onExportLog('log')}>Exporter le log</Button>
-        <Button size="sm" onClick={() => onExportJson('json')}>Exporter JSON</Button>
+        <Button size="sm" onClick={onCopyLog}>{t('packChecker.technicalLog.copyLog')}</Button>
+        <Button size="sm" onClick={() => onExportLog('log')}>{t('packChecker.technicalLog.exportLog')}</Button>
+        <Button size="sm" onClick={() => onExportJson('json')}>{t('packChecker.technicalLog.exportJson')}</Button>
       </div>
       <pre>{(report.technicalLog || []).join('\n')}</pre>
     </details>
@@ -725,6 +738,7 @@ export function TechnicalLog({ report, onCopyLog, onExportLog, onExportJson }) {
 }
 
 export function ProcessLog({ status, lines }) {
+  const { t } = useTranslation();
   const linesRef = useRef(null);
   useEffect(() => {
     const node = linesRef.current;
@@ -734,10 +748,10 @@ export function ProcessLog({ status, lines }) {
 
   if (!lines?.length) return null;
   const title = status === 'fixing'
-    ? 'Correction en cours'
+    ? t('packChecker.processLog.fixing')
     : status === 'analyzing'
-      ? 'Analyse en cours'
-      : 'Dernières opérations';
+      ? t('packChecker.processLog.analyzing')
+      : t('packChecker.processLog.idle');
   return (
     <div className={`checker-process-log ${status === 'idle' ? 'is-idle' : 'is-active'}`}>
       <div className="checker-process-log-head">

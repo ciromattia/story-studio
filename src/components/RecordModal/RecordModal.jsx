@@ -5,11 +5,13 @@ import { Mic } from '../icons/LucideLocal';
 import { Button } from '../common/Button';
 import { sanitizeProjectPrefix } from '../../utils/projectPrefix';
 import { createAudioPlayer, disposeAudioPlayerRef } from '../../utils/audioPlayer';
+import { useTranslation } from '../../i18n/I18nContext';
 import './RecordModal.css';
 
 const COUNTDOWN_SECONDS = 3;
 
 export function RecordModal({ savePath, workspaceDir, projectName = '', onSaved, onClose }) {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState('countdown'); // countdown | recording | preview | saving | error
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [duration, setDuration] = useState(0);
@@ -102,7 +104,7 @@ export function RecordModal({ savePath, workspaceDir, projectName = '', onSaved,
     } catch (e) {
       stream?.getTracks().forEach(track => track.stop());
       if (closedRef.current) return;
-      setError(`Impossible d'accéder au micro : ${e.message}`);
+      setError(t('audioTools.record.micError', { message: e.message }));
       setPhase('error');
     }
   }
@@ -149,7 +151,7 @@ export function RecordModal({ savePath, workspaceDir, projectName = '', onSaved,
       const path = await invoke('save_recording', { savePath, workspaceDir, filename, data });
       onSaved?.(path);
     } catch (e) {
-      setError(`Écriture du fichier impossible : ${e}`);
+      setError(t('audioTools.record.writeError', { error: e }));
       setPhase('error');
     }
   }
@@ -162,7 +164,7 @@ export function RecordModal({ savePath, workspaceDir, projectName = '', onSaved,
     <div className="modal-overlay">
       <div className="modal-box record-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <span>Enregistrement audio</span>
+          <span>{t('audioTools.record.title')}</span>
           <Button variant="icon" className="modal-close" onClick={handleClose} disabled={phase === 'saving'}>×</Button>
         </div>
 
@@ -170,7 +172,7 @@ export function RecordModal({ savePath, workspaceDir, projectName = '', onSaved,
           {phase === 'countdown' && (
             <>
               <div className="record-countdown">{countdown}</div>
-              <div className="record-hint">Prépare-toi…</div>
+              <div className="record-hint">{t('audioTools.record.getReadyHint')}</div>
             </>
           )}
 
@@ -178,7 +180,7 @@ export function RecordModal({ savePath, workspaceDir, projectName = '', onSaved,
             <>
               <div className="record-pulse" />
               <div className="record-timer">{formatDuration(duration)}</div>
-              <Button variant="danger" onClick={stopRecording}>⏹ Arrêter</Button>
+              <Button variant="danger" onClick={stopRecording}>{t('audioTools.record.stopButton')}</Button>
             </>
           )}
 
@@ -187,34 +189,34 @@ export function RecordModal({ savePath, workspaceDir, projectName = '', onSaved,
               <div className="record-preview-icon">
                 <Mic className="record-preview-icon-svg" strokeWidth={2} absoluteStrokeWidth />
               </div>
-              <div className="record-hint">Durée : {formatDuration(duration)}</div>
+              <div className="record-hint">{t('audioTools.record.durationHint', { duration: formatDuration(duration) })}</div>
               <div className="record-name-field">
                 <input
                   className="record-name-input"
                   value={recordingName}
                   onChange={(e) => setRecordingName(e.target.value)}
-                  placeholder="Nom du fichier"
+                  placeholder={t('audioTools.record.namePlaceholder')}
                   spellCheck={false}
                 />
                 <span className="record-name-ext">.webm</span>
               </div>
               <div className="record-actions">
-                <Button onClick={playPreview}>▶ Écouter</Button>
-                <Button onClick={stopPreview}>⏸ Pause</Button>
-                <Button onClick={retry}>↺ Recommencer</Button>
-                <Button variant="primary" onClick={confirm}>✓ Utiliser</Button>
+                <Button onClick={playPreview}>{t('audioTools.record.playButton')}</Button>
+                <Button onClick={stopPreview}>{t('audioTools.record.pauseButton')}</Button>
+                <Button onClick={retry}>{t('audioTools.record.retryButton')}</Button>
+                <Button variant="primary" onClick={confirm}>{t('audioTools.record.confirmButton')}</Button>
               </div>
             </>
           )}
 
           {phase === 'saving' && (
-            <div className="record-hint">Écriture du fichier…</div>
+            <div className="record-hint">{t('audioTools.record.savingHint')}</div>
           )}
 
           {phase === 'error' && (
             <>
               <div className="record-hint" style={{ color: '#E24B4A' }}>{error}</div>
-              <Button onClick={handleClose}>Fermer</Button>
+              <Button onClick={handleClose}>{t('audioTools.record.closeButton')}</Button>
             </>
           )}
         </div>

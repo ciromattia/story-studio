@@ -1,3 +1,4 @@
+import { useTranslation } from '../i18n/I18nContext';
 import { X } from '../components/icons/LucideLocal';
 import {
   IconArchive,
@@ -8,7 +9,7 @@ import {
   IconStop,
   IconStory,
 } from '../components/TreePanel/TreeIcons';
-import { END_NODE_ID, TYPE_LABELS } from '../components/diagram/flowDiagramLayout';
+import { END_NODE_ID, getTypeLabels } from '../components/diagram/flowDiagramLayout';
 
 function NodeTypeIcon({ type, icon }) {
   if (type === 'root') return <IconHouse />;
@@ -20,43 +21,46 @@ function NodeTypeIcon({ type, icon }) {
   return <IconHouse />;
 }
 
-function getHeaderData({ node, selectedId, selectedIds, project }) {
+function getHeaderData({ node, selectedId, selectedIds, project, t }) {
+  const typeLabels = getTypeLabels(t);
   if (selectedIds?.size > 1) {
     return {
       type: 'multi',
-      title: `${selectedIds.size} éléments sélectionnés`,
-      badge: 'Modification groupée',
+      title: t('workspace.settingsPanelHeader.multiSelectionTitle', { count: selectedIds.size }),
+      badge: t('workspace.settingsPanelHeader.multiSelectionBadge'),
       icon: null,
     };
   }
   if (selectedId === END_NODE_ID) {
     return {
       type: END_NODE_ID,
-      title: project?.endNodeName || 'Message de fin',
-      badge: TYPE_LABELS[END_NODE_ID],
+      title: project?.endNodeName || t('workspace.settingsPanelHeader.endNodeTitle'),
+      badge: typeLabels[END_NODE_ID],
       icon: project?.globalOptions?.nightMode ? 'moon' : 'stop',
     };
   }
   if (!node) {
     return {
       type: 'root',
-      title: 'Réglages',
-      badge: 'Sélection',
+      title: t('workspace.settingsPanelHeader.defaultTitle'),
+      badge: t('workspace.settingsPanelHeader.noSelectionBadge'),
       icon: null,
     };
   }
   const type = node.type === 'root' ? 'root' : node.type;
   const rootTitle = project?.projectType === 'simple'
-    ? (project?.projectName || 'Mon histoire')
-    : (project?.rootName || project?.projectName || 'Menu racine');
+    ? (project?.projectName || t('workspace.settingsPanelHeader.simpleStoryFallback'))
+    : (project?.rootName || project?.projectName || t('workspace.settingsPanelHeader.rootMenuFallback'));
   // Badge du root : dépend du type de projet — « Histoire simple » en `simple`
   // (le header est visible dans l'éditeur simple même sans diagramme),
   // « Pack » sinon. « Histoire » seul serait ambigu avec TYPE_LABELS.story.
-  const rootBadge = project?.projectType === 'simple' ? 'Histoire simple' : 'Pack';
+  const rootBadge = project?.projectType === 'simple'
+    ? t('workspace.settingsPanelHeader.simpleBadge')
+    : t('workspace.settingsPanelHeader.packBadge');
   return {
     type,
-    title: type === 'root' ? rootTitle : (node.name || TYPE_LABELS[type] || 'Réglages'),
-    badge: type === 'root' ? rootBadge : (TYPE_LABELS[type] || 'Réglages'),
+    title: type === 'root' ? rootTitle : (node.name || typeLabels[type] || t('workspace.settingsPanelHeader.defaultTitle')),
+    badge: type === 'root' ? rootBadge : (typeLabels[type] || t('workspace.settingsPanelHeader.defaultTitle')),
     icon: node.icon ?? null,
   };
 }
@@ -69,7 +73,8 @@ export function SettingsPanelHeader({
   onClose = null,
   dragHandleProps = {},
 }) {
-  const data = getHeaderData({ node, selectedId, selectedIds, project });
+  const { t } = useTranslation();
+  const data = getHeaderData({ node, selectedId, selectedIds, project, t });
 
   return (
     <div className="settings-panel-header" {...dragHandleProps}>
@@ -84,7 +89,7 @@ export function SettingsPanelHeader({
         <button
           type="button"
           className="settings-panel-header-close"
-          aria-label="Fermer les réglages"
+          aria-label={t('workspace.settingsPanelHeader.closeAriaLabel')}
           onClick={onClose}
         >
           <X aria-hidden="true" />

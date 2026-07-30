@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from '../../../i18n/I18nContext';
 import { AudioField } from '../AudioField';
 import { Toggle } from '../../common/Toggle';
 import { Tooltip } from '../../common/Tooltip';
@@ -18,12 +19,11 @@ import {
   getEffectiveEndBehavior,
 } from '../../../store/generatedNavigation';
 import {
-  CONTROL_DEFS,
+  getControlDefs,
   SEQUENCE_CONTROL_DEFAULTS,
   NavigationTargetSelect,
   generatedTargetIdToSelectValue,
   getNavigationSelectHint,
-  NAV_ROOT_LABEL,
   normalizeSequenceStep,
 } from './storyUtils';
 import { EndSequenceEditor } from './EndSequenceEditor';
@@ -42,11 +42,11 @@ import {
   selectLocalEndDraftAudio,
 } from '../../../store/localEndDraft';
 
-function destinationHintLabel(label) {
+function destinationHintLabel(label, t) {
   if (!label) return null;
   return String(label)
-    .replace(/^Retour vers /, '')
-    .replace(/^Lecture de /, '')
+    .replace(new RegExp(`^${t('editorsStory.afterPlay.destinationHintReturnPrefix')}`), '')
+    .replace(new RegExp(`^${t('editorsStory.afterPlay.destinationHintPlayPrefix')}`), '')
     .trim();
 }
 
@@ -80,22 +80,23 @@ function routeTypeFromTarget(target, project) {
   return 'menu';
 }
 
-function routeDestinationFromTarget(targetId, project, allMenus, allStories) {
+function routeDestinationFromTarget(targetId, project, allMenus, allStories, t) {
   if (!targetId) return null;
   if (targetId === 'root') {
     const defaultDest = getDefaultPackEntryDestination(project);
-    if (!defaultDest) return { name: NAV_ROOT_LABEL, type: 'menu' };
+    if (!defaultDest) return { name: t('editorsStory.navSelect.rootMenuLabel'), type: 'menu' };
     return { name: defaultDest.name, type: defaultDest.type };
   }
   if (isStoryNavigationTarget(targetId)) {
     const storyId = decodeNavigationStoryId(targetId);
     const story = allStories.find((s) => s.id === storyId);
-    const prefix = isStoryPlayNavigationTarget(targetId)
-      ? 'Lecture directe - '
+    const storyName = story?.name ?? t('editorsStory.navSelect.unnamedLabel');
+    const name = isStoryPlayNavigationTarget(targetId)
+      ? t('editorsStory.navSelect.directPlaybackPrefix', { name: storyName })
       : isStoryHomeStepNavigationTarget(targetId)
-        ? 'Retour de fin - '
-        : '';
-    return { name: `${prefix}${story?.name ?? 'Histoire'}`, type: 'story' };
+        ? t('editorsStory.navSelect.endReturnPrefix', { name: storyName })
+        : storyName;
+    return { name, type: 'story' };
   }
   const menu = allMenus.find((m) => m.id === targetId);
   return menu ? { name: menu.name, type: 'menu' } : null;
@@ -113,12 +114,12 @@ function resolvedReturnSelectValueFromTarget(targetId, project) {
   return generatedTargetIdToSelectValue(targetId);
 }
 
-function getAutoNextContextText(autoNextResolution) {
+function getAutoNextContextText(autoNextResolution, t) {
   if (!autoNextResolution?.enabled) return null;
   if (autoNextResolution.applies) {
     return autoNextResolution.hasNextStory
-      ? "Auto-next est activé dans les options du pack : la sortie automatique lance directement l'histoire suivante."
-      : "Auto-next est activé dans les options du pack : aucune histoire suivante, la sortie automatique revient au dossier.";
+      ? t('editorsStory.afterPlay.autoNextAppliesWithNext')
+      : t('editorsStory.afterPlay.autoNextAppliesNoNext');
   }
   return null;
 }
@@ -134,16 +135,18 @@ export function AfterPlaySection({
   afterPlayFocus = null,
   onAfterPlayFocusConsumed,
 }) {
+  const { t } = useTranslation();
   const { showConfirmDialog } = useErrorDialog();
   const { onAttachStoryEndToGlobal } = useProjectActions();
   const { onImportFile } = useProjectContext();
+  const controlDefs = getControlDefs(t);
   const autoNextEnabled = !!project?.globalOptions?.autoNext;
   const hasEndNode = !!(!autoNextEnabled && (project?.nightModeAudio || project?.globalOptions?.nightMode || project?.globalOptions?.endNode));
   const rawHasPrompt = !!node?.afterPlaybackPromptAudio;
   const hasPrompt = rawHasPrompt && !autoNextEnabled;
-  const afterPlaybackSequence = (node.afterPlaybackSequence ?? []).map(normalizeSequenceStep);
+  const afterPlaybackSequence = (node.afterPlaybackSequence ?? []).map((step, index) => normalizeSequenceStep(step, index, t));
   const afterPlaybackHomeStep = node.afterPlaybackHomeStep
-    ? normalizeSequenceStep(node.afterPlaybackHomeStep, 0)
+    ? normalizeSequenceStep(node.afterPlaybackHomeStep, 0, t)
     : null;
 
   const rawHasSequence = afterPlaybackSequence.length > 0;
@@ -184,7 +187,7 @@ export function AfterPlaySection({
   const storyControls = node.controlSettings ?? {};
   const autoContinuationEnabled = !!effectiveEndBehavior?.autoContinuation;
   const routeFinalTargetId = effectiveEndBehavior?.finalTargetId ?? null;
-  const routeFinalDestination = routeDestinationFromTarget(routeFinalTargetId, project, allMenus, allStories);
+  const routeFinalDestination = routeDestinationFromTarget(routeFinalTargetId, project, allMenus, allStories, t);
   const returnIsVirtualTarget = isRootNavigationTarget(node.returnAfterPlay)
     || isCurrentMenuNavigationTarget(node.returnAfterPlay);
   // On résout l'affichage vers la destination réelle dans deux cas : le retour par
@@ -194,16 +197,16 @@ export function AfterPlaySection({
     ? (storyNavigation?.directReturn?.targetId ?? null)
     : null;
   const resolvedReturnDestination = resolvedReturnTargetId
-    ? routeDestinationFromTarget(resolvedReturnTargetId, project, allMenus, allStories)
+    ? routeDestinationFromTarget(resolvedReturnTargetId, project, allMenus, allStories, t)
     : null;
   const resolvedReturnValue = resolvedReturnTargetId
     ? resolvedReturnSelectValueFromTarget(resolvedReturnTargetId, project)
     : null;
   const autoNextDestinationLabel = autoNextApplies
-    ? (routeFinalDestination?.name || (autoNextResolution?.isLastStory ? (parentMenu?.name || 'ce dossier') : "l'histoire suivante"))
+    ? (routeFinalDestination?.name || (autoNextResolution?.isLastStory ? (parentMenu?.name || t('editorsStory.afterPlay.thisFolder')) : t('editorsStory.afterPlay.nextStory')))
     : null;
   const returnEmptyResolvedLabel = autoNextApplies
-    ? `Auto-next : ${autoNextDestinationLabel}`
+    ? t('editorsStory.afterPlay.autoNextPrefix', { destination: autoNextDestinationLabel })
     : inheritedReturnLabel;
   const returnDestinationHint = getNavigationSelectHint({
     value: node.returnAfterPlay,
@@ -216,29 +219,29 @@ export function AfterPlaySection({
     ? '__none__'
     : (node.afterPlaybackPromptHomeTarget ?? '');
   const promptAudioLabel = usesGlobalEndNodeAudio
-    ? 'Audio du message de fin'
+    ? t('editorsStory.afterPlay.promptAudioGlobalLabel')
     : hasEndNode
-      ? 'Audio de remplacement'
-      : 'Audio de fin';
+      ? t('editorsStory.afterPlay.promptAudioReplacementLabel')
+      : t('editorsStory.afterPlay.promptAudioEndLabel');
   const promptAudioDescription = usesGlobalEndNodeAudio
-    ? "Cette histoire utilise l'audio commun défini dans le message de fin du pack."
+    ? t('editorsStory.afterPlay.promptAudioGlobalDesc')
     : hasEndNode
-      ? "Joué à la place du message de fin pour cette histoire"
+      ? t('editorsStory.afterPlay.promptAudioReplacementDesc')
       : autoNextApplies
-        ? "Joué à la fin de l'histoire, avant la destination auto-next"
-        : "Joué à la fin de l'histoire";
+        ? t('editorsStory.afterPlay.promptAudioAutoNextDesc')
+        : t('editorsStory.afterPlay.promptAudioDefaultDesc');
   const addPromptTooltip = hasEndNode
-    ? "Pour cette histoire uniquement : un seul audio joué à la fin, à la place du message de fin du pack."
-    : "Un seul audio joué à la fin (ex : « Bravo, l'histoire est finie ! »)";
+    ? t('editorsStory.afterPlay.addPromptTooltipReplacement')
+    : t('editorsStory.afterPlay.addPromptTooltipDefault');
   const addSequenceTooltip = hasEndNode
-    ? "Pour cette histoire uniquement : plusieurs étapes audio enchaînées à la place du message de fin du pack."
-    : 'Plusieurs étapes audio enchaînées (ex : question → réponse → conclusion)';
+    ? t('editorsStory.afterPlay.addSequenceTooltipReplacement')
+    : t('editorsStory.afterPlay.addSequenceTooltipDefault');
   const advancedTitle = hasEndNode
-    ? 'Message de fin personnalisé'
-    : 'Réglages avancés';
+    ? t('editorsStory.afterPlay.advancedTitleCustom')
+    : t('editorsStory.afterPlay.advancedTitleDefault');
   const advancedDescription = hasEndNode
-      ? 'Par défaut, cette histoire utilise le message de fin du pack.'
-      : 'Options rarement nécessaires pour personnaliser la fin de cette histoire.';
+      ? t('editorsStory.afterPlay.advancedDescCustom')
+      : t('editorsStory.afterPlay.advancedDescDefault');
   const localDraftApplicability = localDraft
     ? getLocalEndDraftApplicability({
       draft: localDraft,
@@ -258,9 +261,9 @@ export function AfterPlaySection({
   async function clearEndAfterPlayback() {
     if (rawHasPrompt || rawHasSequence) {
       const confirmed = await showConfirmDialog({
-        title: 'Confirmer la suppression',
-        message: 'Supprimer le message de fin de cette histoire ?',
-        okLabel: 'Supprimer',
+        title: t('editorsStory.afterPlay.confirmDeleteTitle'),
+        message: t('editorsStory.afterPlay.confirmDeleteEndMessage'),
+        okLabel: t('editorsStory.afterPlay.deleteButton'),
         okKind: 'danger',
       });
       if (!confirmed) return;
@@ -279,9 +282,9 @@ export function AfterPlaySection({
 
   function startSequence() {
     const firstStep = normalizeSequenceStep({
-      name: 'Étape 1',
+      name: t('editorsStory.afterPlay.firstStepName'),
       controlSettings: { ...SEQUENCE_CONTROL_DEFAULTS, autoplay: true, ok: true },
-    }, 0);
+    }, 0, t);
     onUpdate({
       afterPlaybackSequence: [firstStep],
       afterPlaybackPromptAudio: null,
@@ -330,34 +333,34 @@ export function AfterPlaySection({
 
   const playbackEndMode = autoContinuationEnabled ? 'auto' : 'stay';
   const returnDestinationLabel = routeFinalDestination?.name
-    || destinationHintLabel(returnDestinationHint)
+    || destinationHintLabel(returnDestinationHint, t)
     || inheritedReturnLabel
-    || 'la destination choisie';
+    || t('editorsStory.afterPlay.chosenDestinationFallback');
   const returnDestinationType = routeFinalDestination?.type || routeTypeFromTarget(node.returnAfterPlay, project);
   const nightModeActive = !!project?.globalOptions?.nightMode;
   const routeUsesEndStep = !!effectiveEndBehavior?.usesEndStep;
   const routeFinalLabel = routeFinalDestination?.name || returnDestinationLabel;
   const routeFinalType = routeFinalDestination?.type || returnDestinationType;
   const routeEndStepLabel = hasSequence
-    ? 'Scénario de fin'
+    ? t('editorsStory.afterPlay.endSequenceTitle')
     : hasPrompt && !usesGlobalEndNodeAudio
-      ? 'Message de fin personnalisé'
-      : `${project?.endNodeName || 'Message de fin'}${nightModeActive ? ' (mode nuit)' : ''}`;
+      ? t('editorsStory.afterPlay.advancedTitleCustom')
+      : `${project?.endNodeName || t('editorsStory.multiEditor.endMessageNameFallback')}${nightModeActive ? t('editorsStory.afterPlay.nightModeSuffix') : ''}`;
   const routeContextText = autoNextApplies
-    ? 'Auto-next activé'
+    ? t('editorsStory.afterPlay.autoNextActiveContext')
     : usesStorySpecificEndReturn
-      ? 'Destination réglée dans cette histoire'
+      ? t('editorsStory.afterPlay.destinationSetContext')
       : null;
   const showEndModeControls = !hasGeneratedEndNode && !autoNextApplies;
   const showReturnDestinationRow = !autoNextApplies && (
     usesStorySpecificEndReturn
     || (!hasGeneratedEndNode && autoContinuationEnabled)
   );
-  const autoNextContextText = getAutoNextContextText(autoNextResolution);
+  const autoNextContextText = getAutoNextContextText(autoNextResolution, t);
   const afterPlayNotes = [
     autoNextContextText,
     autoNextApplies
-      ? 'Les retours personnalisés, le message de fin et les scénarios de fin restent dans le projet, mais auto-next prend la main.'
+      ? t('editorsStory.afterPlay.autoNextOverrideNote')
       : null,
   ].filter(Boolean);
   const showAfterPlayIntro = afterPlayNotes.length > 0;
@@ -369,29 +372,29 @@ export function AfterPlaySection({
   if (endMessage.presentationKind === 'global') {
     endContent = localDraft ? (
       <div className="end-simple-settings">
-        <div className="sequence-note sequence-note--spaced">Brouillon de fin locale — il ne modifie pas encore cette histoire.</div>
+        <div className="sequence-note sequence-note--spaced">{t('editorsStory.afterPlay.draftNotice')}</div>
         <div className="field-row end-local-audio-row">
           <div style={{ flex: 1 }}>
-            <span className="field-label">Audio de la fin locale</span>
-            <div className="after-play-muted">{localDraft.audio ? basename(localDraft.audio) : 'Aucun audio choisi'}</div>
+            <span className="field-label">{t('editorsStory.afterPlay.localEndAudioLabel')}</span>
+            <div className="after-play-muted">{localDraft.audio ? basename(localDraft.audio) : t('editorsStory.afterPlay.noAudioChosen')}</div>
           </div>
-          <Button size="sm" onClick={() => void pickLocalDraftAudio()}>Choisir un audio</Button>
-          {localDraft.audio ? <Button size="sm" onClick={() => setLocalDraft((draft) => ({ ...draft, audio: null, audioSource: null }))}>Retirer</Button> : null}
+          <Button size="sm" onClick={() => void pickLocalDraftAudio()}>{t('editorsStory.afterPlay.chooseAudioButton')}</Button>
+          {localDraft.audio ? <Button size="sm" onClick={() => setLocalDraft((draft) => ({ ...draft, audio: null, audioSource: null }))}>{t('editorsStory.afterPlay.removeButton')}</Button> : null}
         </div>
         <div className="sequence-targets">
           <div className="field-row field-row--flush">
-            <span className="field-label">Bouton OK</span>
+            <span className="field-label">{t('editorsStory.afterPlay.okButtonLabel')}</span>
             <NavigationTargetSelect
               value={localDraft.okTarget ?? ''}
               onChange={(okTarget) => setLocalDraft((draft) => ({ ...draft, okTarget: okTarget || null }))}
               allMenus={allMenus}
               allStories={allStories}
               currentStoryId={node.id}
-              emptyLabel="Comme à la fin de l'histoire"
+              emptyLabel={t('editorsStory.endSequence.sameAsEndOfStory')}
             />
           </div>
           <div className="field-row field-row--flush">
-            <span className="field-label">Bouton Accueil</span>
+            <span className="field-label">{t('editorsStory.afterPlay.homeButtonLabel')}</span>
             <NavigationTargetSelect
               value={localDraft.homeNone ? '__none__' : (localDraft.homeTarget ?? '')}
               onChange={(value) => setLocalDraft((draft) => value === '__none__'
@@ -402,23 +405,23 @@ export function AfterPlaySection({
               currentStoryId={node.id}
               includeNone
               includeStoryPlay={false}
-              emptyLabel="Identique au bouton OK"
+              emptyLabel={t('editorsStory.afterPlay.sameAsOk')}
             />
           </div>
         </div>
         {!localDraftApplicability?.applicable ? (
           <div className="after-play-muted" role="status">
-            Choisissez un audio ou une destination différente de la fin globale.
+            {t('editorsStory.afterPlay.applicabilityWarning')}
           </div>
         ) : null}
         <div className="end-actions-end">
-          <Button size="sm" onClick={() => setLocalDraft(null)}>Annuler</Button>
+          <Button size="sm" onClick={() => setLocalDraft(null)}>{t('editorsStory.afterPlay.cancelButton')}</Button>
           <Button
             size="sm"
             onClick={applyLocalDraft}
             disabled={!localDraftApplicability?.applicable}
           >
-            Appliquer la fin locale
+            {t('editorsStory.afterPlay.applyLocalEndButton')}
           </Button>
         </div>
       </div>
@@ -426,12 +429,12 @@ export function AfterPlaySection({
       <div className="end-add-actions">
         <Tooltip text={addPromptTooltip} placement="above">
           <Button size="sm" onClick={startLocalDraft}>
-            Ajouter un audio de fin
+            {t('editorsStory.afterPlay.addEndAudioButton')}
           </Button>
         </Tooltip>
         <Tooltip text={addSequenceTooltip} placement="above">
           <Button size="sm" onClick={startSequence}>
-            Ajouter un scénario de fin
+            {t('editorsStory.afterPlay.addEndSequenceButton')}
           </Button>
         </Tooltip>
       </div>
@@ -442,39 +445,41 @@ export function AfterPlaySection({
         <div className="end-summary">
           <div>
             <div className="end-summary-title">
-              <span>Scénario de fin</span>
+              <span>{t('editorsStory.afterPlay.endSequenceTitle')}</span>
               <span className="end-summary-badge">
-                {afterPlaybackSequence.length} étape{afterPlaybackSequence.length > 1 ? 's' : ''}
+                {afterPlaybackSequence.length === 1
+                  ? t('editorsStory.afterPlay.stepsBadgeOne', { count: afterPlaybackSequence.length })
+                  : t('editorsStory.afterPlay.stepsBadgeOther', { count: afterPlaybackSequence.length })}
               </span>
             </div>
             <div className="end-summary-copy">
-              Séquence jouée après la fin de l'histoire, avant la destination suivante.
+              {t('editorsStory.afterPlay.endSequenceDesc')}
             </div>
           </div>
           <div className="end-summary-actions">
             {hasEndNode && (
               <Button size="sm" onClick={() => onAttachStoryEndToGlobal?.(node.id)}>
-                Rattacher au message du pack
+                {t('editorsStory.afterPlay.attachToPackMessageButton')}
               </Button>
             )}
-            <Tooltip text={showSequenceEditor ? 'Masquer le scénario' : 'Afficher le scénario'}>
+            <Tooltip text={showSequenceEditor ? t('editorsStory.afterPlay.hideSequenceTooltip') : t('editorsStory.afterPlay.showSequenceTooltip')}>
               <button
                 type="button"
                 className="sequence-summary-icon-btn"
                 onClick={() => setShowSequenceEditor((v) => !v)}
-                aria-label={showSequenceEditor ? 'Masquer le scénario' : 'Afficher le scénario'}
+                aria-label={showSequenceEditor ? t('editorsStory.afterPlay.hideSequenceTooltip') : t('editorsStory.afterPlay.showSequenceTooltip')}
               >
                 {showSequenceEditor
                   ? <ChevronUp className="sequence-icon" />
                   : <ChevronDown className="sequence-icon" />}
               </button>
             </Tooltip>
-            <Tooltip text="Retirer le scénario de fin">
+            <Tooltip text={t('editorsStory.afterPlay.removeSequenceTooltip')}>
               <button
                 type="button"
                 className="story-prompt-trash"
                 onClick={clearEndAfterPlayback}
-                aria-label="Retirer le scénario de fin"
+                aria-label={t('editorsStory.afterPlay.removeSequenceTooltip')}
               >
                 <Trash2 className="card-danger-icon" />
               </button>
@@ -499,14 +504,14 @@ export function AfterPlaySection({
       <>
         <div className="end-field-head">
           <span className="field-label">
-            Message audio de fin
+            {t('editorsStory.afterPlay.endAudioMessageLabel')}
           </span>
-          <Tooltip text="Retirer le message audio de fin">
+          <Tooltip text={t('editorsStory.afterPlay.removeEndAudioTooltip')}>
             <button
               type="button"
               className="story-prompt-trash"
               onClick={clearEndAfterPlayback}
-              aria-label="Retirer le message audio de fin"
+              aria-label={t('editorsStory.afterPlay.removeEndAudioTooltip')}
             >
               <Trash2 className="card-danger-icon" />
             </button>
@@ -514,7 +519,7 @@ export function AfterPlaySection({
         </div>
         {hasEndNode && !usesGlobalEndNodeAudio && (
           <div className="sequence-note sequence-note--spaced">
-            Cette histoire jouera ce message <strong>à la place</strong> du message de fin du pack.
+            {t('editorsStory.afterPlay.replacesPackMessageNotePrefix')} <strong>{t('editorsStory.afterPlay.replacesPackMessageNoteStrong')}</strong> {t('editorsStory.afterPlay.replacesPackMessageNoteSuffix')}
           </div>
         )}
         <AudioField
@@ -522,7 +527,7 @@ export function AfterPlaySection({
           description={promptAudioDescription}
           file={node.afterPlaybackPromptAudio}
           required={false}
-          ttsFilenameHint={`fin-${node.name || 'histoire'}`}
+          ttsFilenameHint={`fin-${node.name || t('editorsStory.endSequence.storyFallbackName')}`}
           xttsTarget={{ kind: 'story', entryId: node.id, field: 'afterPlaybackPromptAudio' }}
           onPick={(f) => onUpdate({ afterPlaybackPromptAudio: f })}
           onClear={() => onUpdate({
@@ -536,11 +541,11 @@ export function AfterPlaySection({
           <div className="end-simple-settings">
             {hasEndNode && (
               <div className="sequence-note sequence-note--spaced">
-                Cette histoire utilise une fin locale à la place du message du pack.
+                {t('editorsStory.afterPlay.localEndOverridesPackNote')}
               </div>
             )}
             <div className="sequence-controls">
-              {CONTROL_DEFS.map(({ key, label, def }) => (
+              {controlDefs.map(({ key, label, def }) => (
                 <label key={key} className="sequence-control">
                   <span>{label}</span>
                   <Toggle
@@ -562,7 +567,7 @@ export function AfterPlaySection({
             <div className="sequence-targets">
               <div className="field-row field-row--flush">
                 <div style={{ flex: 1 }}>
-                  <span className="field-label">Bouton OK</span>
+                  <span className="field-label">{t('editorsStory.afterPlay.okButtonLabel')}</span>
                 </div>
                 <NavigationTargetSelect
                   value={node.afterPlaybackPromptOkTarget ?? ''}
@@ -570,12 +575,12 @@ export function AfterPlaySection({
                   allMenus={allMenus}
                   allStories={allStories}
                   currentStoryId={node.id}
-                  emptyLabel="Comme à la fin de l'histoire"
+                  emptyLabel={t('editorsStory.endSequence.sameAsEndOfStory')}
                 />
               </div>
               <div className="field-row field-row--flush">
                 <div style={{ flex: 1 }}>
-                  <span className="field-label">Bouton Accueil</span>
+                  <span className="field-label">{t('editorsStory.afterPlay.homeButtonLabel')}</span>
                 </div>
                 <NavigationTargetSelect
                   value={promptHomeSelectValue}
@@ -590,7 +595,7 @@ export function AfterPlaySection({
                   allStories={allStories}
                   currentStoryId={node.id}
                   includeNone
-                  emptyLabel="Identique au bouton OK"
+                  emptyLabel={t('editorsStory.afterPlay.sameAsOk')}
                   includeStoryPlay={false}
                 />
               </div>
@@ -598,11 +603,11 @@ export function AfterPlaySection({
             <div className="end-actions-end">
               {hasEndNode && (
                 <Button size="sm" onClick={() => onAttachStoryEndToGlobal?.(node.id)}>
-                  Rattacher au message du pack
+                  {t('editorsStory.afterPlay.attachToPackMessageButton')}
                 </Button>
               )}
               <Button size="sm" onClick={startSequence}>
-                Convertir en scénario de fin
+                {t('editorsStory.afterPlay.convertToSequenceButton')}
               </Button>
             </div>
           </div>
@@ -614,12 +619,12 @@ export function AfterPlaySection({
       <div className="end-add-actions">
         <Tooltip text={addPromptTooltip} placement="above">
           <Button size="sm" onClick={() => setShowPromptField(true)}>
-            Ajouter un audio de fin
+            {t('editorsStory.afterPlay.addEndAudioButton')}
           </Button>
         </Tooltip>
         <Tooltip text={addSequenceTooltip} placement="above">
           <Button size="sm" onClick={startSequence}>
-            Ajouter un scénario de fin
+            {t('editorsStory.afterPlay.addEndSequenceButton')}
           </Button>
         </Tooltip>
       </div>
@@ -631,9 +636,9 @@ export function AfterPlaySection({
   return (
     <div className="card">
       <div className="card-title-row">
-        <div className="card-title">Après la lecture</div>
+        <div className="card-title">{t('editorsStory.afterPlay.sectionTitle')}</div>
         <div className="card-copy card-copy--inline">
-          Que se passe-t-il quand cette histoire se termine.
+          {t('editorsStory.afterPlay.sectionDesc')}
         </div>
       </div>
 
@@ -649,15 +654,15 @@ export function AfterPlaySection({
 
           {showEndModeControls && (
             <div className="after-play-end-row">
-              <span className="after-play-end-label">À la fin</span>
-              <div className="story-end-mode" role="group" aria-label="Comportement à la fin de l'histoire">
+              <span className="after-play-end-label">{t('editorsStory.multiEditor.atEndLabel')}</span>
+              <div className="story-end-mode" role="group" aria-label={t('editorsStory.afterPlay.endBehaviorAriaLabel')}>
                 <button
                   type="button"
                   className={`story-end-mode-btn ${playbackEndMode === 'stay' ? 'is-active' : ''}`}
                   aria-pressed={playbackEndMode === 'stay'}
                   onClick={() => updateAutoContinuation(false)}
                 >
-                  Rester sur l'écran
+                  {t('editorsStory.afterPlay.stayOnScreen')}
                 </button>
                 <button
                   type="button"
@@ -665,7 +670,7 @@ export function AfterPlaySection({
                   aria-pressed={playbackEndMode === 'auto'}
                   onClick={() => updateAutoContinuation(true)}
                 >
-                  Enchaîner
+                  {t('editorsStory.afterPlay.continueLabel')}
                 </button>
               </div>
             </div>
@@ -678,17 +683,17 @@ export function AfterPlaySection({
           <div className="after-play-destination-copy">
             <span className="field-label">
               {usesStorySpecificEndReturn
-                ? 'Destination après le message de fin'
+                ? t('editorsStory.afterPlay.destinationAfterEndMessage')
                 : autoNextApplies
-                  ? 'Exception à auto-next'
-                  : "Destination après l'histoire"}
+                  ? t('editorsStory.afterPlay.autoNextException')
+                  : t('editorsStory.afterPlay.destinationAfterStory')}
             </span>
             <div className="after-play-muted">
               {usesStorySpecificEndReturn
-                ? 'Utilisée lorsque le retour du message de fin est réglé sur « Selon chaque histoire ». Une valeur vide suit le dossier ou le comportement par défaut.'
+                ? t('editorsStory.afterPlay.specificDestinationUsedNote')
                 : autoNextApplies
-                ? 'Laisser vide pour suivre le comportement auto-next global.'
-                : "L'écran ou le menu affiché à la sortie automatique."}
+                ? t('editorsStory.afterPlay.autoNextFollowNote')
+                : t('editorsStory.afterPlay.autoExitScreenNote')}
             </div>
           </div>
           <div className="after-play-destination-select">
@@ -699,7 +704,7 @@ export function AfterPlaySection({
               allStories={allStories}
               currentStoryId={node.id}
               allowCurrentStory={!parentMenu}
-              emptyLabel={autoNextApplies ? 'Suit auto-next global' : (inheritedReturnLabel || resolvedReturnDestination?.name || 'Choisir une destination')}
+              emptyLabel={autoNextApplies ? t('editorsStory.afterPlay.followsAutoNext') : (inheritedReturnLabel || resolvedReturnDestination?.name || t('editorsStory.afterPlay.chooseDestination'))}
               resolvedDefaultValue={resolvedReturnValue}
               resolvedDefaultLabel={resolvedReturnDestination?.name}
               resolvedDefaultKind={resolvedReturnDestination?.type}
@@ -711,13 +716,13 @@ export function AfterPlaySection({
 
       <div className="after-play-route" ref={afterPlayRef}>
         <div className="after-play-route-head">
-          <div className="after-play-route-title">Résumé du parcours</div>
+          <div className="after-play-route-title">{t('editorsStory.afterPlay.routeSummaryTitle')}</div>
           {routeContextText ? (
             <div className="after-play-route-context">{routeContextText}</div>
           ) : null}
         </div>
         <div className="after-play-route-list">
-          <RouteChip icon={<CircleStop />}>Histoire terminée</RouteChip>
+          <RouteChip icon={<CircleStop />}>{t('editorsStory.afterPlay.storyFinishedChip')}</RouteChip>
           <RouteArrow />
           {routeUsesEndStep ? (
             <>
@@ -734,7 +739,7 @@ export function AfterPlaySection({
           ) : autoContinuationEnabled ? (
             <RouteChip icon={<RouteTargetIcon type={returnDestinationType} />} destination>{returnDestinationLabel}</RouteChip>
           ) : (
-            <RouteChip icon={<Pause />}>Attente sur l'écran</RouteChip>
+            <RouteChip icon={<Pause />}>{t('editorsStory.multiEditor.waitingOnScreen')}</RouteChip>
           )}
         </div>
       </div>

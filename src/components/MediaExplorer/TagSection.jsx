@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { tagStyle } from './helpers';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function TagSection({ paths, mediaTags, itemTags, allProjectTags, onAddMediaTag, onRemoveMediaTag }) {
+  const { t } = useTranslation();
   const [newTag, setNewTag] = useState('');
   const targetPaths = (paths ?? []).filter(Boolean);
   const isBulk = targetPaths.length > 1;
@@ -21,7 +23,7 @@ export function TagSection({ paths, mediaTags, itemTags, allProjectTags, onAddMe
 
   return (
     <div className="ctx-tag-section">
-      <div className="ctx-tag-header">{isBulk ? `Tags (${targetPaths.length})` : 'Tags'}</div>
+      <div className="ctx-tag-header">{isBulk ? t('mediaExplorer.tags.tagsCountLabel', { count: targetPaths.length }) : t('mediaExplorer.tags.tagsLabel')}</div>
       {allProjectTags.map((tag) => {
         const taggedCount = targetPaths.filter((path) => tagsForPath(path).includes(tag)).length;
         const active = taggedCount === targetPaths.length;
@@ -48,7 +50,7 @@ export function TagSection({ paths, mediaTags, itemTags, allProjectTags, onAddMe
           className="ctx-tag-new-input"
           value={newTag}
           onChange={(e) => setNewTag(e.target.value)}
-          placeholder="+ Nouveau tag"
+          placeholder={t('mediaExplorer.tags.newTagPlaceholder')}
           onKeyDown={(e) => e.stopPropagation()}
         />
       </form>

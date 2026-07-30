@@ -1,14 +1,16 @@
 import { AppModalPortal } from './AppModalPortal';
 import { Button } from './Button';
+import { useTranslation } from '../../i18n/I18nContext';
 import './CreditsModal.css';
 
 /** Modale « À propos de Story Studio » (crédits). */
 export function CreditsModal({ appVersion, onClose }) {
+  const { t } = useTranslation();
   return (
     <AppModalPortal>
       <div className="modal-box credits-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <span>À propos de Story Studio</span>
+          <span>{t('common.credits.title')}</span>
           <Button variant="icon" className="modal-close" onClick={onClose}>✕</Button>
         </div>
         <div className="credits-body">
@@ -17,14 +19,14 @@ export function CreditsModal({ appVersion, onClose }) {
             {appVersion && <span className="credits-version">v{appVersion}</span>}
           </div>
           <div className="credits-line">
-            Né d'une envie simple : créer des histoires pour Armand.
+            {t('common.credits.origin')}
           </div>
           <div className="credits-line">
-            Créé par hugs11, assisté de Claude-code et Codex
+            {t('common.credits.author')}
           </div>
           <div className="credits-line credits-thanks">
-            Grâce au travail de<br />
-            <strong>Jersou</strong>, <strong>Dantsu</strong>, <strong>o.Daneel</strong> et{' '}
+            {t('common.credits.thanksIntro')}<br />
+            <strong>Jersou</strong>, <strong>Dantsu</strong>, <strong>o.Daneel</strong> {t('common.credits.namesConjunction')}{' '}
             <strong>LuckyTheCookie</strong>
           </div>
         </div>

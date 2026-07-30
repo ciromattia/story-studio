@@ -1,27 +1,32 @@
+import { useTranslation } from '../../i18n/I18nContext';
+
 /**
  * Écran « Génération » du châssis pour les funnels génératifs/outils.
  * Spinner violet + liste de phases (à venir / en cours / faite) + barre de
  * progression. Stepper et pied sont masqués par le shell (`showChrome=false`).
  *
  * @param {Object}   props
- * @param {string}   [props.title='Génération…']
- * @param {string}   [props.hint='Ne ferme pas la fenêtre.']
+ * @param {string}   [props.title]  Défaut : traduction de `funnels.generationState.defaultTitle`.
+ * @param {string}   [props.hint]   Défaut : traduction de `funnels.generationState.defaultHint`.
  * @param {{label: string, status?: 'todo'|'active'|'done'}[]} [props.phases]
  * @param {number}   [props.progress]   0..1. Si fourni, affiche la barre + %.
  */
 export function FunnelGenerationState({
-  title = 'Génération…',
-  hint = 'Ne ferme pas la fenêtre.',
+  title,
+  hint,
   phases = [],
   progress = null,
 }) {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t('funnels.generationState.defaultTitle');
+  const resolvedHint = hint ?? t('funnels.generationState.defaultHint');
   const pct = progress === null ? null : Math.round(Math.max(0, Math.min(1, progress)) * 100);
 
   return (
     <div className="funnel-process">
       <div className="funnel-spinner" aria-hidden="true" />
-      <div className="funnel-process-title">{title}</div>
-      <div className="funnel-process-hint">{hint}</div>
+      <div className="funnel-process-title">{resolvedTitle}</div>
+      <div className="funnel-process-hint">{resolvedHint}</div>
 
       {phases.length > 0 && (
         <div className="funnel-phases">

@@ -1,0 +1,185 @@
+export default {
+  toolbar: {
+    projectMenu: {
+      title: 'Project actions',
+      label: 'Project',
+    },
+    panels: {
+      groupAria: 'Visible, reorderable panels',
+      toggleTree: 'Show/hide the tree',
+      toggleSettings: 'Show/hide settings',
+      toggleDiagram: 'Show/hide the diagram',
+    },
+    packOptions: {
+      title: 'Options',
+      label: 'Options',
+    },
+    successToast: 'Pack ready to generate',
+    generate: {
+      label: 'Generate pack',
+      blockedTooltip: 'Clear the "to fix" items before generating ({{shortcut}})',
+    },
+  },
+  projectMenuPopover: {
+    head: {
+      title: 'Project',
+      subtitleSaved: 'Saved',
+      subtitleDefault: 'File and saving',
+    },
+    items: {
+      backHome: 'Back to home',
+      openProject: 'Open a project',
+      saveProject: 'Save',
+      saveAs: 'Save as...',
+    },
+  },
+  packNameModal: {
+    emptyTitleHint: 'Title required to generate the export name',
+    title: 'Pack metadata',
+    close: 'Close',
+    cover: {
+      label: 'Cover',
+      defined: 'Set from the library',
+      empty: 'No root image set',
+      notEditable: 'not editable here',
+    },
+    fields: {
+      title: {
+        label: 'Pack title',
+        placeholder: 'My pack title',
+      },
+      age: {
+        label: 'Minimum age',
+        groupAria: 'Preset minimum ages',
+        customLabel: 'Other:',
+        customAria: 'Custom minimum age',
+        customPlaceholder: '5',
+      },
+      author: {
+        label: 'Author',
+        placeholder: 'Author name',
+      },
+      version: {
+        label: 'Version',
+      },
+      producer: {
+        label: 'Producer',
+        placeholder: 'RTL, France Inter... (optional)',
+      },
+      bonus: {
+        label: 'Bonus',
+        tag: 'optional',
+        placeholder: 'e.g. 8 chapters',
+      },
+      description: {
+        label: 'Description',
+        tag: 'changelog',
+        placeholder: 'Target audience, content, changes since the previous version...',
+      },
+      uuid: {
+        label: 'UUID',
+        placeholder: 'Pack UUID',
+        regenerate: 'Generate a new UUID',
+        importedHint: 'UUID imported from the pack. You can regenerate it if you want.',
+      },
+    },
+    preview: {
+      label: 'Export name',
+      collision: 'A ZIP with this name already exists in the export folder',
+      free: 'Name available in the export folder',
+      checking: 'Checking name availability',
+      noFolder: 'No export folder available',
+    },
+    footer: {
+      storiesOne: 'story',
+      storiesMany: 'stories',
+      mediaOne: 'linked media file',
+      mediaMany: 'linked media files',
+    },
+    actions: {
+      cancel: 'Cancel',
+      apply: 'Apply',
+      applying: 'Applying...',
+      applyAndGenerate: 'Apply & generate',
+      preparing: 'Preparing...',
+      tooltipBusy: 'An action is already in progress.',
+      tooltipNeedTitle: 'Fill in the pack title before generating.',
+      tooltipBlocked: 'Clear the "to fix" items before you can generate the pack.',
+      tooltipReady: 'Apply the metadata and generate the pack.',
+    },
+  },
+  packOptionsPopover: {
+    dialogAria: 'Pack options',
+    audioTitle: 'Pack audio processing',
+    harmonize: {
+      label: 'Harmonize volume',
+      toggleAria: 'Harmonize the volume of all audio files to -14 LUFS at generation.',
+      help: "Levels out the volume of every story to the same target (-14 LUFS) at generation time (recommended if your audio files aren't already prepared for the Lunii). Audio that's near-silent or too clipped to fix without distorting will block generation. If disabled, each file keeps its original volume.",
+    },
+    silence: {
+      title: 'Start/end silence',
+      groupAria: 'Start and end silence mode',
+      durationSame: '{{leading}} at the start and end',
+      durationDiff: '{{leading}} at the start · {{trailing}} at the end',
+      normalize: {
+        label: 'Adjust',
+        aria: 'Measure and adjust the start and end silences',
+        help: 'Recommended: measures the silences and trims or pads them to exactly {{leading}} at the start and {{trailing}} at the end (cuts if too long, fills in if too short).',
+      },
+      add: {
+        label: 'Add',
+        aria: 'Add {{leading}} at the start and {{trailing}} at the end',
+        help: "Adds {{leading}} at the start and {{trailing}} at the end without measuring what's already there — existing silence stacks on top.",
+      },
+      off: {
+        label: 'Do nothing',
+        aria: 'Leave the start and end silences unchanged',
+        help: 'Leaves the start and end silences untouched.',
+      },
+    },
+    playback: {
+      title: 'Playback',
+      scopeTag: '· global',
+    },
+    autoNext: {
+      label: 'Auto-next',
+      hint: 'Chains playback across nodes',
+      help: 'Automatically chains stories and ignores messages, scenarios, and configured endings while the option is active.',
+      toggleAria: 'Auto-next. Automatically chains stories and ignores configured endings.',
+    },
+    preferences: {
+      title: 'App preferences',
+      subtitle: 'Theme, working folders, audio, shortcuts.',
+    },
+  },
+  titleBar: {
+    defaultProjectName: 'New project',
+    unsavedProject: 'Unsaved project',
+    packFallbackTitle: 'Pack metadata',
+    projectTooltip: 'Project name: "{{name}}"',
+    packTooltipDefined: '"{{name}}" — Edit the pack name and metadata',
+    packTooltipEmpty: 'Fill in the pack name and metadata',
+    saveStatus: {
+      notSaved: 'Project not saved yet',
+      unsavedChanges: 'Unsaved changes',
+      saved: 'Project saved',
+    },
+    about: 'About',
+    minimize: 'Minimize',
+    maximize: 'Maximize or restore',
+    close: 'Close',
+  },
+  validationPill: {
+    packGroupLabel: 'Pack',
+    ready: 'Pack ready',
+    verifying: 'Checking files…',
+    verifyingShort: 'Checking…',
+    toFix: 'to fix',
+    dropdownTitle: 'To fix',
+    listAria: 'List of items to fix',
+    issuesOne: '{{count}} item to fix before generating',
+    issuesMany: '{{count}} items to fix before generating',
+    subtitleOne: '{{count}} item to fix before generating the pack.',
+    subtitleMany: '{{count}} items to fix before generating the pack.',
+  },
+};

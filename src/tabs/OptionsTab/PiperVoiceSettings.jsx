@@ -1,4 +1,5 @@
 import { Button } from '../../components/common/Button';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function PiperVoiceSettings({
   piperVoices,
@@ -9,15 +10,16 @@ export function PiperVoiceSettings({
   updatePiperSpeed,
   preparePiperVoice,
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="xtts-settings">
       <div className="opts-row-sub" style={{ marginBottom: 8 }}>
-        Piper ajoute un bouton texte → audio dans tous les champs audio. La voix est téléchargée
-        automatiquement au premier usage.
+        {t('options.voice.piper.desc')}
       </div>
       <div className="xtts-grid">
         <label className="xtts-label">
-          Voix
+          {t('options.voice.piper.voiceLabel')}
           <select
             className="xtts-input"
             value={piperVoice}
@@ -25,14 +27,14 @@ export function PiperVoiceSettings({
           >
             {(piperVoices.length > 0 ? piperVoices : [{ id: piperVoice, label: piperVoice, installed: false }]).map((voice) => (
               <option key={voice.id} value={voice.id}>
-                {voice.label}{voice.installed ? '' : ' — à télécharger'}
+                {voice.label}{voice.installed ? '' : t('options.voice.piper.voiceDownloadSuffix')}
               </option>
             ))}
           </select>
         </label>
 
         <label className="xtts-label">
-          Vitesse ({piperSpeed.toFixed(2)}×)
+          {t('options.voice.piper.speedLabel', { speed: piperSpeed.toFixed(2) })}
           <input
             className="xtts-input"
             type="number"
@@ -47,10 +49,10 @@ export function PiperVoiceSettings({
 
       <div className="xtts-actions">
         <Button onClick={preparePiperVoice} disabled={piperProvision.state === 'loading'}>
-          {piperProvision.state === 'loading' ? 'Téléchargement…' : 'Préparer la voix maintenant'}
+          {piperProvision.state === 'loading' ? t('options.voice.piper.preparingButton') : t('options.voice.piper.prepareButton')}
         </Button>
         <span className="opts-row-sub">
-          Optionnel : prépare la voix sélectionnée à l’avance pour éviter l’attente au 1er usage.
+          {t('options.voice.piper.prepareHint')}
         </span>
       </div>
 

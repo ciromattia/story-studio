@@ -8,10 +8,12 @@ import { Info } from '../icons/LucideLocal';
 import { KEYS, read, write } from '../../store/persistentSettings';
 import { basename } from '../../utils/fileUtils';
 import { formatFrenchCount } from '../../utils/frenchText.js';
+import { useTranslation } from '../../i18n/I18nContext';
 import './EditorPanel.css';
 import './RootEditor.css';
 
 export const RootEditor = memo(function RootEditor({ node, projectType, onUpdateRoot, onUpdateMedia, onUpdateStoryAudio }) {
+  const { t } = useTranslation();
   const sameImage = !!node.sameImage;
   const nativeGraph = node.nativeGraph ?? null;
   const nativeGraphStageCount = nativeGraph?.stageCount ?? nativeGraph?.document?.stageNodes?.length ?? 0;
@@ -70,12 +72,12 @@ export const RootEditor = memo(function RootEditor({ node, projectType, onUpdate
     return (
       <div className="root-audio-section">
         <div className="media-col-header">
-          Son
-          <span className="media-col-subtitle">Titre audio — entendu dans le menu principal</span>
+          {t('editorsCore.rootEditor.soundColHeader')}
+          <span className="media-col-subtitle">{t('editorsCore.rootEditor.soundColSubtitle')}</span>
         </div>
         <AudioField
-          label="Titre audio"
-          description="Entendu dans le menu principal"
+          label={t('editorsCore.rootEditor.titleAudioLabel')}
+          description={t('editorsCore.rootEditor.titleAudioDesc')}
           file={node.rootAudio}
           ttsTextSuggestion={rootTitle}
           ttsFilenameHint={`titre-${rootTitle || 'projet'}`}
@@ -92,11 +94,16 @@ export const RootEditor = memo(function RootEditor({ node, projectType, onUpdate
       {nativeGraph ? (
         <div className="card">
           <div className="card-title-row">
-            <div className="card-title">Graphe interactif importé</div>
-            <div className="card-copy card-copy--inline">{nativeGraphStageCount} stages · {nativeGraphActionCount} actions</div>
+            <div className="card-title">{t('editorsCore.rootEditor.nativeGraphCardTitle')}</div>
+            <div className="card-copy card-copy--inline">
+              {t('editorsCore.rootEditor.nativeGraphCardCopy', {
+                stageCount: nativeGraphStageCount,
+                actionCount: nativeGraphActionCount,
+              })}
+            </div>
           </div>
           <div className="sequence-note" style={{ margin: '0 16px 12px' }}>
-            Ce pack utilise une structure interactive avec convergences et retours Accueil explicites. Les stages ci-dessous sont ceux qui seront utilisés pour le round-trip fidèle.
+            {t('editorsCore.rootEditor.nativeGraphNote')}
           </div>
           <NativeGraphEditor
             graph={nativeGraph}
@@ -111,18 +118,17 @@ export const RootEditor = memo(function RootEditor({ node, projectType, onUpdate
             <Info className="chrome-icon" strokeWidth={1.9} absoluteStrokeWidth />
           </span>
           <div className="simple-mode-info-text">
-            <strong>Mode histoire simple</strong>
+            <strong>{t('editorsCore.rootEditor.simpleModeInfoTitle')}</strong>
             <span>
-              Tu crées un pack contenant une seule histoire. Pour des menus, plusieurs histoires ou
-              une navigation personnalisée, utilise plutôt l'« Éditeur libre ».
+              {t('editorsCore.rootEditor.simpleModeInfoText')}
             </span>
           </div>
           <button
             type="button"
             className="simple-mode-info-dismiss"
             onClick={dismissSimpleInfo}
-            aria-label="Masquer ce message"
-            title="Masquer ce message"
+            aria-label={t('editorsCore.rootEditor.simpleModeInfoDismissAria')}
+            title={t('editorsCore.rootEditor.simpleModeInfoDismissTitle')}
           >
             ×
           </button>
@@ -131,27 +137,31 @@ export const RootEditor = memo(function RootEditor({ node, projectType, onUpdate
 
       <div className="card root-identity-card">
         <div className="card-title-row">
-          <div className="card-title">{isSimple ? 'Mon histoire' : 'Menu Racine'}</div>
+          <div className="card-title">{isSimple ? t('editorsCore.rootEditor.identityTitleSimple') : t('editorsCore.rootEditor.identityTitlePack')}</div>
           <div className="card-copy card-copy--inline">
             {isSimple
-              ? "Image et audio utilisés quand l'enfant choisit cette histoire."
-              : "Image et audio utilisés quand l'enfant choisit ce pack."}
+              ? t('editorsCore.rootEditor.identityDescSimple')
+              : t('editorsCore.rootEditor.identityDescPack')}
           </div>
         </div>
 
         {projectType === 'pack' ? (
           <div className="root-card-name-row root-card-name-row--identity">
             <div className="field-row" style={{ marginBottom: 0, flex: 1 }}>
-              <span className="field-label">Nom</span>
+              <span className="field-label">{t('editorsCore.rootEditor.nameLabel')}</span>
               <input
                 className="field-input"
                 value={node.rootName ?? ''}
                 onChange={(e) => onUpdateRoot({ rootName: e.target.value })}
-                placeholder="Menu racine"
+                placeholder={t('editorsCore.rootEditor.namePlaceholder')}
               />
             </div>
             <span className="root-entry-count">
-              {formatFrenchCount(node.rootEntries?.length ?? 0, 'élément', 'éléments')}
+              {formatFrenchCount(
+                node.rootEntries?.length ?? 0,
+                t('editorsCore.rootEditor.entrySingular'),
+                t('editorsCore.rootEditor.entryPlural'),
+              )}
             </span>
           </div>
         ) : null}
@@ -159,15 +169,15 @@ export const RootEditor = memo(function RootEditor({ node, projectType, onUpdate
         {isSimple ? (
           <div className="root-card-name-row root-card-name-row--simple root-card-name-row--identity">
             <div className="simple-name-field">
-              <label className="simple-name-label" htmlFor="root-simple-name">Nom de l'histoire</label>
+              <label className="simple-name-label" htmlFor="root-simple-name">{t('editorsCore.rootEditor.simpleNameLabel')}</label>
               <input
                 id="root-simple-name"
                 className="field-input simple-name-input"
                 value={simpleStoryName}
                 onChange={(e) => handleSimpleNameChange(e.target.value)}
-                placeholder="Le loup et l'agneau"
+                placeholder={t('editorsCore.rootEditor.simpleNamePlaceholder')}
               />
-              <span className="simple-name-hint">Apparaît dans le catalogue Lunii et donne son nom au fichier ZIP exporté.</span>
+              <span className="simple-name-hint">{t('editorsCore.rootEditor.simpleNameHint')}</span>
             </div>
           </div>
         ) : null}
@@ -179,25 +189,25 @@ export const RootEditor = memo(function RootEditor({ node, projectType, onUpdate
             <div className="media-split root-cover-media-split">
               <div className="media-split-left">
                 <div className="media-col-header">
-                  Image
+                  {t('editorsCore.rootEditor.imageColHeader')}
                   <span className="media-col-subtitle">
                     {isSimple
-                      ? "Visuel utilisé pour présenter l'histoire"
-                      : 'Visuel utilisé pour présenter le pack'}
+                      ? t('editorsCore.rootEditor.imageColSubtitleSimple')
+                      : t('editorsCore.rootEditor.imageColSubtitlePack')}
                   </span>
                 </div>
                 <ImageField
                   fieldId="root:coverImage"
                   file={node.rootImage}
-                  badge="Lunii + Catalogue"
-                  formatHint="Choisis une image : elle sera adaptée en 320 × 240 px à l’export"
+                  badge={t('editorsCore.rootEditor.coverBadge')}
+                  formatHint={t('editorsCore.rootEditor.coverFormatHint')}
                   extraActions={[
                     {
                       key: 'generate-text',
-                      label: 'Générer une image-titre',
+                      label: t('editorsCore.rootEditor.generateTitleImageLabel'),
                       icon: '✦',
                       onClick: handleGenerateTextImage,
-                      title: "Créer une image-titre à partir du nom de l'histoire",
+                      title: t('editorsCore.rootEditor.generateTitleImageTitle'),
                     },
                   ]}
                   onPick={(f) => {
@@ -221,32 +231,32 @@ export const RootEditor = memo(function RootEditor({ node, projectType, onUpdate
             <>
               <div className="root-image-section">
                 <div className="media-col-header">
-                  Image
+                  {t('editorsCore.rootEditor.imageColHeader')}
                   <span className="media-col-subtitle">
                     {isSimple
-                      ? "Visuels utilisés pour présenter l'histoire sur la Lunii et dans les catalogues"
-                      : 'Visuels utilisés pour présenter le pack sur la Lunii et dans les catalogues'}
+                      ? t('editorsCore.rootEditor.imageColSubtitleSplitSimple')
+                      : t('editorsCore.rootEditor.imageColSubtitleSplitPack')}
                   </span>
                 </div>
                 <div className="root-image-split-layout">
                   <div className="root-image-col root-image-col--lunii">
                     <div className="media-col-header">
-                      Image Lunii
-                      <span className="media-col-subtitle">Affichée sur la Lunii, adaptée en 320×240 à l'export</span>
+                      {t('editorsCore.rootEditor.luniiImageColHeader')}
+                      <span className="media-col-subtitle">{t('editorsCore.rootEditor.luniiImageColSubtitle')}</span>
                     </div>
                     <ImageField
                       align="start"
                       fieldId="root:rootImage"
                       file={node.rootImage}
-                      badge="Lunii · 320×240"
-                      formatHint="Choisis une image : elle sera adaptée en 320 × 240 px à l’export"
+                      badge={t('editorsCore.rootEditor.luniiBadge')}
+                      formatHint={t('editorsCore.rootEditor.coverFormatHint')}
                       extraActions={[
                         {
                           key: 'generate-text',
-                          label: 'Générer une image-titre',
+                          label: t('editorsCore.rootEditor.generateTitleImageLabel'),
                           icon: '✦',
                           onClick: handleGenerateTextImage,
-                          title: "Créer une image-titre à partir du nom de l'histoire",
+                          title: t('editorsCore.rootEditor.generateTitleImageTitle'),
                         },
                       ]}
                       onPick={(f) => { onUpdateMedia('rootImage', f); onUpdateMedia('autoGenerateRootImage', false); }}
@@ -255,22 +265,22 @@ export const RootEditor = memo(function RootEditor({ node, projectType, onUpdate
                   </div>
                   <div className="root-image-col root-image-col--catalog">
                     <div className="media-col-header">
-                      Vignette catalogue
-                      <span className="media-col-subtitle">Utilisée par STUdio, LuniiQt et les bibliothèques</span>
+                      {t('editorsCore.rootEditor.catalogImageColHeader')}
+                      <span className="media-col-subtitle">{t('editorsCore.rootEditor.catalogImageColSubtitle')}</span>
                     </div>
                     <ImageField
                       align="start"
                       fieldId="root:thumbnailImage"
                       file={node.thumbnailImage}
-                      badge="Catalogue · taille libre"
-                      formatHint="Taille libre — utilisée par STUdio, LuniiQt et les catalogues"
+                      badge={t('editorsCore.rootEditor.catalogBadge')}
+                      formatHint={t('editorsCore.rootEditor.catalogFormatHint')}
                       extraActions={[
                         {
                           key: 'generate-text',
-                          label: 'Générer une image-titre',
+                          label: t('editorsCore.rootEditor.generateTitleImageLabel'),
                           icon: '✦',
                           onClick: handleGenerateThumbnailTextImage,
-                          title: "Créer une image-titre pour le catalogue à partir du nom de l'histoire",
+                          title: t('editorsCore.rootEditor.generateThumbnailTitleImageTitle'),
                         },
                       ]}
                       onPick={(f) => onUpdateMedia('thumbnailImage', f)}
@@ -290,18 +300,18 @@ export const RootEditor = memo(function RootEditor({ node, projectType, onUpdate
 
       <div className="card root-image-settings-card">
         <div className="card-title-row">
-          <div className="card-title">Réglage du menu racine</div>
+          <div className="card-title">{t('editorsCore.rootEditor.settingsTitle')}</div>
         </div>
 
         <label className="sequence-control root-image-sync-control">
           <Toggle
             on={sameImage}
             onChange={setSameImage}
-            ariaLabel="Utiliser la même image pour la Lunii et la vignette catalogue"
+            ariaLabel={t('editorsCore.rootEditor.sameImageAria')}
           />
           <div className="root-image-sync-copy">
             <span className="during-play-control-title">
-              Utiliser la même image pour la Lunii et la vignette catalogue
+              {t('editorsCore.rootEditor.sameImageLabel')}
             </span>
           </div>
         </label>
@@ -310,12 +320,12 @@ export const RootEditor = memo(function RootEditor({ node, projectType, onUpdate
       {isSimple && (
         <div className="card">
           <div className="card-title-row">
-            <div className="card-title">Récit complet</div>
-            <div className="card-copy card-copy--inline">Le fichier audio joué quand l'enfant valide son choix sur la Lunii — c'est l'histoire en elle-même.</div>
+            <div className="card-title">{t('editorsCore.rootEditor.fullStoryTitle')}</div>
+            <div className="card-copy card-copy--inline">{t('editorsCore.rootEditor.fullStoryDesc')}</div>
           </div>
           <AudioField
-            label="Audio du récit"
-            description="Joué quand l'enfant valide son choix"
+            label={t('editorsCore.rootEditor.fullStoryAudioLabel')}
+            description={t('editorsCore.rootEditor.fullStoryAudioDesc')}
             file={node.storyAudio}
             ttsFilenameHint={`histoire-complete-${simpleStoryName || 'histoire'}`}
             xttsTarget={{ kind: 'rootStory', field: 'audio' }}

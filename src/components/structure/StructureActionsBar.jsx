@@ -12,6 +12,7 @@ import { LuniiIcon } from '../icons/LuniiIcon';
 import { Tooltip } from '../common/Tooltip';
 import { partitionStructureActions } from './structureActionLayout';
 import { StructureActionsOverflow } from './StructureActionsOverflow';
+import { useTranslation } from '../../i18n/I18nContext';
 import './StructureActionsBar.css';
 
 function ActionIcon({ Icon }) {
@@ -57,6 +58,7 @@ export function StructureActionsBar({
   trailing = null,
   availableInlineSize = null,
 }) {
+  const { t } = useTranslation();
   const barRef = useRef(null);
   const [measuredInlineSize, setMeasuredInlineSize] = useState(null);
   const hasAvailableInlineSize = Number.isFinite(availableInlineSize);
@@ -81,7 +83,7 @@ export function StructureActionsBar({
   const actions = [
     {
       id: 'import-story',
-      title: 'Importer audio, ZIP ou 7z',
+      title: t('shell.structureActions.importStory'),
       priority: 'primary',
       disabled: !canAddStory,
       onClick: () => onAddStory?.(targetMenuId),
@@ -89,7 +91,7 @@ export function StructureActionsBar({
     },
     {
       id: 'add-folder',
-      title: 'Créer un dossier',
+      title: t('shell.structureActions.addFolder'),
       priority: 'primary',
       disabled: !canAddFolder,
       onClick: () => onAddFolder?.(targetMenuId),
@@ -97,7 +99,7 @@ export function StructureActionsBar({
     },
     {
       id: 'import-folder',
-      title: 'Importer un dossier',
+      title: t('shell.structureActions.importFolder'),
       priority: 'secondary',
       disabled: !canImportFolder,
       onClick: () => onImportFolder?.(targetMenuId),
@@ -105,7 +107,7 @@ export function StructureActionsBar({
     },
     {
       id: 'import-podcast',
-      title: 'Ajouter un podcast',
+      title: t('shell.structureActions.importPodcast'),
       priority: 'secondary',
       disabled: !canImportPodcast,
       onClick: onImportPodcast,
@@ -113,7 +115,7 @@ export function StructureActionsBar({
     },
     ...(onImportYoutube ? [{
       id: 'import-youtube',
-      title: 'Importer depuis YouTube',
+      title: t('shell.structureActions.importYoutube'),
       priority: 'secondary',
       disabled: !canImportYoutube,
       onClick: onImportYoutube,
@@ -121,7 +123,7 @@ export function StructureActionsBar({
     }] : []),
     {
       id: 'record',
-      title: 'Enregistrer une histoire avec le micro',
+      title: t('shell.structureActions.record'),
       priority: 'secondary',
       disabled: !canRecord,
       onClick: onRecord,
@@ -129,7 +131,7 @@ export function StructureActionsBar({
     },
     ...(onGenerateStoryTts ? [{
       id: 'generate-tts',
-      title: 'Créer une histoire avec TTS',
+      title: t('shell.structureActions.generateTts'),
       priority: 'secondary',
       disabled: !canGenerateStoryTts,
       onClick: onGenerateStoryTts,
@@ -137,7 +139,7 @@ export function StructureActionsBar({
     }] : []),
     ...(onLaunchSimulator ? [{
       id: 'simulator',
-      title: 'Lancer le simulateur',
+      title: t('shell.structureActions.launchSimulator'),
       priority: 'secondary',
       disabled: !canLaunchSimulator,
       onClick: onLaunchSimulator,
@@ -153,9 +155,9 @@ export function StructureActionsBar({
     <div
       ref={barRef}
       className={`structure-actions-bar structure-actions-bar--${variant}`}
-      aria-label="Ajouter à la structure"
+      aria-label={t('shell.structureActions.barAriaLabel')}
     >
-      {showLabel ? <span className="structure-actions-label">Ajouter</span> : null}
+      {showLabel ? <span className="structure-actions-label">{t('shell.structureActions.addLabel')}</span> : null}
       {directActions.map((action) => <StructureActionButton key={action.id} action={action} />)}
       <StructureActionsOverflow actions={overflowActions} />
       {trailing ? <span className="structure-actions-trailing">{trailing}</span> : null}

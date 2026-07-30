@@ -1,6 +1,8 @@
 import { SquareStack } from '../../icons/LucideLocal';
+import { useTranslation } from '../../../i18n/I18nContext';
 
 export function StructureLevelSummaryNode({ entry, onExpand }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -10,16 +12,16 @@ export function StructureLevelSummaryNode({ entry, onExpand }) {
         event.stopPropagation();
         onExpand?.(entry.id);
       }}
-      title={`Déplier ce dossier et afficher ses ${entry.storyCount} histoires`}
+      title={t('diagram.structure.unfoldTitle', { count: entry.storyCount })}
     >
       <span className="fd-structure-summary-visual" aria-hidden="true">
         <SquareStack className="fd-structure-summary-icon" />
         <span className="fd-structure-summary-meta">
           <span className="fd-structure-summary-count">{entry.storyCount}</span>
-          <span className="fd-structure-summary-label">histoires</span>
+          <span className="fd-structure-summary-label">{t('diagram.structure.storiesLabel')}</span>
         </span>
       </span>
-      <span className="fd-structure-summary-action">Déplier</span>
+      <span className="fd-structure-summary-action">{t('diagram.structure.unfoldAction')}</span>
     </button>
   );
 }

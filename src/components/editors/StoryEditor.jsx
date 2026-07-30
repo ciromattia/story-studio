@@ -25,6 +25,7 @@ import {
   isExplicitSilentStoryTitle,
   isStorySelectionAudioRequired,
 } from '../../store/storyTitleStage';
+import { useTranslation } from '../../i18n/I18nContext';
 import './EditorPanel.css';
 
 // ─── Navigation helpers (used for computed props only) ────────────────────────
@@ -39,32 +40,36 @@ function resolveNavigationTargetId(target, currentMenuId = null) {
   return decodeNavigationMenuId(normalized);
 }
 
-function targetNameById(allMenus, allStories, targetId, fallback = 'destination introuvable') {
+function targetNameById(t, allMenus, allStories, targetId, fallback = t('editorsCore.storyEditor.targetNameMissing')) {
   if (targetId === 'root') return NAV_ROOT_LABEL;
-  if (targetId === NAV_TARGET_NEXT_STORY) return 'Histoire suivante';
+  if (targetId === NAV_TARGET_NEXT_STORY) return t('editorsCore.storyEditor.targetNameNextStory');
   if (!targetId) return fallback;
   if (isStoryNavigationTarget(targetId)) {
     const storyId = decodeNavigationStoryId(targetId);
     const storyName = allStories.find((s) => s.id === storyId)?.name || fallback;
     return isStoryHomeStepNavigationTarget(targetId)
-      ? `Retour de fin — ${storyName}`
+      ? t('editorsCore.storyEditor.targetNameHome', { name: storyName })
       : isStoryPlayNavigationTarget(targetId)
-      ? `Lecture directe — ${storyName}`
-      : `Titre — ${storyName}`;
+      ? t('editorsCore.storyEditor.targetNamePlay', { name: storyName })
+      : t('editorsCore.storyEditor.targetNameTitle', { name: storyName });
   }
   return allMenus.find((menu) => menu.id === targetId)?.name || fallback;
 }
 
-function buildInheritedReturnLabel(parentMenu, allMenus, allStories, autoNextEffective) {
+function buildInheritedReturnLabel(t, parentMenu, allMenus, allStories, autoNextEffective) {
   if (!parentMenu) return null;
-  if (autoNextEffective) return 'Lecture de l’histoire suivante';
+  if (autoNextEffective) return t('editorsCore.storyEditor.inheritedReturnAutoNext');
   const inheritedTargetId = parentMenu.returnAfterPlay ?? null;
   if (!inheritedTargetId || isCurrentMenuNavigationTarget(inheritedTargetId)) {
-    return `Revient à ${parentMenu.name || 'ce dossier'}`;
+    return t('editorsCore.storyEditor.inheritedReturnTo', {
+      name: parentMenu.name || t('editorsCore.storyEditor.inheritedReturnDefaultMenu'),
+    });
   }
-  if (isRootNavigationTarget(inheritedTargetId)) return `Revient à ${NAV_ROOT_LABEL}`;
-  const name = targetNameById(allMenus, allStories, resolveNavigationTargetId(inheritedTargetId, parentMenu.id));
-  return `Revient à ${name}`;
+  if (isRootNavigationTarget(inheritedTargetId)) {
+    return t('editorsCore.storyEditor.inheritedReturnTo', { name: NAV_ROOT_LABEL });
+  }
+  const name = targetNameById(t, allMenus, allStories, resolveNavigationTargetId(inheritedTargetId, parentMenu.id));
+  return t('editorsCore.storyEditor.inheritedReturnTo', { name });
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -80,6 +85,7 @@ export const StoryEditor = memo(function StoryEditor({
   afterPlayFocus = null,
   onAfterPlayFocusConsumed,
 }) {
+  const { t } = useTranslation();
   const { onExtractAudioEmbeddedImage } = useProjectContext();
 
   const autoNext = project?.globalOptions?.autoNext ?? false;
@@ -92,7 +98,7 @@ export const StoryEditor = memo(function StoryEditor({
   );
 
   const inheritedReturnLabel = buildInheritedReturnLabel(
-    parentMenu, allMenus, allStories, autoNextEffective && !isLastInMenu,
+    t, parentMenu, allMenus, allStories, autoNextEffective && !isLastInMenu,
   );
   const explicitSilentSelection = isExplicitSilentStoryTitle(node);
   const selectionAudioRequired = isStorySelectionAudioRequired(node);
@@ -123,17 +129,17 @@ export const StoryEditor = memo(function StoryEditor({
       {/* Card : L'histoire (nom intégré) */}
       <div className="card">
         <div className="card-title-row">
-          <div className="card-title">L'histoire</div>
-          <div className="card-copy card-copy--inline">Nom, image et audios — comment cette histoire apparaît dans le menu et ce qui est joué.</div>
+          <div className="card-title">{t('editorsCore.storyEditor.title')}</div>
+          <div className="card-copy card-copy--inline">{t('editorsCore.storyEditor.description')}</div>
         </div>
 
         <div className="field-row" style={{ marginBottom: 0 }}>
-          <span className="field-label">Nom</span>
+          <span className="field-label">{t('editorsCore.storyEditor.nameLabel')}</span>
           <input
             className="field-input"
             value={node.name || ''}
             onChange={(e) => onUpdate({ name: e.target.value })}
-            placeholder="Nom de l'histoire"
+            placeholder={t('editorsCore.storyEditor.namePlaceholder')}
           />
         </div>
         <div className="card-sep" />
@@ -141,8 +147,8 @@ export const StoryEditor = memo(function StoryEditor({
         <div className="media-split">
           <div className="media-split-left">
             <div className="media-col-header">
-              Image
-              <span className="media-col-subtitle">Image affichée dans le menu de sélection</span>
+              {t('editorsCore.storyEditor.imageColHeader')}
+              <span className="media-col-subtitle">{t('editorsCore.storyEditor.imageColSubtitle')}</span>
             </div>
             <ImageField
               fieldId={`${node.id}:itemImage`}
@@ -150,10 +156,10 @@ export const StoryEditor = memo(function StoryEditor({
               extraActions={[
                 {
                   key: 'generate-text',
-                  label: 'Générer une image-titre',
+                  label: t('editorsCore.storyEditor.generateTitleImageLabel'),
                   icon: '✦',
                   onClick: handleRegenerate,
-                  title: "Créer une image-titre à partir du nom de l'histoire",
+                  title: t('editorsCore.storyEditor.generateTitleImageTitle'),
                 },
               ]}
               onPick={(f) => onUpdate({ itemImage: f, autoGenerateImage: false })}
@@ -163,17 +169,17 @@ export const StoryEditor = memo(function StoryEditor({
           <div className="media-split-divider" />
           <div className="media-split-right">
             <div className="media-col-header">
-              Son
-              <span className="media-col-subtitle">Audio de sélection puis lecture de l'histoire</span>
+              {t('editorsCore.storyEditor.soundColHeader')}
+              <span className="media-col-subtitle">{t('editorsCore.storyEditor.soundColSubtitle')}</span>
             </div>
             <AudioField
-              label="Audio de sélection"
+              label={t('editorsCore.storyEditor.selectionAudioLabel')}
               description={explicitSilentSelection
-                ? 'Optionnel — ce titre de sélection peut rester silencieux'
-                : "Énoncé quand l'enfant parcourt les histoires"}
+                ? t('editorsCore.storyEditor.selectionAudioDescSilent')
+                : t('editorsCore.storyEditor.selectionAudioDescDefault')}
               file={node.itemAudio}
               required={selectionAudioRequired}
-              emptyBadge={explicitSilentSelection ? 'Écran silencieux' : null}
+              emptyBadge={explicitSilentSelection ? t('editorsCore.storyEditor.selectionAudioSilentBadge') : null}
               ttsTextSuggestion={node.name || ''}
               ttsFilenameHint={`selection-${node.name || 'histoire'}`}
               xttsTarget={{ kind: 'story', entryId: node.id, field: 'itemAudio' }}
@@ -181,8 +187,8 @@ export const StoryEditor = memo(function StoryEditor({
               onClear={() => onUpdate(createStorySelectionAudioUpdate(null))}
             />
             <AudioField
-              label="Histoire complète"
-              description="Écoutée quand l'enfant valide son choix"
+              label={t('editorsCore.storyEditor.fullStoryAudioLabel')}
+              description={t('editorsCore.storyEditor.fullStoryAudioDesc')}
               file={node.audio}
               ttsFilenameHint={`histoire-complete-${node.name || 'histoire'}`}
               xttsTarget={{ kind: 'story', entryId: node.id, field: 'audio' }}
@@ -223,14 +229,14 @@ export const StoryEditor = memo(function StoryEditor({
             className="card-danger-trash"
             type="button"
             onClick={onDelete}
-            aria-label="Supprimer cette histoire"
-            title="Supprimer cette histoire"
+            aria-label={t('editorsCore.storyEditor.deleteAriaLabel')}
+            title={t('editorsCore.storyEditor.deleteTitle')}
           >
             <Trash2 className="card-danger-icon" />
           </button>
-          <span className="card-danger-title">Supprimer cette histoire</span>
+          <span className="card-danger-title">{t('editorsCore.storyEditor.deleteTitle')}</span>
           <p className="card-danger-desc">
-            L'histoire et ses transitions sont retirées du pack. Ses fichiers restent dans la médiathèque, sans être supprimés du disque.
+            {t('editorsCore.storyEditor.deleteDesc')}
           </p>
         </div>
       </div>

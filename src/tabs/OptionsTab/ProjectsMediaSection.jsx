@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '../../components/common/Button';
 import { Toggle } from '../../components/common/Toggle';
-import { formatFrenchCount } from '../../utils/frenchText.js';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function ProjectsMediaSection({
   className,
@@ -15,6 +15,7 @@ export function ProjectsMediaSection({
   onConsolidateProject,
   project,
 }) {
+  const { t } = useTranslation();
   const [consolidating, setConsolidating] = useState(false);
   const [consolidationResult, setConsolidationResult] = useState(null);
 
@@ -31,63 +32,65 @@ export function ProjectsMediaSection({
 
   return (
     <section id="projects-media" className={className} ref={sectionRef}>
-      <div className="opts-card-title">Gestion des projets et médias</div>
+      <div className="opts-card-title">{t('options.projectsMedia.title')}</div>
       <div className="opts-row">
         <div className="opts-row-info">
-          <div className="opts-row-label">Utiliser un workspace pour les nouveaux projets</div>
+          <div className="opts-row-label">{t('options.projectsMedia.useWorkspaceLabel')}</div>
           <div className="opts-row-sub">
-            Désactivé par défaut : les nouveaux projets commencent dans une session temporaire, sans emplacement imposé.
+            {t('options.projectsMedia.useWorkspaceSub')}
           </div>
         </div>
         <Toggle on={!!useWorkspaceForNewProjects} onChange={onUseWorkspaceForNewProjectsChange} />
       </div>
       <div className="opts-row">
         <div className="opts-row-info">
-          <div className="opts-row-label">Emplacement de travail</div>
+          <div className="opts-row-label">{t('options.projectsMedia.workspaceDirLabel')}</div>
           <div className="opts-row-sub">
-            Emplacement de référence pour les projets enregistrés et les médias gérés.
+            {t('options.projectsMedia.workspaceDirSub')}
           </div>
           <div className="opts-path-value" title={displayedWorkspaceDir || ''}>
-            {displayedWorkspaceDir || 'Workspace en cours de résolution...'}
+            {displayedWorkspaceDir || t('options.projectsMedia.workspaceResolving')}
           </div>
         </div>
         <Button onClick={onPickWorkspaceDir}>
-          Choisir
+          {t('options.projectsMedia.chooseButton')}
         </Button>
       </div>
       <div className="opts-row">
         <div className="opts-row-info">
-          <div className="opts-row-label">Copier les fichiers importés dans l’emplacement de travail</div>
+          <div className="opts-row-label">{t('options.projectsMedia.copyFilesLabel')}</div>
           <div className="opts-row-sub">
-            Copie chaque fichier importé (ZIP, 7z, audio, image) dans <strong>Workspace/fichiers-importes/</strong>.
+            {t('options.projectsMedia.copyFilesSubPrefix')} <strong>Workspace/fichiers-importes/</strong>{t('options.projectsMedia.copyFilesSubSuffix')}
           </div>
         </div>
         <Toggle on={copyFilesEnabled} onChange={(v) => onCopyFilesChange?.(v)} />
       </div>
       <div className="opts-row">
         <div className="opts-row-info">
-          <div className="opts-row-label">Consolider le projet</div>
+          <div className="opts-row-label">{t('options.projectsMedia.consolidateLabel')}</div>
           <div className="opts-row-sub">
-            Copie le `.mbah` et tous les médias référencés dans un dossier cible, sans supprimer les originaux.
+            {t('options.projectsMedia.consolidateSub')}
           </div>
         </div>
         <Button onClick={handleConsolidate} disabled={consolidating || !project}>
-          {consolidating ? 'Consolidation...' : 'Consolider'}
+          {consolidating ? t('options.projectsMedia.consolidatingButton') : t('options.projectsMedia.consolidateButton')}
         </Button>
       </div>
       {consolidationResult && (
         <div className={`info-box info-box--spaced ${consolidationResult.errors?.length ? 'warn' : ''}`}>
-          Projet consolidé : {formatFrenchCount(
-            consolidationResult.copiedCount,
-            'média copié',
-            'médias copiés',
+          {t(
+            consolidationResult.copiedCount === 1
+              ? 'options.projectsMedia.consolidatedResultOne'
+              : 'options.projectsMedia.consolidatedResultOther',
+            { count: consolidationResult.copiedCount },
           )}
           {consolidationResult.errors?.length
-            ? `, ${formatFrenchCount(
-              consolidationResult.errors.length,
-              'fichier manquant',
-              'fichiers manquants',
-            )}.`
+            ? t(
+              consolidationResult.errors.length === 1
+                ? 'options.projectsMedia.missingFilesOne'
+                : 'options.projectsMedia.missingFilesOther',
+              { count: consolidationResult.errors.length },
+            )
             : '.'}
         </div>
       )}

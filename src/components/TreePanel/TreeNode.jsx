@@ -9,6 +9,7 @@ import {
   ICON_BY_KEY,
 } from './TreeIcons';
 import { getTreeGuideStyleVars, getTreeIndent, resolveHoverGuide } from './treeGuides';
+import { useTranslation } from '../../i18n/I18nContext';
 import './TreePanel.css';
 import './TreeGuides.css';
 
@@ -29,6 +30,7 @@ const BADGE_ICON_BY_KIND = {
 const MAX_NAVIGATION_BADGE_SLOTS = 2;
 
 function TreeInlineNameInput({ value, onChange, onCommit, onCancel }) {
+  const { t } = useTranslation();
   const inputRef = useRef(null);
   const cancelledRef = useRef(false);
 
@@ -42,7 +44,7 @@ function TreeInlineNameInput({ value, onChange, onCommit, onCancel }) {
       ref={inputRef}
       className="tree-inline-name-input"
       value={value}
-      aria-label="Renommer"
+      aria-label={t('tree.node.renameAriaLabel')}
       onChange={(event) => onChange(event.target.value)}
       onBlur={() => {
         if (!cancelledRef.current) onCommit();

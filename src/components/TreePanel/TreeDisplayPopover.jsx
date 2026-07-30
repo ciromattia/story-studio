@@ -10,20 +10,23 @@ import { Toggle } from '../common/Toggle';
 import { Tooltip } from '../common/Tooltip';
 import { Eye } from '../icons/LucideLocal';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { useTranslation } from '../../i18n/I18nContext';
 import './TreeDisplayPopover.css';
 
-const OPTIONS = [
-  {
-    key: 'badges',
-    label: 'Badges de navigation',
-    help: 'Affiche les indications de retour et de parcours sur les lignes.',
-  },
-  {
-    key: 'guides',
-    label: 'Rails de guidage',
-    help: "Affiche les lignes d'indentation et de branche active dans l'arbre.",
-  },
-];
+function buildOptions(t) {
+  return [
+    {
+      key: 'badges',
+      label: t('tree.displayPopover.options.badges.label'),
+      help: t('tree.displayPopover.options.badges.help'),
+    },
+    {
+      key: 'guides',
+      label: t('tree.displayPopover.options.guides.label'),
+      help: t('tree.displayPopover.options.guides.help'),
+    },
+  ];
+}
 
 export function TreeDisplayPopover({
   open,
@@ -33,6 +36,8 @@ export function TreeDisplayPopover({
   showGuides,
   onShowGuidesChange,
 }) {
+  const { t } = useTranslation();
+  const OPTIONS = buildOptions(t);
   const wrapRef = useRef(null);
   const triggerRef = useRef(null);
   const popoverRef = useRef(null);
@@ -101,12 +106,12 @@ export function TreeDisplayPopover({
 
   return (
     <div className={`tree-display-wrap${open ? ' is-open' : ''}`} ref={wrapRef}>
-      <Tooltip text="Affichage de l'arbre" placement="below">
+      <Tooltip text={t('tree.displayPopover.tooltip')} placement="below">
         <button
           ref={triggerRef}
           type="button"
           className={`tree-display-trigger${open ? ' is-active' : ''}`}
-          aria-label="Affichage de l'arbre"
+          aria-label={t('tree.displayPopover.tooltip')}
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={() => onOpenChange?.(!open)}
@@ -120,7 +125,7 @@ export function TreeDisplayPopover({
           ref={popoverRef}
           className={`tree-display-popover${position?.isAbove ? ' is-above' : ''}`}
           role="dialog"
-          aria-label="Affichage de l'arbre"
+          aria-label={t('tree.displayPopover.tooltip')}
           style={position
             ? {
               left: position.left,
@@ -130,8 +135,8 @@ export function TreeDisplayPopover({
             : { left: -9999, top: -9999, visibility: 'hidden' }}
         >
           <div className="tree-display-head">
-            <span className="tree-display-title">Affichage</span>
-            <span className="tree-display-subtitle">Options visibles dans la structure.</span>
+            <span className="tree-display-title">{t('tree.displayPopover.title')}</span>
+            <span className="tree-display-subtitle">{t('tree.displayPopover.subtitle')}</span>
           </div>
 
           <div className="tree-display-section">

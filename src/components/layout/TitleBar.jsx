@@ -4,6 +4,7 @@ import { isTauriRuntime } from '../../utils/tauriRuntime';
 import { Image as ImageIcon } from '../icons/LucideLocal';
 import { useLocalFile } from '../../hooks/useLocalFile';
 import { Tooltip } from '../common/Tooltip';
+import { useTranslation } from '../../i18n/I18nContext';
 import './TitleBar.css';
 
 function AppMark() {
@@ -56,24 +57,25 @@ function ChevronIcon() {
 }
 
 export function TitleBar({ projectName, packMetadata = null, packCoverImage = null, isDirty, hasSavePath = false, saveState = null, showProjectMeta = true, onOpenPackMetadata = null, onOpenCredits = null }) {
+  const { t } = useTranslation();
   const currentWindow = useMemo(() => (isTauriRuntime() ? getCurrentWindow() : null), []);
   const [isMaximizing, setIsMaximizing] = useState(false);
   const packCoverUrl = useLocalFile(packCoverImage);
-  const displayProjectName = hasSavePath ? (projectName || 'Nouveau projet') : 'Projet non enregistré';
+  const displayProjectName = hasSavePath ? (projectName || t('layout.titleBar.defaultProjectName')) : t('layout.titleBar.unsavedProject');
   const packStoryName = packMetadata?.title || '';
-  const packDisplayName = packStoryName || 'Métadonnées du pack';
+  const packDisplayName = packStoryName || t('layout.titleBar.packFallbackTitle');
   const packMetaLine = `${packMetadata?.minAge || '3'}+ · v${packMetadata?.version || 1}`;
-  const projectTooltip = `Nom du projet : « ${displayProjectName} »`;
+  const projectTooltip = t('layout.titleBar.projectTooltip', { name: displayProjectName });
   const packTooltip = packStoryName
-    ? `« ${packStoryName} » — Modifier le nom et les métadonnées du pack`
-    : 'Renseigner le nom et les métadonnées du pack';
+    ? t('layout.titleBar.packTooltipDefined', { name: packStoryName })
+    : t('layout.titleBar.packTooltipEmpty');
   const showSaveIndicator = isDirty || hasSavePath || saveState === 'ok';
   const saveIndicatorClass = (isDirty && saveState !== 'ok')
     ? 'chrome-titlebar-status is-dirty'
     : 'chrome-titlebar-status is-saved';
   const saveIndicatorTitle = !hasSavePath
-    ? 'Projet pas encore enregistré'
-    : (isDirty && saveState !== 'ok') ? 'Modifications non enregistrées' : 'Projet enregistré';
+    ? t('layout.titleBar.saveStatus.notSaved')
+    : (isDirty && saveState !== 'ok') ? t('layout.titleBar.saveStatus.unsavedChanges') : t('layout.titleBar.saveStatus.saved');
 
   async function handleToggleMaximize() {
     if (!currentWindow || isMaximizing) return;
@@ -135,19 +137,19 @@ export function TitleBar({ projectName, packMetadata = null, packCoverImage = nu
 
       <div className="chrome-window-controls">
         {onOpenCredits ? (
-          <button type="button" className="chrome-window-btn" onClick={onOpenCredits} title="À propos">
+          <button type="button" className="chrome-window-btn" onClick={onOpenCredits} title={t('layout.titleBar.about')}>
             <HelpIcon />
           </button>
         ) : null}
         {currentWindow ? (
           <>
-            <button type="button" className="chrome-window-btn" onClick={() => currentWindow.minimize()} title="Réduire">
+            <button type="button" className="chrome-window-btn" onClick={() => currentWindow.minimize()} title={t('layout.titleBar.minimize')}>
               <MinimizeIcon />
             </button>
-            <button type="button" className="chrome-window-btn" onClick={handleToggleMaximize} title="Agrandir ou restaurer" disabled={isMaximizing}>
+            <button type="button" className="chrome-window-btn" onClick={handleToggleMaximize} title={t('layout.titleBar.maximize')} disabled={isMaximizing}>
               <MaximizeIcon />
             </button>
-            <button type="button" className="chrome-window-btn chrome-window-btn-close" onClick={() => currentWindow.close()} title="Fermer">
+            <button type="button" className="chrome-window-btn chrome-window-btn-close" onClick={() => currentWindow.close()} title={t('layout.titleBar.close')}>
               <CloseIcon />
             </button>
           </>

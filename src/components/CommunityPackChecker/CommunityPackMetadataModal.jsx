@@ -5,6 +5,7 @@ import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { generateConventionName, parseConventionName } from '../../utils/packConvention';
 import { generateUuid } from '../../utils/uuid';
 import { useErrorDialog } from '../common/Dialog';
+import { useTranslation } from '../../i18n/I18nContext';
 import './CommunityPackMetadataModal.css';
 
 const AGE_CHIPS = ['2', '3', '6', '9', '12'];
@@ -50,8 +51,8 @@ function defaultDraft(report) {
   };
 }
 
-function filenameTokens(exportName) {
-  if (!exportName) return [{ kind: 'empty', text: 'Titre requis' }];
+function filenameTokens(t, exportName) {
+  if (!exportName) return [{ kind: 'empty', text: t('packChecker.metadata.titleRequired') }];
   const tokens = [];
   const ageMatch = exportName.match(/^(\d+\+\])/);
   let rest = exportName;
@@ -79,6 +80,7 @@ export function CommunityPackMetadataModal({
   onCancel,
   onSubmit,
 }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState(() => defaultDraft(report));
   const [uuidPromptOpen, setUuidPromptOpen] = useState(false);
   const uuidPromptRequestRef = useRef(null);
@@ -87,7 +89,7 @@ export function CommunityPackMetadataModal({
   const { showConfirmDialog } = useErrorDialog();
   const normalized = useMemo(() => normalizeDraft(draft), [draft]);
   const exportName = useMemo(() => generateConventionName(normalized), [normalized]);
-  const tokens = useMemo(() => filenameTokens(exportName), [exportName]);
+  const tokens = useMemo(() => filenameTokens(t, exportName), [t, exportName]);
   const issues = useMemo(() => titleIssues(report), [report]);
   const currentAge = String(draft.minAge || '3').replace(/\D/g, '') || '3';
   const customAge = AGE_CHIPS.includes(currentAge) ? '' : currentAge;
@@ -110,13 +112,11 @@ export function CommunityPackMetadataModal({
         uuid: currentUuid,
         report,
         promise: showConfirmDialog({
-          title: 'Générer un nouvel UUID ?',
-          message:
-            'La correction crée une nouvelle archive. Un nouvel UUID permet de '
-            + "l'identifier comme un pack distinct.",
+          title: t('packChecker.metadata.uuidConfirmTitle'),
+          message: t('packChecker.metadata.uuidConfirmMessage'),
           variant: 'warning',
-          okLabel: 'Générer un nouvel UUID',
-          cancelLabel: "Conserver l'UUID actuel",
+          okLabel: t('packChecker.metadata.uuidConfirmOk'),
+          cancelLabel: t('packChecker.metadata.uuidConfirmCancel'),
         }),
       };
       uuidPromptRequestRef.current = request;
@@ -162,18 +162,18 @@ export function CommunityPackMetadataModal({
       data-modal-surface=""
       role="dialog"
       aria-modal="true"
-      aria-label="Correction des métadonnées"
+      aria-label={t('packChecker.metadata.ariaLabel')}
       onMouseDown={onCancel}
     >
       <div className="checker-meta-modal" onMouseDown={(event) => event.stopPropagation()}>
         <header className="checker-meta-header">
           <span className="checker-meta-header-icon"><FilePen className="checker-icon" aria-hidden="true" /></span>
           <div className="checker-meta-heading">
-            <span>Correction des métadonnées</span>
-            <h2 title={exportName || undefined}>{exportName || 'Nom du pack'}</h2>
-            <p>Chaque correction crée une nouvelle révision : la version est proposée à +1.</p>
+            <span>{t('packChecker.metadata.header')}</span>
+            <h2 title={exportName || undefined}>{exportName || t('packChecker.metadata.titleFallback')}</h2>
+            <p>{t('packChecker.metadata.intro')}</p>
           </div>
-          <button type="button" className="checker-meta-close" onClick={onCancel} aria-label="Fermer">
+          <button type="button" className="checker-meta-close" onClick={onCancel} aria-label={t('packChecker.metadata.close')}>
             <X className="checker-icon" aria-hidden="true" />
           </button>
         </header>
@@ -184,7 +184,7 @@ export function CommunityPackMetadataModal({
               <Package className="checker-icon" aria-hidden="true" />
             </div>
             <div>
-              <strong>{report?.packName || 'Pack communautaire'}</strong>
+              <strong>{report?.packName || t('packChecker.metadata.packFallback')}</strong>
               <span title={report?.zipPath}>{report?.zipPath}</span>
             </div>
             {issues.length > 0 ? (
@@ -199,24 +199,24 @@ export function CommunityPackMetadataModal({
             ) : (
               <div className="checker-meta-ok">
                 <CircleCheck className="checker-icon" aria-hidden="true" />
-                <span>Le nom semble déjà valide.</span>
+                <span>{t('packChecker.metadata.okName')}</span>
               </div>
             )}
           </aside>
 
           <section className="checker-meta-form">
             <label>
-              <span>Titre du pack</span>
+              <span>{t('packChecker.metadata.titleLabel')}</span>
               <input
                 autoFocus
                 value={draft.title || ''}
                 onChange={(event) => updateField('title', event.target.value)}
-                placeholder="Titre du pack"
+                placeholder={t('packChecker.metadata.titlePlaceholder')}
               />
             </label>
 
             <label>
-              <span>Âge minimum</span>
+              <span>{t('packChecker.metadata.ageLabel')}</span>
               <div className="checker-meta-age">
                 {AGE_CHIPS.map((age) => (
                   <button
@@ -232,50 +232,50 @@ export function CommunityPackMetadataModal({
                   value={customAge}
                   onChange={(event) => updateAge(event.target.value)}
                   inputMode="numeric"
-                  placeholder="Autre"
+                  placeholder={t('packChecker.metadata.agePlaceholder')}
                 />
               </div>
             </label>
 
             <div className="checker-meta-grid">
               <label>
-                <span>Auteur</span>
-                <input value={draft.author || ''} onChange={(event) => updateField('author', event.target.value)} placeholder="Nom de l'auteur" />
+                <span>{t('packChecker.metadata.authorLabel')}</span>
+                <input value={draft.author || ''} onChange={(event) => updateField('author', event.target.value)} placeholder={t('packChecker.metadata.authorPlaceholder')} />
               </label>
               <label>
-                <span>Version</span>
+                <span>{t('packChecker.metadata.versionLabel')}</span>
                 <input type="number" min="1" value={draft.version || 1} onChange={(event) => updateField('version', event.target.value)} />
               </label>
             </div>
 
             <div className="checker-meta-grid">
               <label>
-                <span>Producteur</span>
-                <input value={draft.producer || ''} onChange={(event) => updateField('producer', event.target.value)} placeholder="Radio France, RTL..." />
+                <span>{t('packChecker.metadata.producerLabel')}</span>
+                <input value={draft.producer || ''} onChange={(event) => updateField('producer', event.target.value)} placeholder={t('packChecker.metadata.producerPlaceholder')} />
               </label>
               <label>
-                <span>Bonus</span>
-                <input value={draft.bonus || ''} onChange={(event) => updateField('bonus', event.target.value)} placeholder="facultatif" />
+                <span>{t('packChecker.metadata.bonusLabel')}</span>
+                <input value={draft.bonus || ''} onChange={(event) => updateField('bonus', event.target.value)} placeholder={t('packChecker.metadata.bonusPlaceholder')} />
               </label>
             </div>
 
             <label>
-              <span>Description</span>
-              <textarea value={draft.description || ''} onChange={(event) => updateField('description', event.target.value)} rows={3} placeholder="Description ou changelog..." />
+              <span>{t('packChecker.metadata.descriptionLabel')}</span>
+              <textarea value={draft.description || ''} onChange={(event) => updateField('description', event.target.value)} rows={3} placeholder={t('packChecker.metadata.descriptionPlaceholder')} />
             </label>
 
             <label>
-              <span>UUID</span>
+              <span>{t('packChecker.metadata.uuidLabel')}</span>
               <div className="checker-meta-uuid">
-                <input value={draft.uuid || ''} onChange={(event) => updateField('uuid', event.target.value)} placeholder="UUID du pack" />
-                <button type="button" onClick={regenerateUuid}>Générer</button>
+                <input value={draft.uuid || ''} onChange={(event) => updateField('uuid', event.target.value)} placeholder={t('packChecker.metadata.uuidPlaceholder')} />
+                <button type="button" onClick={regenerateUuid}>{t('packChecker.metadata.uuidGenerate')}</button>
               </div>
             </label>
           </section>
         </div>
 
         <div className="checker-meta-preview">
-          <span>Aperçu convention communautaire</span>
+          <span>{t('packChecker.metadata.previewLabel')}</span>
           <div title={exportName ? `${exportName}.zip` : undefined}>
             {tokens.map((token, index) => (
               <em key={`${token.kind}-${index}-${token.text}`} className={`is-${token.kind}`}>{token.text}</em>
@@ -285,9 +285,9 @@ export function CommunityPackMetadataModal({
         </div>
 
         <footer className="checker-meta-footer">
-          <Button onClick={onCancel} disabled={busy}>Annuler</Button>
+          <Button onClick={onCancel} disabled={busy}>{t('packChecker.metadata.cancel')}</Button>
           <button type="button" className="chrome-toolbar-cta checker-correction-cta" onClick={submit} disabled={!canSubmit}>
-            {busy ? 'Correction...' : 'Corriger le pack'}
+            {busy ? t('packChecker.metadata.correcting') : t('packChecker.metadata.correctPack')}
           </button>
         </footer>
       </div>

@@ -23,6 +23,13 @@ import {
   getGeneratedNavigationTargetName,
   resolveGeneratedTargetForStory,
 } from '../../store/generatedNavigation.js';
+import { translate } from '../../i18n/index.js';
+
+// Repli français par défaut : préserve les appels existants (tests, code non
+// encore migré) qui n'ont pas de `t` React à fournir.
+function defaultT(key, vars) {
+  return translate('fr', key, vars);
+}
 
 // Retourne 'error' / 'warn' / null selon la pile d'issues d'une entree.
 export function getStrongestStatus(issues = []) {
@@ -182,45 +189,48 @@ export function computeBadgesData(entry, parentMenu, issuesById, project, rootEn
 }
 
 // Transforme un BadgeData en badge UI consommable par TreeNode.
-// Résout les noms via projectIndex (lookup Map).
-export function formatBadgeTitle(data, projectIndex) {
+// Résout les noms via projectIndex (lookup Map). `t` est la fonction de
+// traduction (useTranslation) fournie par l'appelant (hook React).
+export function formatBadgeTitle(data, projectIndex, t = defaultT) {
   switch (data.kind) {
     case 'graph':
       return {
         key: 'native-graph',
         kind: 'graph',
         label: '◇',
-        title: 'Graphe interactif natif préservé pour le round-trip.',
+        title: t('tree.badges.nativeGraphTitle'),
       };
     case 'continuation':
       return {
         key: 'continuation',
         kind: 'continuation',
         label: '⇒',
-        title: `Continuation native importée depuis ${data.sourceStoryName || 'une histoire'}.`,
+        title: t('tree.badges.continuationTitle', {
+          source: data.sourceStoryName || t('tree.badges.continuationFallbackSource'),
+        }),
       };
     case 'return': {
       const returnName = getGeneratedNavigationTargetName(data.targetId, projectIndex);
       const flow = data.flow === 'sequence'
-        ? "À la fin de l'histoire : passage par le scénario de fin"
-        : "À la fin de l'histoire";
+        ? t('tree.badges.returnFlowSequence')
+        : t('tree.badges.returnFlowDirect');
       return {
         key: `return:${data.targetId}:${returnName}`,
         kind: 'return',
         status: data.status,
         label: '↩',
-        title: `${flow} → « ${returnName} »`,
+        title: t('tree.badges.returnTitle', { flow, target: returnName }),
       };
     }
     case 'prompt-return': {
       const returnName = getGeneratedNavigationTargetName(data.targetId, projectIndex);
-      const suffix = data.isInactive ? ', mais OK et autoplay sont désactivés sur le message de fin' : '';
+      const suffix = data.isInactive ? t('tree.badges.promptReturnInactiveSuffix') : '';
       return {
         key: `prompt-return:${data.targetId}:${returnName}`,
         kind: 'prompt-return',
         status: data.status,
         label: '↩',
-        title: `À la fin de l'histoire : passage par le message de fin personnalisé → « ${returnName} »${suffix}`,
+        title: t('tree.badges.promptReturnTitle', { target: returnName, suffix }),
       };
     }
     case 'home-none':
@@ -229,7 +239,7 @@ export function formatBadgeTitle(data, projectIndex) {
         kind: 'home-none',
         status: data.status,
         label: '⌂',
-        title: 'Bouton Accueil désactivé pendant la lecture',
+        title: t('tree.badges.homeNoneTitle'),
       };
     case 'home-implicit': {
       const homeName = getGeneratedNavigationTargetName(data.targetId, projectIndex);
@@ -238,7 +248,7 @@ export function formatBadgeTitle(data, projectIndex) {
         kind: 'home-implicit',
         status: data.status,
         label: '⌂',
-        title: `Appuie sur le bouton Accueil pendant la lecture → « ${homeName} »`,
+        title: t('tree.badges.homeTitle', { target: homeName }),
       };
     }
     case 'home': {
@@ -249,20 +259,20 @@ export function formatBadgeTitle(data, projectIndex) {
         status: data.status,
         label: '⌂',
         title: data.isInactive
-          ? `Appuie sur le bouton Accueil pendant la lecture → « ${homeName} », mais le bouton Accueil est désactivé pendant la lecture`
-          : `Appuie sur le bouton Accueil pendant la lecture → « ${homeName} »`,
+          ? t('tree.badges.homeInactiveTitle', { target: homeName })
+          : t('tree.badges.homeTitle', { target: homeName }),
       };
     }
     case 'end-node':
     case 'end-night': {
       const returnName = getGeneratedNavigationTargetName(data.targetId, projectIndex);
-      const suffix = data.kind === 'end-night' ? ' (mode nuit)' : '';
+      const suffix = data.kind === 'end-night' ? t('tree.common.nightModeSuffix') : '';
       return {
         key: `${data.kind}:${data.targetId}:${returnName}`,
         kind: data.kind,
         status: data.status,
         label: data.kind === 'end-night' ? '☾' : '■',
-        title: `À la fin de l'histoire : passage par le message de fin${suffix} → « ${returnName} »`,
+        title: t('tree.badges.endNodeTitle', { suffix, target: returnName }),
       };
     }
     default:

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocalFile } from '../../hooks/useLocalFile';
 import { getEntryThumbnailPath } from '../../store/projectModel';
 import { Tooltip } from '../common/Tooltip';
+import { useTranslation } from '../../i18n/I18nContext';
 import { ChevronDown, Eye } from '../icons/LucideLocal';
 import { IconArchive, IconArrowRight, IconFolderOpen, IconHouse, IconMoon, IconStop, IconStory } from '../TreePanel/TreeIcons';
 import { END_NODE_ID } from './flowDiagramLayout';
@@ -72,6 +73,7 @@ export function FullDiagramNode({
   rootImage,
   hasExpandedStoryGroup = false,
 }) {
+  const { t } = useTranslation();
   const compact = compactMode !== 'full';
   const showThumbnail = !compact
     || entry.type === 'story'
@@ -94,9 +96,9 @@ export function FullDiagramNode({
   const isCut = cutIds?.has(entry.id);
   const nodeColor = entry.treeColor ?? null;
   const canRegroupStories = (entry.type === 'menu' || entry.type === 'root') && hasExpandedStoryGroup;
-  const collapseLabel = 'Replier les histoires';
+  const collapseLabel = t('diagram.node.collapseStories');
   const dropLabel = isDropTarget
-    ? (isRoot ? 'Deplacer a la racine' : 'Deplacer ici')
+    ? (isRoot ? t('diagram.node.moveToRoot') : t('diagram.node.moveHere'))
     : null;
 
   function handleClick(e) {
@@ -142,7 +144,7 @@ export function FullDiagramNode({
           onSelect?.(entry.id);
         }
       }}
-      title={entry.name || '(sans nom)'}
+      title={entry.name || t('diagram.node.unnamed')}
     >
       {canRegroupStories ? (
         <Tooltip text={collapseLabel} className="fd-complete-node-regroup-wrap">
@@ -161,7 +163,7 @@ export function FullDiagramNode({
         </Tooltip>
       ) : null}
       <div className="fd-complete-node-actions">
-        <Tooltip text="Simuler depuis ce point">
+        <Tooltip text={t('diagram.node.simulateFromHere')}>
           <button
             type="button"
             className="fd-complete-node-action fd-complete-node-action--preview"
@@ -194,12 +196,12 @@ export function FullDiagramNode({
               : <span className={`fd-complete-node-placeholder ${entry.type === 'menu' ? 'fd-complete-node-placeholder--menu' : ''}`} aria-hidden="true" />}
           </>
         )}
-        {sequenceCount > 0 ? <span className="fd-complete-end-badge">Fin x{sequenceCount}</span> : null}
+        {sequenceCount > 0 ? <span className="fd-complete-end-badge">{t('diagram.node.endBadge', { count: sequenceCount })}</span> : null}
         {dropLabel ? <div className="fd-complete-drop-indicator">{dropLabel}</div> : null}
       </div>
       <div className="fd-complete-node-label">
         <div className="fd-complete-node-texts">
-          <span className="fd-complete-node-name">{entry.type === 'ref' ? (entry.label?.trim() || 'Lien') : (entry.name || '(sans nom)')}</span>
+          <span className="fd-complete-node-name">{entry.type === 'ref' ? (entry.label?.trim() || t('diagram.node.linkFallback')) : (entry.name || t('diagram.node.unnamed'))}</span>
         </div>
       </div>
     </div>

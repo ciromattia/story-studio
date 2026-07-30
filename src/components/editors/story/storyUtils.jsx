@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useTranslation } from '../../../i18n/I18nContext';
 import {
   NAV_TARGET_NEXT_STORY,
   decodeNavigationMenuId,
@@ -37,38 +38,40 @@ function iconForKind(kind) {
 }
 
 function buildNavigationTargetOptions({
+  t,
   value,
   allMenus = [],
   allStories = [],
   currentStoryId = null,
   allowCurrentStory = false,
   includeNone = false,
-  noneLabel = 'Aucune transition',
-  emptyLabel = 'Choisir une destination',
+  noneLabel,
+  emptyLabel,
   includeDefault = true,
   includeNextStory = true,
   includeStoryPlay = true,
 }) {
+  const unnamedLabel = t('editorsStory.navSelect.unnamedLabel');
   const options = [];
   if (value === '__mixed__') {
     options.push({
       value: '__mixed__',
-      label: 'Valeurs mixtes — ne pas modifier',
+      label: t('editorsStory.navSelect.mixedValuesLabel'),
       kind: 'default',
       disabled: true,
     });
   }
   if (includeDefault) {
-    options.push({ value: '', label: emptyLabel, kind: 'default' });
+    options.push({ value: '', label: emptyLabel ?? t('editorsStory.navSelect.chooseDestinationLabel'), kind: 'default' });
   }
-  if (includeNone) options.push({ value: '__none__', label: noneLabel, kind: 'none' });
+  if (includeNone) options.push({ value: '__none__', label: noneLabel ?? t('editorsStory.navSelect.noTransitionLabel'), kind: 'none' });
   if (includeNextStory) {
-    options.push({ value: NAV_TARGET_NEXT_STORY, label: 'Histoire suivante', kind: 'story' });
+    options.push({ value: NAV_TARGET_NEXT_STORY, label: t('editorsStory.navSelect.nextStoryLabel'), kind: 'story' });
   }
   for (const menu of allMenus) {
     options.push({
       value: encodeMenuNavigationTarget(menu.id),
-      label: menu.name || '(sans nom)',
+      label: menu.name || unnamedLabel,
       kind: 'menu',
     });
   }
@@ -76,7 +79,7 @@ function buildNavigationTargetOptions({
   for (const story of selectableStories) {
     options.push({
       value: encodeStoryNavigationTarget(story.id),
-      label: story.name || '(sans nom)',
+      label: story.name || unnamedLabel,
       kind: 'story',
     });
   }
@@ -84,7 +87,7 @@ function buildNavigationTargetOptions({
     for (const story of selectableStories) {
       options.push({
         value: encodeStoryPlayNavigationTarget(story.id),
-        label: `Lecture directe - ${story.name || '(sans nom)'}`,
+        label: t('editorsStory.navSelect.directPlaybackPrefix', { name: story.name || unnamedLabel }),
         kind: 'story_play',
       });
     }
@@ -92,20 +95,22 @@ function buildNavigationTargetOptions({
   for (const story of allStories.filter((s) => s.id !== currentStoryId && s.hasAfterPlaybackHomeStep)) {
     options.push({
       value: encodeStoryHomeStepNavigationTarget(story.id),
-      label: `Retour de fin - ${story.name || '(sans nom)'}`,
+      label: t('editorsStory.navSelect.endReturnPrefix', { name: story.name || unnamedLabel }),
       kind: 'story_home_step',
     });
   }
   return options;
 }
 
-export const CONTROL_DEFS = [
-  { key: 'autoplay', label: 'Lecture automatique', def: true },
-  { key: 'ok',       label: 'Bouton OK',            def: true },
-  { key: 'home',     label: 'Bouton Accueil',        def: true },
-  { key: 'pause',    label: 'Bouton pause',          def: false },
-  { key: 'wheel',    label: 'Molette',               def: false },
-];
+export function getControlDefs(t) {
+  return [
+    { key: 'autoplay', label: t('editorsStory.duringPlay.autoplayLabel'), def: true },
+    { key: 'ok',       label: t('editorsStory.duringPlay.okLabel'),       def: true },
+    { key: 'home',     label: t('editorsStory.duringPlay.homeLabel'),     def: true },
+    { key: 'pause',    label: t('editorsStory.duringPlay.pauseSelectionLabel'), def: false },
+    { key: 'wheel',    label: t('editorsStory.duringPlay.wheelLabel'),    def: false },
+  ];
+}
 
 export const SEQUENCE_CONTROL_DEFAULTS = {
   autoplay: true,
@@ -115,11 +120,11 @@ export const SEQUENCE_CONTROL_DEFAULTS = {
   wheel: false,
 };
 
-export function normalizeSequenceStep(step = {}, index = 0) {
+export function normalizeSequenceStep(step = {}, index = 0, t = null) {
   const controls = step.controlSettings ?? {};
   return {
     id: step.id || crypto.randomUUID(),
-    name: step.name || `Étape ${index + 1}`,
+    name: step.name || (t ? t('editorsStory.endSequence.stepNamePlaceholder', { n: index + 1 }) : `Étape ${index + 1}`),
     audio: step.audio ?? null,
     image: step.image ?? null,
     controlSettings: { ...SEQUENCE_CONTROL_DEFAULTS, ...controls },
@@ -151,27 +156,29 @@ export function resolveNavigationTargetId(target, currentMenuId = null) {
 // L'appelant passe `emptyResolvedLabel` qui décrit ce que "vide" signifie dans son contexte
 // (héritage parent vs premier élément du pack vs etc).
 export function getNavigationSelectHint({
+  t,
   value,
   emptyResolvedLabel = null,
   entry = null,
   parentMenu = null,
   project = null,
 }) {
+  const unnamedLabel = t('editorsStory.navSelect.unnamedLabel');
   const normalized = normalizeNavigationTarget(value);
   if (!normalized) return emptyResolvedLabel;
   if (isRootNavigationTarget(normalized)) {
     const def = project?.rootEntries?.[0];
-    if (!def) return 'Aucune entrée dans le pack';
-    return `${def.name || '(sans nom)'} (premier élément du pack)`;
+    if (!def) return t('editorsStory.navSelect.noEntriesInPack');
+    return t('editorsStory.navSelect.firstPackEntry', { name: def.name || unnamedLabel });
   }
   if (isNextStoryNavigationTarget(normalized)) {
-    if (!entry) return 'Histoire suivante selon l\'histoire source';
+    if (!entry) return t('editorsStory.navSelect.nextStoryFromSource');
     const siblings = parentMenu ? (parentMenu.children ?? []) : (project?.rootEntries ?? []);
     const idx = siblings.findIndex((s) => s.id === entry.id);
     const next = idx >= 0 ? siblings.slice(idx + 1).find((s) => s.type === 'story') : null;
-    if (next) return next.name || '(sans nom)';
+    if (next) return next.name || unnamedLabel;
     // Fallback Rust : si pas d'histoire suivante, retour vers le parent
-    return parentMenu ? `${parentMenu.name || '(sans nom)'} (parent)` : NAV_ROOT_LABEL;
+    return parentMenu ? t('editorsStory.navSelect.parentSuffix', { name: parentMenu.name || unnamedLabel }) : t('editorsStory.navSelect.rootMenuLabel');
   }
   // Explicite — la valeur affichée dans le select est déjà la destination
   return null;
@@ -185,8 +192,8 @@ export function NavigationTargetSelect({
   currentStoryId,
   allowCurrentStory = false,
   includeNone = false,
-  noneLabel = 'Aucune transition',
-  emptyLabel = 'Choisir une destination',
+  noneLabel = null,
+  emptyLabel = null,
   includeDefault = true,
   resolvedDefaultValue = null,
   resolvedDefaultLabel = null,
@@ -197,6 +204,8 @@ export function NavigationTargetSelect({
   includeStoryPlay = true,
   size = 'default',
 }) {
+  const { t } = useTranslation();
+  const effectiveEmptyLabel = emptyLabel ?? t('editorsStory.navSelect.chooseDestinationLabel');
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const rootRef = useRef(null);
@@ -207,6 +216,7 @@ export function NavigationTargetSelect({
     : null;
   const baseOptions = useMemo(
     () => buildNavigationTargetOptions({
+      t,
       value: rawSelectedValue,
       allMenus,
       allStories,
@@ -214,12 +224,13 @@ export function NavigationTargetSelect({
       allowCurrentStory,
       includeNone,
       noneLabel,
-      emptyLabel,
+      emptyLabel: effectiveEmptyLabel,
       includeDefault,
       includeNextStory,
       includeStoryPlay,
     }),
     [
+      t,
       rawSelectedValue,
       allMenus,
       allStories,
@@ -227,7 +238,7 @@ export function NavigationTargetSelect({
       allowCurrentStory,
       includeNone,
       noneLabel,
-      emptyLabel,
+      effectiveEmptyLabel,
       includeDefault,
       includeNextStory,
       includeStoryPlay,
@@ -251,7 +262,7 @@ export function NavigationTargetSelect({
   const resolvedSelectedOption = useResolvedValue
     ? {
       value: normalizedResolvedValue,
-      label: resolvedDefaultLabel || emptyLabel,
+      label: resolvedDefaultLabel || effectiveEmptyLabel,
       kind: resolvedDefaultKind || 'default',
     }
     : null;
@@ -347,7 +358,7 @@ export function NavigationTargetSelect({
           onKeyDown={handleKeyDown}
         >
           {SelectedIcon ? <SelectedIcon className="navigation-listbox-icon" strokeWidth={2} /> : null}
-          <span className="navigation-listbox-label">{selectedOption?.label ?? emptyLabel}</span>
+          <span className="navigation-listbox-label">{selectedOption?.label ?? effectiveEmptyLabel}</span>
           <span className="navigation-listbox-chevron" aria-hidden="true">⌄</span>
         </button>
         {open ? (

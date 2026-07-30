@@ -4,8 +4,10 @@ import { Button } from '../../components/common/Button';
 import { Toggle } from '../../components/common/Toggle';
 import { pickComfyWorkflowApiJson, pickComfyWorkflowConfigJson } from '../../hooks/useFileDialog';
 import { isTauriRuntime } from '../../utils/tauriRuntime';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function AiImagesSection({ className, sectionRef, sdSettings, onUpdateSdSettings }) {
+  const { t } = useTranslation();
   const [sdProbe, setSdProbe] = useState({ state: 'idle', message: '' });
   const [sdWorkflows, setSdWorkflows] = useState([]);
   const [importApiPath, setImportApiPath] = useState(null);
@@ -24,11 +26,11 @@ export function AiImagesSection({ className, sectionRef, sdSettings, onUpdateSdS
     const launching = sdSettings?.autoStart && sdSettings?.launcherPath;
     setSdProbe({
       state: 'loading',
-      message: launching ? 'Démarrage de ComfyUI en cours… (peut prendre jusqu\'à 60s)' : 'Connexion à ComfyUI en cours…',
+      message: launching ? t('options.aiImages.launchingMessage') : t('options.aiImages.connectingMessage'),
     });
     try {
       await invoke('comfyui_check', { settings: sdSettings });
-      setSdProbe({ state: 'ok', message: 'ComfyUI accessible et prêt.' });
+      setSdProbe({ state: 'ok', message: t('options.aiImages.readyMessage') });
     } catch (e) {
       setSdProbe({ state: 'error', message: String(e) });
     }
@@ -56,7 +58,7 @@ export function AiImagesSection({ className, sectionRef, sdSettings, onUpdateSdS
       setImportApiPath(null);
       setImportConfigPath(null);
     } catch (e) {
-      setSdProbe({ state: 'error', message: `Import échoué : ${e}` });
+      setSdProbe({ state: 'error', message: t('options.aiImages.importFailedMessage', { error: e }) });
     } finally {
       setImporting(false);
     }
@@ -67,18 +69,18 @@ export function AiImagesSection({ className, sectionRef, sdSettings, onUpdateSdS
       await invoke('comfyui_delete_workflow', { workflowId });
       setSdWorkflows(prev => prev.filter(w => w.id !== workflowId));
     } catch (e) {
-      setSdProbe({ state: 'error', message: `Suppression échouée : ${e}` });
+      setSdProbe({ state: 'error', message: t('options.aiImages.deleteFailedMessage', { error: e }) });
     }
   }
 
   return (
     <section id="comfyui" className={className} ref={sectionRef}>
-      <div className="opts-card-title">Génération d'images IA — ComfyUI</div>
+      <div className="opts-card-title">{t('options.aiImages.title')}</div>
       <div className="opts-row">
         <div className="opts-row-info">
-          <div className="opts-row-label">Activer la génération d'images IA</div>
+          <div className="opts-row-label">{t('options.aiImages.enableLabel')}</div>
           <div className="opts-row-sub">
-            Ajoute un bouton ✨ Générer IA sous chaque image dans l'éditeur.
+            {t('options.aiImages.enableSub')}
           </div>
         </div>
         <Toggle on={sdSettings?.aiImageGen} onChange={(v) => onUpdateSdSettings?.({ aiImageGen: v })} />
@@ -88,30 +90,30 @@ export function AiImagesSection({ className, sectionRef, sdSettings, onUpdateSdS
         <div className="xtts-settings">
           <div className="xtts-grid">
             <label className="xtts-label">
-              URL du serveur ComfyUI
+              {t('options.aiImages.serverUrlLabel')}
               <input
                 className="xtts-input"
                 value={sdSettings?.serverUrl ?? ''}
                 onChange={(e) => onUpdateSdSettings?.({ serverUrl: e.target.value })}
-                placeholder="http://127.0.0.1:8188"
+                placeholder={t('options.aiImages.serverUrlPlaceholder')}
               />
             </label>
             <label className="xtts-label">
-              Script de démarrage ComfyUI
+              {t('options.aiImages.launcherPathLabel')}
               <input
                 className="xtts-input"
                 value={sdSettings?.launcherPath ?? ''}
                 onChange={(e) => onUpdateSdSettings?.({ launcherPath: e.target.value })}
-                placeholder="Chemin vers start_comfyui.bat, start_comfyui.sh ou un launcher"
+                placeholder={t('options.aiImages.launcherPathPlaceholder')}
               />
             </label>
           </div>
 
           <div className="opts-row opts-row--pt">
             <div className="opts-row-info">
-              <div className="opts-row-label">Démarrer ComfyUI automatiquement</div>
+              <div className="opts-row-label">{t('options.aiImages.autoStartLabel')}</div>
               <div className="opts-row-sub">
-                Lance le script de démarrage si ComfyUI ne répond pas au moment de générer.
+                {t('options.aiImages.autoStartSub')}
               </div>
             </div>
             <Toggle on={sdSettings?.autoStart} onChange={(v) => onUpdateSdSettings?.({ autoStart: v })} />
@@ -120,8 +122,8 @@ export function AiImagesSection({ className, sectionRef, sdSettings, onUpdateSdS
           <div className="xtts-actions">
             <Button onClick={handleTestSd} disabled={sdProbe.state === 'loading'}>
               {sdProbe.state === 'loading'
-                ? (sdSettings?.autoStart && sdSettings?.launcherPath ? 'Démarrage…' : 'Test en cours…')
-                : 'Tester ComfyUI'}
+                ? (sdSettings?.autoStart && sdSettings?.launcherPath ? t('options.aiImages.launchingButton') : t('options.aiImages.testingButton'))
+                : t('options.aiImages.testButton')}
             </Button>
           </div>
 
@@ -133,23 +135,23 @@ export function AiImagesSection({ className, sectionRef, sdSettings, onUpdateSdS
 
           {/* Gestion des workflows */}
           <div className="sd-workflows-section">
-            <div className="opts-row-label" style={{ marginBottom: 8 }}>Workflows disponibles</div>
+            <div className="opts-row-label" style={{ marginBottom: 8 }}>{t('options.aiImages.workflowsTitle')}</div>
             {sdWorkflows.length === 0 ? (
-              <div className="opts-row-sub">Aucun workflow chargé.</div>
+              <div className="opts-row-sub">{t('options.aiImages.noWorkflows')}</div>
             ) : (
               <div className="sd-workflow-list">
                 {sdWorkflows.map(wf => (
                   <div key={wf.id} className="sd-workflow-item">
                     <div>
                       <span className="sd-workflow-item-name">{wf.name}</span>
-                      {!wf.isCustom && <span className="sd-workflow-item-tag">intégré</span>}
+                      {!wf.isCustom && <span className="sd-workflow-item-tag">{t('options.aiImages.builtInTag')}</span>}
                     </div>
                     {wf.isCustom && (
                       <Button
                         size="sm"
                         onClick={() => handleDeleteWorkflow(wf.id)}
                       >
-                        Supprimer
+                        {t('options.aiImages.deleteButton')}
                       </Button>
                     )}
                   </div>
@@ -158,13 +160,13 @@ export function AiImagesSection({ className, sectionRef, sdSettings, onUpdateSdS
             )}
 
             <div className="sd-import-section">
-              <div className="opts-row-label" style={{ marginBottom: 6 }}>Importer un workflow custom</div>
+              <div className="opts-row-label" style={{ marginBottom: 6 }}>{t('options.aiImages.importTitle')}</div>
               <div className="sd-import-row">
                 <Button size="sm" onClick={handlePickApiJson}>
-                  {importApiPath ? '✓ API JSON' : 'Choisir *-api.json…'}
+                  {importApiPath ? t('options.aiImages.apiJsonChosenButton') : t('options.aiImages.chooseApiJsonButton')}
                 </Button>
                 <Button size="sm" onClick={handlePickConfigJson}>
-                  {importConfigPath ? '✓ Config JSON' : 'Choisir *.config.json…'}
+                  {importConfigPath ? t('options.aiImages.configJsonChosenButton') : t('options.aiImages.chooseConfigJsonButton')}
                 </Button>
                 <Button
                   size="sm"
@@ -172,7 +174,7 @@ export function AiImagesSection({ className, sectionRef, sdSettings, onUpdateSdS
                   onClick={handleImportWorkflow}
                   disabled={!importApiPath || !importConfigPath || importing}
                 >
-                  {importing ? 'Import…' : 'Importer'}
+                  {importing ? t('options.aiImages.importingButton') : t('options.aiImages.importButton')}
                 </Button>
               </div>
             </div>

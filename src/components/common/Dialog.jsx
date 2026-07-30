@@ -3,9 +3,25 @@ import { createPortal } from 'react-dom';
 import { Button } from './Button';
 import { TriangleAlert } from '../icons/LucideLocal';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { detectSystemLocale, SUPPORTED_LOCALES, translate } from '../../i18n';
 import './Dialog.css';
 
 const ErrorDialogContext = createContext(null);
+
+// ErrorDialogProvider est monté au-dessus de I18nProvider (voir App.jsx), donc
+// useTranslation() n'y a pas accès au contexte i18n : on résout la locale
+// courante depuis <html lang> (posé par applyLocaleToDocument), avec repli sur
+// la détection système.
+function currentLocale() {
+  if (typeof document !== 'undefined' && SUPPORTED_LOCALES.includes(document.documentElement.lang)) {
+    return document.documentElement.lang;
+  }
+  return detectSystemLocale();
+}
+
+function t(key, vars) {
+  return translate(currentLocale(), key, vars);
+}
 
 function actionVariant(kind) {
   if (kind === 'primary') return 'primary';
@@ -22,8 +38,8 @@ function Dialog({ dialog, onClose, onConfirm, onAction }) {
   if (!dialog) return null;
 
   const variant = dialog.variant || 'error';
-  const title = dialog.title || 'Erreur';
-  const closeLabel = dialog.okLabel || 'Fermer';
+  const title = dialog.title || t('common.dialog.errorTitle');
+  const closeLabel = dialog.okLabel || t('common.close');
   const hasConfirm = typeof dialog.onConfirm === 'function';
   const actions = Array.isArray(dialog.actions) ? dialog.actions : null;
 
@@ -54,7 +70,7 @@ function Dialog({ dialog, onClose, onConfirm, onAction }) {
             </Button>
           )) : hasConfirm && (
             <Button ref={closeButtonRef} onClick={onClose} autoFocus>
-              {dialog.cancelLabel || 'Annuler'}
+              {dialog.cancelLabel || t('common.cancel')}
             </Button>
           )}
           {!actions ? (
@@ -117,7 +133,7 @@ export function ErrorDialogProvider({ children }) {
   const showErrorDialog = useCallback((nextDialog) => {
     rememberFocus();
     setDialog({
-      title: nextDialog?.title || 'Erreur',
+      title: nextDialog?.title || t('common.dialog.errorTitle'),
       message: String(nextDialog?.message ?? ''),
       variant: nextDialog?.variant || 'error',
       okLabel: nextDialog?.okLabel,
@@ -129,12 +145,12 @@ export function ErrorDialogProvider({ children }) {
   const showConfirmDialog = useCallback((nextDialog) => new Promise((resolve) => {
     rememberFocus();
     setDialog({
-      title: nextDialog?.title || 'Confirmer',
+      title: nextDialog?.title || t('common.confirm'),
       message: String(nextDialog?.message ?? ''),
       variant: nextDialog?.variant || 'warning',
       okLabel: nextDialog?.okLabel || 'OK',
       okKind: nextDialog?.okKind,
-      cancelLabel: nextDialog?.cancelLabel || 'Annuler',
+      cancelLabel: nextDialog?.cancelLabel || t('common.cancel'),
       onConfirm: () => resolve(true),
       onClose: () => resolve(false),
     });
@@ -144,7 +160,7 @@ export function ErrorDialogProvider({ children }) {
     rememberFocus();
     const cancelValue = nextDialog?.cancelValue ?? null;
     setDialog({
-      title: nextDialog?.title || 'Choisir',
+      title: nextDialog?.title || t('common.dialog.chooseTitle'),
       message: String(nextDialog?.message ?? ''),
       variant: nextDialog?.variant || 'warning',
       actions: nextDialog?.actions ?? [],

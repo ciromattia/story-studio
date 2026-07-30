@@ -27,6 +27,7 @@ import {
 } from '../tree/treeOperations';
 import { buildRefDisplay } from '../tree/refDisplay';
 import { hasVisibleEndNode } from '../../store/generatedNavigation';
+import { useTranslation } from '../../i18n/I18nContext';
 import './TreePanel.css';
 
 export { END_NODE_ID };
@@ -47,6 +48,7 @@ export function TreePanel({
   showNavigationBadges = true,
   showTreeGuides = true,
 }) {
+  const { t } = useTranslation();
   const { activeDropZone } = useMediaTransfer();
   const [ctxMenu, setCtxMenu] = useState(null);
   const [collapsedIds, setCollapsedIds] = useState(new Set());
@@ -343,7 +345,7 @@ export function TreePanel({
             <TreeNode
               id={entry.id}
               type={entry.type}
-              label={entry.type === 'ref' ? buildRefDisplay(entry, projectIndex.entryById).label : entry.name}
+              label={entry.type === 'ref' ? buildRefDisplay(entry, projectIndex.entryById, t).label : entry.name}
               level={level}
               selected={selectedIds.has(entry.id)}
               hovered={hoveredNodeId === entry.id}
@@ -458,8 +460,8 @@ export function TreePanel({
               id="root"
               type="root"
               label={projectType === 'pack'
-                ? (project.rootName || 'Menu racine')
-                : (project.projectName || 'Mon histoire')}
+                ? (project.rootName || t('tree.panel.defaultRootName'))
+                : (project.projectName || t('tree.panel.defaultStoryName'))}
               level={0}
               selected={selectedIds.has('root')}
               hovered={hoveredNodeId === 'root'}
@@ -469,8 +471,8 @@ export function TreePanel({
               navigationBadges={showNavigationBadgeColumn && project?.nativeGraph?.preserveForRoundTrip === true ? [{
                 key: 'native-graph-root',
                 kind: 'graph',
-                label: 'Graphe',
-                title: 'Graphe interactif natif actif pour le round-trip.',
+                label: t('tree.panel.nativeGraphBadgeLabel'),
+                title: t('tree.panel.nativeGraphBadgeTitle'),
               }] : EMPTY_BADGES}
               showNavigationBadgeColumn={showNavigationBadgeColumn}
               dropTarget={resolveDropTargetForNode('root', 'root', dropInfo)}
@@ -492,7 +494,7 @@ export function TreePanel({
                   id={END_NODE_ID}
                   type="end-node"
                   icon={nightModeActive ? 'moon' : 'stop'}
-                  label={`${project.endNodeName || 'Message de fin'}${nightModeActive ? ' (mode nuit)' : ''}`}
+                  label={`${project.endNodeName || t('tree.panel.defaultEndNodeName')}${nightModeActive ? t('tree.common.nightModeSuffix') : ''}`}
                   level={0}
                   selected={selectedIds.has(END_NODE_ID)}
                   hovered={hoveredNodeId === END_NODE_ID}
@@ -509,7 +511,7 @@ export function TreePanel({
 
         {osDropHover && (
           <div className="tree-os-drop-overlay">
-            Déposer pour ajouter au projet
+            {t('tree.panel.dropOverlayText')}
           </div>
         )}
         </div>
@@ -525,6 +527,7 @@ export function TreePanel({
           y={ctxMenu.y}
           onClose={() => setCtxMenu(null)}
           actions={buildTreeContextActions({
+            t,
             nodeId: ctxMenu.nodeId,
             nodeType: ctxMenu.nodeType,
             project,

@@ -5,6 +5,7 @@ import { basename } from '../../utils/fileUtils';
 import { useProjectContext } from '../../store/ProjectContext';
 import { getAudioAssemblyLogicalFileName } from '../../store/mediaToolContext';
 import { KEYS, read, write } from '../../store/persistentSettings';
+import { useTranslation } from '../../i18n/I18nContext';
 import { Button } from '../common/Button';
 import './AudioAssemblyModal.css';
 
@@ -25,6 +26,7 @@ export function AudioAssemblyModal({
   projectAction = null,
   projectActionUnavailableReason = '',
 }) {
+  const { t } = useTranslation();
   const { workspaceDir } = useProjectContext();
   const initialItems = useMemo(
     () => items.map((item) => ({
@@ -138,10 +140,10 @@ export function AudioAssemblyModal({
 
   function readableError(value) {
     const text = String(value || '').trim();
-    if (!text) return "L'assemblage audio a échoué.";
+    if (!text) return t('audioTools.assembly.genericError');
     const firstLine = text.split(/\r?\n/).find((line) => line.trim()) || text;
     if (/ffmpeg|invalid data|error/i.test(text)) {
-      return `FFmpeg n'a pas pu assembler ces fichiers. ${firstLine}`;
+      return t('audioTools.assembly.ffmpegError', { detail: firstLine });
     }
     return firstLine;
   }
@@ -149,16 +151,16 @@ export function AudioAssemblyModal({
   async function handleSubmit() {
     setError('');
     if (!savePath && !workspaceDir) {
-      setError('Enregistrez le projet avant de créer un fichier assemblé.');
+      setError(t('audioTools.assembly.saveProjectError'));
       return;
     }
     if (orderedItems.length < 2) {
-      setError('Conservez au moins deux audios à assembler.');
+      setError(t('audioTools.assembly.minTwoError'));
       return;
     }
     const silence = addSilence ? Number(String(silenceSec).replace(',', '.')) : 0;
     if (!Number.isFinite(silence) || silence < 0 || silence > 30) {
-      setError('La durée du silence doit être comprise entre 0 et 30 secondes.');
+      setError(t('audioTools.assembly.silenceRangeError'));
       return;
     }
 
@@ -192,33 +194,33 @@ export function AudioAssemblyModal({
     <div className="modal-overlay">
       <div className="modal-box audio-assembly-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <span>{willReplaceStories ? 'Assembler et remplacer les histoires' : 'Assembler des audios'}</span>
+          <span>{willReplaceStories ? t('audioTools.assembly.titleReplace') : t('audioTools.assembly.title')}</span>
           <Button variant="icon" className="modal-close" onClick={onClose} disabled={submitting}>×</Button>
         </div>
 
         <div className="audio-assembly-body">
           <div className="audio-assembly-intro">
             {contextRequest ? (
-              <strong>Depuis {contextRequest.storyNames.length} histoires sélectionnées</strong>
+              <strong>{t('audioTools.assembly.introFromStories', { count: contextRequest.storyNames.length })}</strong>
             ) : null}
-            <span>Crée une piste audio unique à partir des fichiers sélectionnés.</span>
-            <span>Les fichiers audio originaux resteront disponibles dans Médias.</span>
+            <span>{t('audioTools.assembly.introDesc')}</span>
+            <span>{t('audioTools.assembly.introKeepFiles')}</span>
             {willReplaceStories ? (
-              <span>Le résultat remplacera les histoires sélectionnées en une seule opération annulable.</span>
+              <span>{t('audioTools.assembly.introReplaceNote')}</span>
             ) : null}
             {contextRequest && !willReplaceStories ? (
-              <span>Le projet restera inchangé{projectActionUnavailableReason ? ` : ${projectActionUnavailableReason}` : '.'}</span>
+              <span>{t('audioTools.assembly.introUnchanged')}{projectActionUnavailableReason ? ` : ${projectActionUnavailableReason}` : '.'}</span>
             ) : null}
           </div>
 
           {ignoredCount > 0 && (
             <div className="audio-assembly-note">
-              Seuls les fichiers audio peuvent être assemblés. {ignoredCount} média{ignoredCount > 1 ? 's' : ''} non audio ignoré{ignoredCount > 1 ? 's' : ''}.
+              {t(ignoredCount === 1 ? 'audioTools.assembly.ignoredNoteOne' : 'audioTools.assembly.ignoredNoteOther', { count: ignoredCount })}
             </div>
           )}
 
           <section className="audio-assembly-section">
-            <h3>Audios à assembler</h3>
+            <h3>{t('audioTools.assembly.itemsTitle')}</h3>
             <div className="audio-assembly-list">
               {orderedItems.map((item, index) => (
                 <div
@@ -233,16 +235,16 @@ export function AudioAssemblyModal({
                   >≡</span>
                   <span className="audio-assembly-name" title={item.name}>{index + 1}. {item.name}</span>
                   <span className="audio-assembly-duration">{formatDuration(item.durationSecs)}</span>
-                  <Button variant="icon" className="audio-assembly-icon-btn" onClick={() => moveItem(index, -1)} disabled={submitting || index === 0} title="Monter">↑</Button>
-                  <Button variant="icon" className="audio-assembly-icon-btn" onClick={() => moveItem(index, 1)} disabled={submitting || index === orderedItems.length - 1} title="Descendre">↓</Button>
-                  <Button variant="icon" className="audio-assembly-icon-btn is-danger" onClick={() => removeItem(index)} disabled={submitting || orderedItems.length <= 2} title="Retirer">×</Button>
+                  <Button variant="icon" className="audio-assembly-icon-btn" onClick={() => moveItem(index, -1)} disabled={submitting || index === 0} title={t('audioTools.assembly.moveUpTitle')}>↑</Button>
+                  <Button variant="icon" className="audio-assembly-icon-btn" onClick={() => moveItem(index, 1)} disabled={submitting || index === orderedItems.length - 1} title={t('audioTools.assembly.moveDownTitle')}>↓</Button>
+                  <Button variant="icon" className="audio-assembly-icon-btn is-danger" onClick={() => removeItem(index)} disabled={submitting || orderedItems.length <= 2} title={t('audioTools.assembly.removeTitle')}>×</Button>
                 </div>
               ))}
             </div>
           </section>
 
           <section className="audio-assembly-section">
-            <h3>Options</h3>
+            <h3>{t('audioTools.assembly.optionsTitle')}</h3>
             <label className="audio-assembly-check">
               <input
                 type="checkbox"
@@ -250,11 +252,11 @@ export function AudioAssemblyModal({
                 onChange={(e) => { setAddSilence(e.target.checked); saveOpts({ addSilence: e.target.checked }); }}
                 disabled={submitting}
               />
-              <span>Ajouter un silence entre les fichiers</span>
+              <span>{t('audioTools.assembly.addSilenceLabel')}</span>
             </label>
             {addSilence && (
               <label className="audio-assembly-field is-inline">
-                <span>Durée</span>
+                <span>{t('audioTools.assembly.durationLabel')}</span>
                 <input
                   type="number"
                   min="0"
@@ -264,26 +266,26 @@ export function AudioAssemblyModal({
                   onChange={(e) => { setSilenceSec(e.target.value); saveOpts({ silenceSec: e.target.value }); }}
                   disabled={submitting}
                 />
-                <span>secondes</span>
+                <span>{t('audioTools.assembly.secondsLabel')}</span>
               </label>
             )}
             <div className="audio-assembly-note">
-              Les fichiers sources restent dans la médiathèque. Ils pourront ensuite être retirés ou supprimés depuis l’onglet Médias.
+              {t('audioTools.assembly.sourcesNote')}
             </div>
           </section>
 
           <section className="audio-assembly-section">
             <label className="audio-assembly-field">
-              <span>Nom du fichier final</span>
+              <span>{t('audioTools.assembly.outputNameLabel')}</span>
               <input
                 value={outputFileName}
                 onChange={(e) => setOutputFileName(e.target.value)}
                 disabled={submitting}
-                placeholder="histoire_complete.flac"
+                placeholder={t('audioTools.assembly.outputNamePlaceholder')}
               />
             </label>
             <div className="audio-assembly-destination">
-              <span>Fichier créé</span>
+              <span>{t('audioTools.assembly.createdFileLabel')}</span>
               <strong title={`fichiers-importes/${storageFileName}`}>fichiers-importes/{storageFileName}</strong>
             </div>
           </section>
@@ -292,10 +294,10 @@ export function AudioAssemblyModal({
         </div>
 
         <div className="audio-assembly-footer">
-          <Button onClick={onClose} disabled={submitting}>Annuler</Button>
+          <Button onClick={onClose} disabled={submitting}>{t('audioTools.common.cancel')}</Button>
           <Button variant="primary" className="audio-assembly-submit" onClick={handleSubmit} disabled={!canSubmit}>
             {submitting && <span className="audio-assembly-spinner" />}
-            {submitting ? 'Assemblage…' : (willReplaceStories ? 'Assembler et remplacer' : 'Assembler')}
+            {submitting ? t('audioTools.assembly.assemblingButton') : (willReplaceStories ? t('audioTools.assembly.submitReplaceButton') : t('audioTools.assembly.submitButton'))}
           </Button>
         </div>
       </div>

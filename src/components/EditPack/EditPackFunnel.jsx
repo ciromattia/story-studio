@@ -11,6 +11,7 @@ import { Eye, FolderOpen, Package, TriangleAlert, Undo2, Upload } from '../icons
 import { pickFolder, pickZip } from '../../hooks/useFileDialog';
 import { basename } from '../../utils/fileUtils';
 import { KEYS, read as readSetting } from '../../store/persistentSettings';
+import { useTranslation } from '../../i18n/I18nContext';
 
 const ARCHIVE_RE = /\.(zip|7z)$/i;
 
@@ -28,6 +29,7 @@ const ARCHIVE_RE = /\.(zip|7z)$/i;
  *   simulateur (lecture seule).
  */
 export function EditPackFunnel({ onClose, onLand, onSimulate }) {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState('collect'); // collect | busy | readOnly | unsupported
   const [busy, setBusy] = useState({ title: '', hint: '' });
   const [error, setError] = useState('');
@@ -37,7 +39,7 @@ export function EditPackFunnel({ onClose, onLand, onSimulate }) {
   async function processPack(path, kind) {
     if (!path) return;
     setError('');
-    setBusy({ title: 'Vérification du pack…', hint: 'Un instant.' });
+    setBusy({ title: t('shell.editPack.busyVerifyTitle'), hint: t('shell.editPack.busyVerifyHint') });
     setPhase('busy');
     try {
       const packLabel = basename(path);
@@ -51,11 +53,11 @@ export function EditPackFunnel({ onClose, onLand, onSimulate }) {
         setPhase(report?.readOnlyInspectable ? 'readOnly' : 'unsupported');
         return;
       }
-      setBusy({ title: 'Décompression du pack…', hint: 'Ne ferme pas la fenêtre.' });
+      setBusy({ title: t('shell.editPack.busyExtractTitle'), hint: t('shell.editPack.busyExtractHint') });
       await onLand({ zipPath, packLabel });
       onClose();
     } catch (e) {
-      setError(`Ce pack n'a pas pu être ouvert : ${e?.message ?? e}`);
+      setError(t('shell.editPack.errorOpenFailed', { message: e?.message ?? e }));
       setPhase('collect');
     }
   }
@@ -66,26 +68,26 @@ export function EditPackFunnel({ onClose, onLand, onSimulate }) {
 
   async function handleSimulate() {
     if (!pending) return;
-    setBusy({ title: 'Préparation du simulateur…', hint: 'Un instant.' });
+    setBusy({ title: t('shell.editPack.busySimulateTitle'), hint: t('shell.editPack.busySimulateHint') });
     setPhase('busy');
     try {
       await onSimulate(pending);
       onClose();
     } catch (e) {
-      setError(`Le simulateur n'a pas pu s'ouvrir : ${e?.message ?? e}`);
+      setError(t('shell.editPack.errorSimulateFailed', { message: e?.message ?? e }));
       setPhase(pending?.report?.readOnlyInspectable ? 'readOnly' : 'unsupported');
     }
   }
 
   async function handleForceExtract() {
     if (!pending || !allowUnsupportedExtraction) return;
-    setBusy({ title: 'Extraction forcée du pack…', hint: 'La structure récupérée peut être incomplète.' });
+    setBusy({ title: t('shell.editPack.busyForceExtractTitle'), hint: t('shell.editPack.busyForceExtractHint') });
     setPhase('busy');
     try {
       await onLand({ ...pending, allowUnsupported: true });
       onClose();
     } catch (e) {
-      setError(`L’extraction forcée a échoué : ${e?.message ?? e}`);
+      setError(t('shell.editPack.errorForceExtractFailed', { message: e?.message ?? e }));
       setPhase(pending?.report?.readOnlyInspectable ? 'readOnly' : 'unsupported');
     }
   }
@@ -93,11 +95,11 @@ export function EditPackFunnel({ onClose, onLand, onSimulate }) {
   return (
     <FunnelShell
       icon={<Package />}
-      title="Modifier un pack"
+      title={t('shell.editPack.title')}
       onClose={onClose}
       showChrome={false}
       fitContent
-      ariaLabel="Modifier un pack"
+      ariaLabel={t('shell.editPack.title')}
     >
       {phase === 'busy' && <FunnelGenerationState title={busy.title} hint={busy.hint} />}
 
@@ -105,19 +107,19 @@ export function EditPackFunnel({ onClose, onLand, onSimulate }) {
         <div className="funnel-step-content">
           <FunnelSectionHeader
             icon={<Upload />}
-            title="Choisis un pack"
-            description="Un .zip, un .7z ou un dossier d'histoire déjà décompressé."
+            title={t('shell.editPack.collectSectionTitle')}
+            description={t('shell.editPack.collectSectionDescription')}
           />
           <FunnelDropZone
-            title="Dépose ton pack ici"
-            hint="Formats : .zip, .7z ou dossier d'histoire décompressé"
+            title={t('shell.editPack.dropzoneTitle')}
+            hint={t('shell.editPack.dropzoneHint')}
             onFiles={handleDrop}
           >
             <FunnelToolButton icon={<Package />} accent="neutral" onClick={handleBrowseFile}>
-              Importer zip/7z
+              {t('shell.editPack.importZipButton')}
             </FunnelToolButton>
             <FunnelToolButton icon={<FolderOpen />} accent="neutral" onClick={handleBrowseFolder}>
-              Importer un dossier
+              {t('shell.editPack.importFolderButton')}
             </FunnelToolButton>
           </FunnelDropZone>
           {error && <div className="funnel-error" role="alert">{error}</div>}
@@ -128,35 +130,34 @@ export function EditPackFunnel({ onClose, onLand, onSimulate }) {
         <div className="funnel-step-content">
           <FunnelSectionHeader
             icon={<TriangleAlert />}
-            title="Pack non éditable"
+            title={t('shell.editPack.readOnlyTitle')}
             description={allowUnsupportedExtraction
-              ? "Ce pack n'est pas éditable de manière fiable. Tu peux le simuler ou tenter une extraction incomplète."
-              : "Ce pack n'est pas éditable avec Story Studio. Tu peux quand même le simuler (lecture seule)."}
+              ? t('shell.editPack.readOnlyDescriptionWithAdvanced')
+              : t('shell.editPack.readOnlyDescriptionDefault')}
           />
           {pending?.report?.reason && (
             <div className="funnel-error" role="status">{pending.report.reason}</div>
           )}
           {!allowUnsupportedExtraction && (
             <div className="funnel-warning" role="status">
-              Besoin de récupérer des éléments ? Une option avancée permet de tenter l’extraction :
-              {' '}Préférences → Avancé → Import et audio. La structure obtenue peut être incomplète.
+              {t('shell.editPack.advancedHint')}
             </div>
           )}
           <div className="funnel-dropzone-actions" style={{ justifyContent: 'flex-start' }}>
             {allowUnsupportedExtraction && (
               <FunnelToolButton icon={<TriangleAlert />} accent="neutral" onClick={handleForceExtract}>
-                Extraire quand même
+                {t('shell.editPack.forceExtractButton')}
               </FunnelToolButton>
             )}
             <FunnelToolButton icon={<Eye />} accent="violet" variant="solid" onClick={handleSimulate}>
-              Simuler le pack
+              {t('shell.editPack.simulateButton')}
             </FunnelToolButton>
             <FunnelToolButton
               icon={<Undo2 />}
               accent="neutral"
               onClick={() => { setPending(null); setError(''); setPhase('collect'); }}
             >
-              Choisir un autre pack
+              {t('shell.editPack.chooseAnotherButton')}
             </FunnelToolButton>
           </div>
         </div>
@@ -166,24 +167,23 @@ export function EditPackFunnel({ onClose, onLand, onSimulate }) {
         <div className="funnel-step-content">
           <FunnelSectionHeader
             icon={<TriangleAlert />}
-            title="Pack non supporté"
+            title={t('shell.editPack.unsupportedTitle')}
             description={allowUnsupportedExtraction
-              ? "Ce pack ne peut pas être ouvert normalement. Tu peux tenter une extraction incomplète pour récupérer ses éléments."
-              : "Ce pack ne peut pas être ouvert ni simulé par Story Studio."}
+              ? t('shell.editPack.unsupportedDescriptionWithAdvanced')
+              : t('shell.editPack.unsupportedDescriptionDefault')}
           />
           {pending?.report?.reason && (
             <div className="funnel-error" role="status">{pending.report.reason}</div>
           )}
           {!allowUnsupportedExtraction && (
             <div className="funnel-warning" role="status">
-              Besoin de récupérer des éléments ? Une option avancée permet de tenter l’extraction :
-              {' '}Préférences → Avancé → Import et audio. La structure obtenue peut être incomplète.
+              {t('shell.editPack.advancedHint')}
             </div>
           )}
           <div className="funnel-dropzone-actions" style={{ justifyContent: 'flex-start' }}>
             {allowUnsupportedExtraction && (
               <FunnelToolButton icon={<TriangleAlert />} accent="neutral" onClick={handleForceExtract}>
-                Tenter l’extraction
+                {t('shell.editPack.attemptExtractButton')}
               </FunnelToolButton>
             )}
             <FunnelToolButton
@@ -191,7 +191,7 @@ export function EditPackFunnel({ onClose, onLand, onSimulate }) {
               accent="neutral"
               onClick={() => { setPending(null); setError(''); setPhase('collect'); }}
             >
-              Choisir un autre pack
+              {t('shell.editPack.chooseAnotherButton')}
             </FunnelToolButton>
           </div>
         </div>

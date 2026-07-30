@@ -10,6 +10,7 @@ import { useRenderQueueExecutor } from './hooks/useRenderQueueExecutor';
 import { useProjectFileAudit } from './hooks/useProjectFileAudit';
 import { ErrorDialogProvider, useErrorDialog } from './components/common/Dialog';
 import { AppShell } from './components/AppShell';
+import { I18nProvider } from './i18n/I18nContext';
 import { useAppBootstrap } from './hooks/useAppBootstrap';
 import { useEscapeKey } from './hooks/useEscapeKey';
 import { useDisclosures } from './hooks/useDisclosures';
@@ -42,6 +43,7 @@ import { useSDJobs } from './hooks/useSDJobs';
 import { useXttsJobs } from './hooks/useXttsJobs';
 import { useWorkspaceViewState } from './workspace/useWorkspaceViewState';
 import { getProjectFilePrefix } from './utils/projectPrefix';
+import { translate } from './i18n/index';
 import './styles/variables.css';
 import './styles/layout.css';
 import './components/layout/AppChrome.css';
@@ -51,17 +53,17 @@ import './components/RenderQueuePanel/RenderQueuePanel.css';
 // false si l'utilisateur a annulé ou si la sauvegarde n'a pas abouti.
 // savedSnapshot : signature projet + catalogue Médias au dernier save/load,
 // ou null si le travail n'a jamais été enregistré.
-async function askSaveBeforeLeave(work, savedSnapshot, onSave, showChoiceDialog) {
+async function askSaveBeforeLeave(work, savedSnapshot, onSave, showChoiceDialog, t) {
   if (!hasUnsavedWork({ ...work, savedSnapshot })) return true;
   const choice = await showChoiceDialog({
-    title: 'Projet non enregistré',
-    message: "Ton travail n'est pas enregistré et sera définitivement perdu.",
+    title: t('common.unsavedWork.title'),
+    message: t('common.unsavedWork.message'),
     variant: 'warning',
     cancelValue: 'cancel',
     actions: [
-      { value: 'cancel', label: 'Annuler', autoFocus: true },
-      { value: 'discard', label: 'Quitter sans enregistrer', kind: 'danger-outline' },
-      { value: 'save', label: 'Enregistrer comme projet', kind: 'primary' },
+      { value: 'cancel', label: t('common.cancel'), autoFocus: true },
+      { value: 'discard', label: t('common.unsavedWork.discard'), kind: 'danger-outline' },
+      { value: 'save', label: t('common.unsavedWork.saveAsProject'), kind: 'primary' },
     ],
   });
   if (choice === 'save') {
@@ -123,6 +125,9 @@ function AppContent() {
     keyboardShortcutsRef,
     themePreference,
     setThemePreference,
+    languagePreference,
+    setLanguagePreference,
+    locale,
     recentProjects,
     setRecentProjects,
     copyImportedFilesEnabled,
@@ -254,7 +259,7 @@ function AppContent() {
     project: projectRef.current,
     mediaLibraryPaths: mediaLibraryPathsRef.current,
     mediaTags: mediaTagsRef.current,
-  }, savedSnapshotRef.current, onSave, showChoiceDialog), [showChoiceDialog]);
+  }, savedSnapshotRef.current, onSave, showChoiceDialog, (key, vars) => translate(locale, key, vars)), [showChoiceDialog, locale]);
 
   const askSaveBeforeLeaveCurrent = useCallback(async (onSave) => {
     const canLeave = await confirmSaveBeforeLeaveCurrent(onSave);
@@ -684,6 +689,8 @@ function AppContent() {
     setAutoSaveBackupLimit,
     themePreference,
     setThemePreference,
+    languagePreference,
+    setLanguagePreference,
     keyboardShortcuts,
     setKeyboardShortcuts,
     xttsSettings,
@@ -926,7 +933,11 @@ function AppContent() {
     },
   };
 
-  return <AppShell {...appShellProps} />;
+  return (
+    <I18nProvider locale={locale}>
+      <AppShell {...appShellProps} />
+    </I18nProvider>
+  );
 }
 
 export default function App() {

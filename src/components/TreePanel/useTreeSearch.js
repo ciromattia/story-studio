@@ -4,10 +4,12 @@ import {
   collectProjectUsedNodeColors,
   toggleNodeColorFilter,
 } from '../tree/nodeColorFilter.js';
+import { useTranslation } from '../../i18n/I18nContext';
 
 // Recherche dans l'arbre : filtre combiné nom/couleurs (+ ancêtres pour garder
 // le chemin visible) et prise de focus déclenchée depuis l'extérieur.
 export function useTreeSearch({ project, projectIndex, projectType, treeSearchFocusTrigger }) {
+  const { t } = useTranslation();
   const [searchActive, setSearchActive] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedColors, setSelectedColors] = useState(new Set());
@@ -15,8 +17,8 @@ export function useTreeSearch({ project, projectIndex, projectType, treeSearchFo
   const pendingFocusRef = useRef(false);
 
   const usedColors = useMemo(
-    () => collectProjectUsedNodeColors(project, projectIndex),
-    [project, projectIndex],
+    () => collectProjectUsedNodeColors(project, projectIndex, t),
+    [project, projectIndex, t],
   );
 
   const visibleIds = useMemo(() => buildVisibleTreeSearchIds({

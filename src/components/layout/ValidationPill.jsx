@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TriangleAlert, CircleCheck, Loader2 } from '../icons/LucideLocal';
 import { Tooltip } from '../common/Tooltip';
+import { useTranslation } from '../../i18n/I18nContext';
 import './ValidationPill.css';
 
 const ChevronDown = ({ size = 10 }) => (
@@ -15,11 +16,11 @@ const ArrowRight = ({ size = 11 }) => (
   </svg>
 );
 
-function parseIssue(issue) {
+function parseIssue(issue, packGroupLabel) {
   const text = issue?.text ?? '';
   const dashIdx = text.indexOf(' — ');
   if (dashIdx === -1) {
-    return { groupKey: '__pack__', groupLabel: 'Pack', label: text };
+    return { groupKey: '__pack__', groupLabel: packGroupLabel, label: text };
   }
   const location = text.slice(0, dashIdx);
   // L'en-tête de groupe porte déjà le chemin complet du nœud : les items ne
@@ -31,10 +32,10 @@ function parseIssue(issue) {
   };
 }
 
-function buildGroups(issues) {
+function buildGroups(issues, packGroupLabel) {
   const groupMap = new Map();
   issues.forEach((issue) => {
-    const parsed = parseIssue(issue);
+    const parsed = parseIssue(issue, packGroupLabel);
     const groupKey = parsed.groupKey;
     let group = groupMap.get(groupKey);
     if (!group) {
@@ -64,13 +65,17 @@ export function ValidationPill({
   onCountZeroTransition,
   shortcutLabel = '',
 }) {
+  const { t } = useTranslation();
   const blockingIssues = useMemo(
     () => validationIssues.filter((i) => i?.status === 'error' || i?.status === 'warning'),
     [validationIssues],
   );
   const totalCount = blockingIssues.length;
 
-  const { groups, flat } = useMemo(() => buildGroups(blockingIssues), [blockingIssues]);
+  const { groups, flat } = useMemo(
+    () => buildGroups(blockingIssues, t('layout.validationPill.packGroupLabel')),
+    [blockingIssues, t],
+  );
 
   const state = pathAuditPending
     ? 'verifying'
@@ -150,10 +155,13 @@ export function ValidationPill({
   }, [isOpen, activeIndex]);
 
   const tooltipText = (() => {
-    if (state === 'ok') return `Pack prêt${shortcutLabel ? ` (${shortcutLabel})` : ''}`;
-    if (state === 'verifying') return 'Vérification des fichiers en cours…';
+    if (state === 'ok') return `${t('layout.validationPill.ready')}${shortcutLabel ? ` (${shortcutLabel})` : ''}`;
+    if (state === 'verifying') return t('layout.validationPill.verifying');
     const shortcutSuffix = shortcutLabel ? ` (${shortcutLabel})` : '';
-    return `${totalCount} élément${totalCount > 1 ? 's' : ''} à corriger avant génération${shortcutSuffix}`;
+    const base = totalCount > 1
+      ? t('layout.validationPill.issuesMany', { count: totalCount })
+      : t('layout.validationPill.issuesOne', { count: totalCount });
+    return `${base}${shortcutSuffix}`;
   })();
 
   function selectIssue(issueId) {
@@ -182,9 +190,9 @@ export function ValidationPill({
     selectIssue(item.issue.id);
   }
 
-  const popoverSubtitle = (() => {
-    return `${totalCount} élément${totalCount > 1 ? 's' : ''} à corriger avant de générer le pack.`;
-  })();
+  const popoverSubtitle = (() => (totalCount > 1
+    ? t('layout.validationPill.subtitleMany', { count: totalCount })
+    : t('layout.validationPill.subtitleOne', { count: totalCount })))();
 
   return (
     <div
@@ -209,18 +217,18 @@ export function ValidationPill({
             <>
               <span className="validation-pill-icon"><TriangleAlert width={12} height={12} /></span>
               <span className="validation-pill-count">{totalCount}</span>
-              <span className="validation-pill-label">à corriger</span>
+              <span className="validation-pill-label">{t('layout.validationPill.toFix')}</span>
               <span className="validation-pill-caret"><ChevronDown size={9} /></span>
             </>
           ) : state === 'ok' ? (
             <>
               <span className="validation-pill-check"><CircleCheck width={12} height={12} /></span>
-              <span className="validation-pill-label">Pack prêt</span>
+              <span className="validation-pill-label">{t('layout.validationPill.ready')}</span>
             </>
           ) : (
             <>
               <span className="validation-pill-spinner"><Loader2 width={12} height={12} /></span>
-              <span className="validation-pill-label">Vérification…</span>
+              <span className="validation-pill-label">{t('layout.validationPill.verifyingShort')}</span>
             </>
           )}
         </button>
@@ -233,10 +241,10 @@ export function ValidationPill({
             className={`validation-pill-dd is-${state}`}
             ref={dropdownRef}
             role="listbox"
-            aria-label="Liste des éléments à corriger"
+            aria-label={t('layout.validationPill.listAria')}
           >
             <div className="validation-pill-dd-head">
-              <span className="validation-pill-dd-title">À corriger</span>
+              <span className="validation-pill-dd-title">{t('layout.validationPill.dropdownTitle')}</span>
               <span className="validation-pill-dd-subtitle">{popoverSubtitle}</span>
             </div>
             <div className="validation-pill-dd-body">

@@ -61,6 +61,7 @@ export async function exportEditedImage({
   outputNameSourcePath = sourcePath,
   workspaceDir = '',
   requireManagedOutput = false,
+  t,
 }) {
   const offscreen = document.createElement('canvas');
   offscreen.width = CANVAS_W;
@@ -75,7 +76,9 @@ export async function exportEditedImage({
   const managedWorkspace = workspaceDir?.trim();
   if (requireManagedOutput && !managedWorkspace) {
     const error = new Error('Aucun workspace géré n’est disponible pour enregistrer ce nouveau média.');
-    error.userMessage = 'Aucun dossier de projet durable n’est disponible. L’image n’a pas été créée.';
+    error.userMessage = t
+      ? t('imageEditor.export.noWorkspaceMessage')
+      : 'Aucun dossier de projet durable n’est disponible. L’image n’a pas été créée.';
     throw error;
   }
 

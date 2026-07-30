@@ -1,5 +1,6 @@
 import { tagStyle } from './helpers';
 import { Button } from '../common/Button';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function MediaSelectionBar({
   selectedCount,
@@ -16,6 +17,7 @@ export function MediaSelectionBar({
   visibleSelectedItems,
   onClear,
 }) {
+  const { t } = useTranslation();
   if (selectedCount <= 1) return null;
 
   function applyBulkTag(e) {
@@ -30,18 +32,26 @@ export function MediaSelectionBar({
 
   return (
     <div className="media-selection-bar">
-      <span className="media-selection-count">{selectedCount} sélectionné{selectedCount > 1 ? 's' : ''}</span>
+      <span className="media-selection-count">
+        {selectedCount === 1
+          ? t('mediaExplorer.selectionBar.selectedCountOne', { count: selectedCount })
+          : t('mediaExplorer.selectionBar.selectedCountOther', { count: selectedCount })}
+      </span>
       {selectedAudioItems.length > 0 ? (
         <>
           <Button className="media-selection-btn" onClick={onCopyAudio}>
-            Copier {selectedAudioItems.length} son{selectedAudioItems.length > 1 ? 's' : ''}
+            {selectedAudioItems.length === 1
+              ? t('mediaExplorer.selectionBar.copySoundOne', { count: selectedAudioItems.length })
+              : t('mediaExplorer.selectionBar.copySoundOther', { count: selectedAudioItems.length })}
           </Button>
           <Button className="media-selection-btn" onClick={onCutAudio}>
-            Couper {selectedAudioItems.length} son{selectedAudioItems.length > 1 ? 's' : ''}
+            {selectedAudioItems.length === 1
+              ? t('mediaExplorer.selectionBar.cutSoundOne', { count: selectedAudioItems.length })
+              : t('mediaExplorer.selectionBar.cutSoundOther', { count: selectedAudioItems.length })}
           </Button>
           {selectedAudioItems.length >= 2 && (
             <Button variant="primary" className="media-selection-btn" onClick={onOpenAssembly}>
-              Assembler les audios
+              {t('mediaExplorer.selectionBar.assembleAudios')}
             </Button>
           )}
         </>
@@ -55,10 +65,10 @@ export function MediaSelectionBar({
               onChange={(e) => onBulkTagChange(e.target.value)}
               onFocus={() => onBulkTagOpenChange(true)}
               onBlur={() => setTimeout(() => onBulkTagOpenChange(false), 150)}
-              placeholder="+ Tag commun"
+              placeholder={t('mediaExplorer.selectionBar.bulkTagPlaceholder')}
             />
             <Button type="submit" className="media-selection-btn" disabled={!bulkTag.trim()}>
-              Appliquer
+              {t('mediaExplorer.selectionBar.applyButton')}
             </Button>
           </form>
           {bulkTagOpen && allTags.length > 0 && (
@@ -84,7 +94,7 @@ export function MediaSelectionBar({
           )}
         </div>
       ) : null}
-      <Button className="media-selection-btn" onClick={onClear}>Effacer</Button>
+      <Button className="media-selection-btn" onClick={onClear}>{t('mediaExplorer.selectionBar.clearButton')}</Button>
     </div>
   );
 }

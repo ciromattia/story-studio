@@ -12,6 +12,7 @@ import { AiImagesSection } from './OptionsTab/AiImagesSection';
 import { AdvancedSection } from './OptionsTab/AdvancedSection';
 import { YoutubeSection } from './OptionsTab/YoutubeSection';
 import { DiagnosticSection } from './OptionsTab/DiagnosticSection';
+import { useTranslation } from '../i18n/I18nContext';
 import './OptionsTab.css';
 
 export function OptionsTab({
@@ -29,6 +30,8 @@ export function OptionsTab({
   onAutoSaveBackupLimitChange,
   themePreference,
   onThemePreferenceChange,
+  languagePreference,
+  onLanguagePreferenceChange,
   xttsSettings,
   onUpdateXttsSettings,
   sdSettings,
@@ -44,6 +47,7 @@ export function OptionsTab({
   asModal = false,
   onClose = null,
 }) {
+  const { t } = useTranslation();
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   // En modale : Escape ferme les Préférences. La modale des raccourcis, montée
@@ -63,7 +67,7 @@ export function OptionsTab({
       {onBackToHome && (
         <div className="opts-back-row">
           <Button onClick={onBackToHome}>
-            Retour à l'accueil
+            {t('options.backToHome')}
           </Button>
         </div>
       )}
@@ -83,6 +87,8 @@ export function OptionsTab({
             sectionRef={registerSection('interface')}
             themePreference={themePreference}
             onThemePreferenceChange={onThemePreferenceChange}
+            languagePreference={languagePreference}
+            onLanguagePreferenceChange={onLanguagePreferenceChange}
             onOpenShortcuts={() => setShortcutsOpen(true)}
           />
           <ProjectsMediaSection
@@ -136,7 +142,7 @@ export function OptionsTab({
         <div className="modal-overlay" onClick={onClose}>
           <div className="modal-box opts-modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <span>Préférences</span>
+              <span>{t('options.preferences')}</span>
               <Button variant="icon" className="modal-close" onClick={onClose}>×</Button>
             </div>
             {content}

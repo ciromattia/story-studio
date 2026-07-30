@@ -6,6 +6,7 @@ import {
 } from '../../config/audioProcessing.js';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { KEYS } from '../../store/persistentSettings';
+import { useTranslation } from '../../i18n/I18nContext';
 
 const BOOL_CODEC = {
   decode: (raw) => raw === 'true',
@@ -18,12 +19,14 @@ const SILENCE_CODEC = {
 };
 
 function SilenceDurationRow({ value, onChange, label }) {
+  const { t } = useTranslation();
+
   return (
     <div className="opts-row">
       <div className="opts-row-info">
         <div className="opts-row-label">{label}</div>
         <div className="opts-row-sub">
-          Durée en secondes, à partir de {PACK_AUDIO_EDGE_SILENCE_MIN_SECONDS}.
+          {t('options.advanced.silenceSub', { min: PACK_AUDIO_EDGE_SILENCE_MIN_SECONDS })}
         </div>
       </div>
       <input
@@ -39,6 +42,7 @@ function SilenceDurationRow({ value, onChange, label }) {
 }
 
 export function AdvancedSection({ className, sectionRef }) {
+  const { t } = useTranslation();
   const [allowUnsupportedPackExtraction, setAllowUnsupportedPackExtraction] = usePersistentState(
     KEYS.ALLOW_UNSUPPORTED_PACK_EXTRACTION,
     false,
@@ -57,29 +61,28 @@ export function AdvancedSection({ className, sectionRef }) {
 
   return (
     <section id="advanced" className={className} ref={sectionRef}>
-      <div className="opts-card-title">Import et traitement audio avancés</div>
+      <div className="opts-card-title">{t('options.advanced.title')}</div>
       <div className="opts-row">
         <div className="opts-row-info">
-          <div className="opts-row-label">Autoriser l’extraction des packs non supportés</div>
+          <div className="opts-row-label">{t('options.advanced.allowUnsupportedLabel')}</div>
           <div className="opts-row-sub">
-            Permet de tenter une projection incomplète pour récupérer des médias ou des histoires.
-            La fidélité du pack et sa capacité à être régénéré ne sont pas garanties. Les protections de sécurité des fichiers restent actives.
+            {t('options.advanced.allowUnsupportedSub')}
           </div>
         </div>
         <Toggle on={allowUnsupportedPackExtraction} onChange={setAllowUnsupportedPackExtraction} />
       </div>
       {allowUnsupportedPackExtraction && (
         <div className="info-box info-box--spaced warn">
-          Mode risqué activé : Story Studio demandera une confirmation avant d’extraire un pack déclaré non supporté.
+          {t('options.advanced.riskModeWarning')}
         </div>
       )}
       <SilenceDurationRow
-        label="Silence au début"
+        label={t('options.advanced.leadingSilenceLabel')}
         value={leadingSilenceSeconds}
         onChange={setLeadingSilenceSeconds}
       />
       <SilenceDurationRow
-        label="Silence à la fin"
+        label={t('options.advanced.trailingSilenceLabel')}
         value={trailingSilenceSeconds}
         onChange={setTrailingSilenceSeconds}
       />

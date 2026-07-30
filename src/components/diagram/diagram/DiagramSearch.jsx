@@ -3,17 +3,18 @@ import { hasVisibleEndNode } from '../../../store/generatedNavigation';
 import { Search } from '../../icons/LucideLocal';
 import { NodeColorFilterChips } from '../../tree/NodeColorFilterChips.jsx';
 import { buildUsedNodeColors, toggleNodeColorFilter } from '../../tree/nodeColorFilter.js';
+import { useTranslation } from '../../../i18n/I18nContext';
 import { END_NODE_ID } from '../flowDiagramLayout';
 import { filterDiagramSearchCandidates } from './diagramSearchFilter.js';
 
-const TYPE_LABELS = {
-  menu: 'Dossier',
-  story: 'Histoire',
-  zip: 'Pack importé',
-  ref: 'Lien',
-};
-
 export function DiagramSearch({ project, projectIndex, focusTrigger, onChoose, onFilterChange }) {
+  const { t } = useTranslation();
+  const TYPE_LABELS = {
+    menu: t('diagram.search.types.menu'),
+    story: t('diagram.search.types.story'),
+    zip: t('diagram.search.types.zip'),
+    ref: t('diagram.search.types.ref'),
+  };
   const [active, setActive] = useState(false);
   const [term, setTerm] = useState('');
   const [selectedColors, setSelectedColors] = useState(new Set());
@@ -25,8 +26,8 @@ export function DiagramSearch({ project, projectIndex, focusTrigger, onChoose, o
   const candidates = useMemo(() => [
     {
       id: 'root',
-      label: project.rootName || project.projectName || 'Menu racine',
-      typeLabel: 'Racine',
+      label: project.rootName || project.projectName || t('diagram.search.rootFallback'),
+      typeLabel: t('diagram.search.rootType'),
       treeColor: project.treeColor ?? null,
     },
     ...(projectIndex.flatEntries ?? []).map(({ entry }) => ({
@@ -37,10 +38,10 @@ export function DiagramSearch({ project, projectIndex, focusTrigger, onChoose, o
     })),
     ...(hasVisibleEndNode(project) ? [{
       id: END_NODE_ID,
-      label: project.endNodeName || 'Message de fin',
-      typeLabel: 'Fin',
+      label: project.endNodeName || t('diagram.search.endFallback'),
+      typeLabel: t('diagram.search.endType'),
     }] : []),
-  ], [project, projectIndex.flatEntries]);
+  ], [project, projectIndex.flatEntries, t]);
 
   const usedColors = useMemo(
     () => buildUsedNodeColors(candidates.map(({ treeColor }) => treeColor)),
@@ -126,8 +127,8 @@ export function DiagramSearch({ project, projectIndex, focusTrigger, onChoose, o
           ref={inputRef}
           type="text"
           value={term}
-          placeholder="Rechercher un nœud…"
-          aria-label="Rechercher dans le diagramme"
+          placeholder={t('diagram.search.placeholder')}
+          aria-label={t('diagram.search.ariaLabel')}
           onChange={(event) => {
             setTerm(event.target.value);
             setActiveIndex(0);
@@ -152,7 +153,7 @@ export function DiagramSearch({ project, projectIndex, focusTrigger, onChoose, o
         <button
           type="button"
           className="fd-diagram-search-close"
-          aria-label="Fermer la recherche"
+          aria-label={t('diagram.search.closeAriaLabel')}
           onClick={() => {
             closeSearch();
           }}
@@ -171,7 +172,7 @@ export function DiagramSearch({ project, projectIndex, focusTrigger, onChoose, o
       />
 
       {filterActive ? (
-        <div className="fd-diagram-search-results" role="listbox" aria-label="Résultats de recherche">
+        <div className="fd-diagram-search-results" role="listbox" aria-label={t('diagram.search.resultsAriaLabel')}>
           {results.length > 0 ? results.map((candidate, index) => (
             <button
               key={candidate.id}
@@ -198,7 +199,7 @@ export function DiagramSearch({ project, projectIndex, focusTrigger, onChoose, o
               <small>{candidate.typeLabel}</small>
             </button>
           )) : (
-            <div className="fd-diagram-search-empty">Aucun résultat</div>
+            <div className="fd-diagram-search-empty">{t('diagram.search.noResults')}</div>
           )}
         </div>
       ) : null}

@@ -33,7 +33,7 @@
 
 import { buildProjectIndex, getPlayableDescendantCount, visitProjectEntries } from './projectModel.js';
 import { decodeNavigationMenuId, decodeNavigationStoryId, isCurrentMenuNavigationTarget, isNextStoryNavigationTarget, isRootNavigationTarget, isStoryHomeStepNavigationTarget, isStoryNavigationTarget, normalizeNavigationTarget } from './navigationTargets.js';
-import { VALIDATION_MESSAGES, brokenField, emptyTarget, missingField, missingTarget } from './validationMessages.js';
+import { createValidationMessages, brokenField, emptyTarget, frenchFallbackT, missingField, missingTarget } from './validationMessages.js';
 import { isStorySelectionAudioRequired } from './storyTitleStage.js';
 
 function hasPath(value) {
@@ -68,7 +68,7 @@ function collectProjectGraphStats(projectIndex) {
   };
 }
 
-function validateNavigationTarget(issues, id, label, target, projectIndex, menuIds) {
+function validateNavigationTarget(issues, id, label, target, projectIndex, menuIds, t, VALIDATION_MESSAGES) {
   const normalized = normalizeNavigationTarget(target);
   if (!normalized) return;
   if (isRootNavigationTarget(normalized) || isCurrentMenuNavigationTarget(normalized) || isNextStoryNavigationTarget(normalized)) {
@@ -78,7 +78,7 @@ function validateNavigationTarget(issues, id, label, target, projectIndex, menuI
     const storyId = decodeNavigationStoryId(normalized);
     const entry = storyId ? projectIndex.entryById.get(storyId) : null;
     if (!entry || entry.type !== 'story') {
-      pushError(issues, id, missingTarget(label, 'histoire'));
+      pushError(issues, id, missingTarget(label, 'histoire', t));
     } else if (isStoryHomeStepNavigationTarget(normalized) && !entry.afterPlaybackHomeStep) {
       pushError(issues, id, VALIDATION_MESSAGES.storyReturnLost(label));
     }
@@ -86,44 +86,47 @@ function validateNavigationTarget(issues, id, label, target, projectIndex, menuI
   }
   const menuId = decodeNavigationMenuId(normalized);
   if (!menuId || !menuIds.has(menuId)) {
-    pushError(issues, id, missingTarget(label, 'dossier'));
+    pushError(issues, id, missingTarget(label, 'dossier', t));
   } else if (getPlayableDescendantCount(projectIndex, menuId) === 0) {
-    pushError(issues, id, emptyTarget(label, 'dossier'));
+    pushError(issues, id, emptyTarget(label, 'dossier', t));
   }
 }
 
-function validateStorySelectionItem(issues, item, fallbackName, fileAudit) {
+function validateStorySelectionItem(issues, item, fallbackName, fileAudit, t) {
   const name = labelOrFallback(item?.name, fallbackName);
   const itemId = item?.id ?? null;
   const selectionAudioRequired = isStorySelectionAudioRequired(item);
-  if (!hasPath(item?.audio)) pushWarning(issues, itemId, missingField(name, 'histoire', { feminine: true }));
-  else if (isBrokenPath(item?.audio, fileAudit)) pushWarning(issues, itemId, brokenField(name, 'histoire'));
-  if (!hasPath(item?.itemImage)) pushWarning(issues, itemId, missingField(name, 'image', { feminine: true }));
-  else if (isBrokenPath(item?.itemImage, fileAudit)) pushWarning(issues, itemId, brokenField(name, 'image'));
-  if (!hasPath(item?.itemAudio) && selectionAudioRequired) pushWarning(issues, itemId, missingField(name, 'audio titre'));
-  else if (isBrokenPath(item?.itemAudio, fileAudit)) pushWarning(issues, itemId, brokenField(name, 'audio titre'));
+  if (!hasPath(item?.audio)) pushWarning(issues, itemId, missingField(name, 'histoire', { feminine: true, t }));
+  else if (isBrokenPath(item?.audio, fileAudit)) pushWarning(issues, itemId, brokenField(name, 'histoire', t));
+  if (!hasPath(item?.itemImage)) pushWarning(issues, itemId, missingField(name, 'image', { feminine: true, t }));
+  else if (isBrokenPath(item?.itemImage, fileAudit)) pushWarning(issues, itemId, brokenField(name, 'image', t));
+  if (!hasPath(item?.itemAudio) && selectionAudioRequired) pushWarning(issues, itemId, missingField(name, 'audio titre', { t }));
+  else if (isBrokenPath(item?.itemAudio, fileAudit)) pushWarning(issues, itemId, brokenField(name, 'audio titre', t));
   if (hasPath(item?.afterPlaybackPromptAudio) && isBrokenPath(item?.afterPlaybackPromptAudio, fileAudit)) {
-    pushWarning(issues, itemId, brokenField(name, "audio de fin d'histoire"));
+    pushWarning(issues, itemId, brokenField(name, "audio de fin d'histoire", t));
   }
   for (const [index, step] of (item?.afterPlaybackSequence ?? []).entries()) {
     if (!hasPath(step?.audio)) {
-      pushWarning(issues, itemId, missingField(name, `audio de fin ${index + 1}`));
+      pushWarning(issues, itemId, missingField(name, `audio de fin ${index + 1}`, { t }));
     } else if (isBrokenPath(step.audio, fileAudit)) {
-      pushWarning(issues, itemId, brokenField(name, `audio de fin ${index + 1}`));
+      pushWarning(issues, itemId, brokenField(name, `audio de fin ${index + 1}`, t));
     }
   }
 }
 
-function validateZipItem(issues, item, fallbackName, fileAudit) {
+function validateZipItem(issues, item, fallbackName, fileAudit, t) {
   const name = labelOrFallback(item?.name, fallbackName);
-  if (!hasPath(item?.zipPath)) pushWarning(issues, item?.id ?? null, missingField(name, 'zip'));
-  else if (isBrokenPath(item?.zipPath, fileAudit)) pushWarning(issues, item?.id ?? null, brokenField(name, 'zip'));
+  if (!hasPath(item?.zipPath)) pushWarning(issues, item?.id ?? null, missingField(name, 'zip', { t }));
+  else if (isBrokenPath(item?.zipPath, fileAudit)) pushWarning(issues, item?.id ?? null, brokenField(name, 'zip', t));
 }
 
-export function getProjectValidationIssues(project, fileAudit = {}, providedProjectIndex = null) {
+export function getProjectValidationIssues(project, fileAudit = {}, providedProjectIndex = null, t = frenchFallbackT) {
   const issues = [];
+  const VALIDATION_MESSAGES = createValidationMessages(t);
   const projectType = project?.projectType;
-  const rootName = labelOrFallback(project?.projectName || project?.packMetadata?.title, 'Pack sans nom');
+  const rootName = labelOrFallback(project?.projectName || project?.packMetadata?.title, t('validation.defaultPackName'));
+  const rootMenuLabel = t('validation.rootMenuLabel');
+  const endMessageLabel = t('validation.endMessageLabel');
   const autoNext = !!project?.globalOptions?.autoNext;
   const nightMode = !!project?.globalOptions?.nightMode;
   const hasEndNode = !autoNext && (nightMode || !!project?.nightModeAudio || !!project?.globalOptions?.endNode);
@@ -153,42 +156,45 @@ export function getProjectValidationIssues(project, fileAudit = {}, providedProj
     pushError(issues, 'root', VALIDATION_MESSAGES.rootReservedId);
   }
 
-  if (!hasPath(project?.rootAudio)) pushWarning(issues, 'root', missingField('Menu racine', 'audio intro'));
-  else if (isBrokenPath(project?.rootAudio, fileAudit)) pushWarning(issues, 'root', brokenField('Menu racine', 'audio intro'));
-  if (!hasPath(project?.rootImage)) pushWarning(issues, 'root', missingField('Menu racine', 'image de couverture', { feminine: true }));
-  else if (isBrokenPath(project?.rootImage, fileAudit)) pushWarning(issues, 'root', brokenField('Menu racine', 'image de couverture'));
+  if (!hasPath(project?.rootAudio)) pushWarning(issues, 'root', missingField(rootMenuLabel, 'audio intro', { t }));
+  else if (isBrokenPath(project?.rootAudio, fileAudit)) pushWarning(issues, 'root', brokenField(rootMenuLabel, 'audio intro', t));
+  if (!hasPath(project?.rootImage)) pushWarning(issues, 'root', missingField(rootMenuLabel, 'image de couverture', { feminine: true, t }));
+  else if (isBrokenPath(project?.rootImage, fileAudit)) pushWarning(issues, 'root', brokenField(rootMenuLabel, 'image de couverture', t));
   const rootImageAsThumbnail = !!project?.sameImage;
   if (projectType === 'pack') {
     if (!rootImageAsThumbnail && !hasPath(project?.thumbnailImage)) {
       pushWarning(
         issues,
         'root',
-        `${missingField('Menu racine', 'image bibliothèque', { feminine: true })} (cocher « même image » ou en choisir une)`,
+        `${missingField(rootMenuLabel, 'image bibliothèque', { feminine: true, t })}${t('validation.thumbnailHint')}`,
       );
     } else if (!rootImageAsThumbnail && isBrokenPath(project?.thumbnailImage, fileAudit)) {
-      pushWarning(issues, 'root', brokenField('Menu racine', 'image bibliothèque'));
+      pushWarning(issues, 'root', brokenField(rootMenuLabel, 'image bibliothèque', t));
     }
   } else if (!rootImageAsThumbnail && hasPath(project?.thumbnailImage) && isBrokenPath(project?.thumbnailImage, fileAudit)) {
-    pushWarning(issues, 'root', brokenField('Menu racine', 'image bibliothèque'));
+    pushWarning(issues, 'root', brokenField(rootMenuLabel, 'image bibliothèque', t));
   }
   if (hasEndNode && !hasPath(project?.nightModeAudio)) {
-    pushWarning(issues, 'end-node', missingField('Message de fin', 'audio'));
+    pushWarning(issues, 'end-node', missingField(endMessageLabel, 'audio', { t }));
   } else if (hasEndNode && isBrokenPath(project?.nightModeAudio, fileAudit)) {
-    pushWarning(issues, 'end-node', brokenField('Message de fin', 'audio'));
+    pushWarning(issues, 'end-node', brokenField(endMessageLabel, 'audio', t));
   }
 
   if (projectType === 'simple') {
     if (!hasPath(firstSimpleStory?.audio)) {
-      pushWarning(issues, 'root', missingField(rootName, 'histoire', { feminine: true }));
+      pushWarning(issues, 'root', missingField(rootName, 'histoire', { feminine: true, t }));
     } else if (isBrokenPath(firstSimpleStory?.audio, fileAudit)) {
-      pushWarning(issues, 'root', brokenField(rootName, 'histoire'));
+      pushWarning(issues, 'root', brokenField(rootName, 'histoire', t));
     }
     return issues;
   }
 
+  const defaultCollectionName = t('validation.defaultCollectionName');
+  const defaultElementName = t('validation.defaultElementName');
+
   visitProjectEntries(project, (entry, ancestors) => {
-    const entryLabel = labelOrFallback(entry?.name, entry?.type === 'menu' ? 'Collection' : 'Element');
-    const pathLabel = [...ancestors.map((parent) => labelOrFallback(parent?.name, 'Collection')), entryLabel]
+    const entryLabel = labelOrFallback(entry?.name, entry?.type === 'menu' ? defaultCollectionName : defaultElementName);
+    const pathLabel = [...ancestors.map((parent) => labelOrFallback(parent?.name, defaultCollectionName)), entryLabel]
       .join(' / ');
     const entryId = typeof entry?.id === 'string' ? entry.id.trim() : '';
     if (!entryId) {
@@ -205,10 +211,12 @@ export function getProjectValidationIssues(project, fileAudit = {}, providedProj
         validateNavigationTarget(
           issues,
           entry?.id ?? null,
-          `${entryLabel} — référence`,
+          `${entryLabel} — ${t('validation.refSuffix')}`,
           entry?.target,
           projectIndex,
           menuIds,
+          t,
+          VALIDATION_MESSAGES,
         );
       }
       return;
@@ -222,12 +230,12 @@ export function getProjectValidationIssues(project, fileAudit = {}, providedProj
     if (entry?.type === 'menu') {
       const menuId = entry?.id ?? null;
       const isSilentImportedContinuation = !!entry?.importedContinuation;
-      if (!hasPath(entry?.audio) && !isSilentImportedContinuation) pushWarning(issues, menuId, missingField(pathLabel, 'audio'));
-      else if (isBrokenPath(entry?.audio, fileAudit)) pushWarning(issues, menuId, brokenField(pathLabel, 'audio'));
+      if (!hasPath(entry?.audio) && !isSilentImportedContinuation) pushWarning(issues, menuId, missingField(pathLabel, 'audio', { t }));
+      else if (isBrokenPath(entry?.audio, fileAudit)) pushWarning(issues, menuId, brokenField(pathLabel, 'audio', t));
       if (!hasPath(entry?.image) && !entry?.autoBlackImage) {
-        pushWarning(issues, menuId, missingField(pathLabel, 'image', { feminine: true }));
+        pushWarning(issues, menuId, missingField(pathLabel, 'image', { feminine: true, t }));
       } else if (isBrokenPath(entry?.image, fileAudit)) {
-        pushWarning(issues, menuId, brokenField(pathLabel, 'image'));
+        pushWarning(issues, menuId, brokenField(pathLabel, 'image', t));
       }
       if (getPlayableDescendantCount(projectIndex, entry.id) === 0) {
         pushWarning(issues, menuId, VALIDATION_MESSAGES.emptyMenu(pathLabel));
@@ -236,19 +244,23 @@ export function getProjectValidationIssues(project, fileAudit = {}, providedProj
         validateNavigationTarget(
           issues,
           menuId,
-          `${entryLabel} — destination des histoires`,
+          `${entryLabel} — ${t('validation.storiesDestinationSuffix')}`,
           entry?.returnAfterPlay,
           projectIndex,
           menuIds,
+          t,
+          VALIDATION_MESSAGES,
         );
       }
       validateNavigationTarget(
         issues,
         menuId,
-        `${entryLabel} — Accueil du dossier`,
+        `${entryLabel} — ${t('validation.folderHomeSuffix')}`,
         entry?.returnOnHome,
         projectIndex,
         menuIds,
+        t,
+        VALIDATION_MESSAGES,
       );
       return;
     }
@@ -257,10 +269,12 @@ export function getProjectValidationIssues(project, fileAudit = {}, providedProj
       validateNavigationTarget(
         issues,
         entry?.id ?? null,
-        `${entryLabel} — destination de fin`,
+        `${entryLabel} — ${t('validation.endDestinationSuffix')}`,
         entry?.returnAfterPlay,
         projectIndex,
         menuIds,
+        t,
+        VALIDATION_MESSAGES,
       );
     }
 
@@ -268,10 +282,12 @@ export function getProjectValidationIssues(project, fileAudit = {}, providedProj
       validateNavigationTarget(
         issues,
         entry?.id ?? null,
-        `${entryLabel} — bouton Accueil`,
+        `${entryLabel} — ${t('validation.homeButtonSuffix')}`,
         entry?.returnOnHome,
         projectIndex,
         menuIds,
+        t,
+        VALIDATION_MESSAGES,
       );
     }
 
@@ -279,33 +295,39 @@ export function getProjectValidationIssues(project, fileAudit = {}, providedProj
       validateNavigationTarget(
         issues,
         entry?.id ?? null,
-        `${entryLabel} — Accueil du titre`,
+        `${entryLabel} — ${t('validation.titleHomeSuffix')}`,
         entry?.titleReturnOnHome,
         projectIndex,
         menuIds,
+        t,
+        VALIDATION_MESSAGES,
       );
     }
 
-    if (entry?.type === 'zip') validateZipItem(issues, entry, pathLabel, fileAudit);
+    if (entry?.type === 'zip') validateZipItem(issues, entry, pathLabel, fileAudit, t);
     else {
-      validateStorySelectionItem(issues, entry, pathLabel, fileAudit);
+      validateStorySelectionItem(issues, entry, pathLabel, fileAudit, t);
       if (!autoNext && hasPath(entry?.afterPlaybackPromptAudio)) {
         validateNavigationTarget(
           issues,
           entry?.id ?? null,
-          `${entryLabel} — OK du prompt final`,
+          `${entryLabel} — ${t('validation.finalPromptOkSuffix')}`,
           entry?.afterPlaybackPromptOkTarget,
           projectIndex,
           menuIds,
+          t,
+          VALIDATION_MESSAGES,
         );
         if (!entry?.afterPlaybackPromptHomeNone) {
           validateNavigationTarget(
             issues,
             entry?.id ?? null,
-            `${entryLabel} — Accueil du prompt final`,
+            `${entryLabel} — ${t('validation.finalPromptHomeSuffix')}`,
             entry?.afterPlaybackPromptHomeTarget,
             projectIndex,
             menuIds,
+            t,
+            VALIDATION_MESSAGES,
           );
         }
       }
@@ -314,19 +336,23 @@ export function getProjectValidationIssues(project, fileAudit = {}, providedProj
           validateNavigationTarget(
             issues,
             entry?.id ?? null,
-            `${entryLabel} — OK fin ${index + 1}`,
+            `${entryLabel} — ${t('validation.endOkSuffix', { index: index + 1 })}`,
             step?.okTarget,
             projectIndex,
             menuIds,
+            t,
+            VALIDATION_MESSAGES,
           );
           if (!step?.homeFollowsOk && !step?.homeNone) {
             validateNavigationTarget(
               issues,
               entry?.id ?? null,
-              `${entryLabel} — Accueil fin ${index + 1}`,
+              `${entryLabel} — ${t('validation.endHomeSuffix', { index: index + 1 })}`,
               step?.homeTarget,
               projectIndex,
               menuIds,
+              t,
+              VALIDATION_MESSAGES,
             );
           }
         }
@@ -340,8 +366,8 @@ export function getProjectValidationIssues(project, fileAudit = {}, providedProj
   return issues;
 }
 
-export function getGenerateErrors(project, fileAudit = {}) {
-  return getProjectValidationIssues(project, fileAudit)
+export function getGenerateErrors(project, fileAudit = {}, t = frenchFallbackT) {
+  return getProjectValidationIssues(project, fileAudit, null, t)
     .filter((issue) => issue.status === 'error' || issue.status === 'warning')
     .map((issue) => issue.text);
 }

@@ -2,30 +2,32 @@ import { useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { AppModalPortal } from '../common/AppModalPortal';
 import { Check, Loader2, Rss, Search, X } from '../icons/LucideLocal';
+import { useTranslation } from '../../i18n/I18nContext';
 import './PodcastImportModal.css';
 
-function formatBytes(bytes) {
+function formatBytes(bytes, t) {
   if (!bytes || bytes <= 0) return '';
   const mb = bytes / (1024 * 1024);
-  if (mb >= 1) return `${mb.toFixed(mb >= 10 ? 0 : 1)} Mo`;
-  return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+  if (mb >= 1) return `${mb.toFixed(mb >= 10 ? 0 : 1)} ${t('importFunnels.podcast.unitMb')}`;
+  return `${Math.max(1, Math.round(bytes / 1024))} ${t('importFunnels.podcast.unitKb')}`;
 }
 
-function formatDate(pubDate) {
+function formatDate(pubDate, locale) {
   if (!pubDate) return '';
   const date = new Date(pubDate);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function episodeMeta(ep) {
-  return [formatDate(ep.pubDate), ep.duration, formatBytes(ep.sizeBytes)]
+function episodeMeta(ep, t, locale) {
+  return [formatDate(ep.pubDate, locale), ep.duration, formatBytes(ep.sizeBytes, t)]
     .map((value) => (value || '').trim())
     .filter(Boolean)
     .join(' · ');
 }
 
 export function PodcastImportModal({ onImport, onClose }) {
+  const { t, locale } = useTranslation();
   const [phase, setPhase] = useState('url');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -95,30 +97,30 @@ export function PodcastImportModal({ onImport, onClose }) {
       <div
         className="podcast-modal"
         role="dialog"
-        aria-label="Importer un podcast"
+        aria-label={t('importFunnels.podcast.modalTitle')}
         onClick={(event) => event.stopPropagation()}
       >
         {phase === 'url' ? (
           <>
             <header className="podcast-head">
               <span className="podcast-head-icon"><Rss /></span>
-              <span className="podcast-head-title">Importer un podcast</span>
+              <span className="podcast-head-title">{t('importFunnels.podcast.modalTitle')}</span>
               <span className="podcast-spacer" />
-              <button type="button" className="podcast-icon-btn" aria-label="Fermer" onClick={onClose} disabled={loading}>
+              <button type="button" className="podcast-icon-btn" aria-label={t('importFunnels.podcast.close')} onClick={onClose} disabled={loading}>
                 <X />
               </button>
             </header>
 
             <div className="podcast-body">
               <form onSubmit={handleLoadFeed}>
-                <label className="podcast-field-label" htmlFor="podcast-url-input">Adresse du flux RSS</label>
+                <label className="podcast-field-label" htmlFor="podcast-url-input">{t('importFunnels.podcast.urlFieldLabel')}</label>
                 <label className="podcast-search">
                   <Rss />
                   <input
                     id="podcast-url-input"
                     type="url"
                     inputMode="url"
-                    placeholder="https://exemple.com/podcast/feed.xml"
+                    placeholder={t('importFunnels.podcast.urlPlaceholder')}
                     value={url}
                     onChange={(event) => setUrl(event.target.value)}
                     autoFocus
@@ -126,15 +128,14 @@ export function PodcastImportModal({ onImport, onClose }) {
                 </label>
               </form>
               <p className="podcast-hint">
-                Colle l'URL du flux RSS du podcast. Tu pourras choisir les épisodes à télécharger
-                avant qu'ils ne deviennent des histoires.
+                {t('importFunnels.podcast.urlHint')}
               </p>
               {error && <div className="podcast-error" role="alert">{error}</div>}
             </div>
 
             <footer className="podcast-foot">
               <button type="button" className="podcast-btn podcast-btn-ghost" onClick={onClose} disabled={loading}>
-                Annuler
+                {t('importFunnels.podcast.cancel')}
               </button>
               <span className="podcast-spacer" />
               <button
@@ -144,7 +145,7 @@ export function PodcastImportModal({ onImport, onClose }) {
                 disabled={loading || !url.trim()}
               >
                 {loading && <Loader2 className="podcast-spin" />}
-                {loading ? 'Chargement…' : 'Charger les épisodes'}
+                {loading ? t('importFunnels.podcast.loadingButton') : t('importFunnels.podcast.loadEpisodesButton')}
               </button>
             </footer>
           </>
@@ -152,12 +153,12 @@ export function PodcastImportModal({ onImport, onClose }) {
           <>
             <header className="podcast-head">
               <span className="podcast-head-icon"><Rss /></span>
-              <span className="podcast-head-title" title={feed?.title}>{feed?.title || 'Podcast'}</span>
+              <span className="podcast-head-title" title={feed?.title}>{feed?.title || t('importFunnels.podcast.defaultPodcastTitle')}</span>
               <span className="podcast-head-count">
-                {episodes.length} épisode{episodes.length > 1 ? 's' : ''}
+                {t(episodes.length === 1 ? 'importFunnels.podcast.episodeCountOne' : 'importFunnels.podcast.episodeCountOther', { count: episodes.length })}
               </span>
               <span className="podcast-spacer" />
-              <button type="button" className="podcast-icon-btn" aria-label="Fermer" onClick={onClose}>
+              <button type="button" className="podcast-icon-btn" aria-label={t('importFunnels.podcast.close')} onClick={onClose}>
                 <X />
               </button>
             </header>
@@ -168,15 +169,15 @@ export function PodcastImportModal({ onImport, onClose }) {
                   <Search />
                   <input
                     type="text"
-                    placeholder="Filtrer les épisodes…"
+                    placeholder={t('importFunnels.podcast.filterPlaceholder')}
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                   />
                 </label>
                 <div className="podcast-bulk">
-                  <button type="button" className="podcast-seg" onClick={selectAllVisible}>Tout sélectionner</button>
+                  <button type="button" className="podcast-seg" onClick={selectAllVisible}>{t('importFunnels.podcast.selectAll')}</button>
                   <button type="button" className="podcast-seg" onClick={clearSelection} disabled={selected.size === 0}>
-                    Tout désélectionner
+                    {t('importFunnels.podcast.deselectAll')}
                   </button>
                 </div>
               </div>
@@ -186,12 +187,12 @@ export function PodcastImportModal({ onImport, onClose }) {
               {visibleEpisodes.length === 0 ? (
                 <div className="podcast-empty">
                   <Search />
-                  <span>Aucun épisode ne correspond à ce filtre.</span>
+                  <span>{t('importFunnels.podcast.noEpisodesMatch')}</span>
                 </div>
               ) : (
                 visibleEpisodes.map((ep) => {
                   const checked = selected.has(ep.id);
-                  const meta = episodeMeta(ep);
+                  const meta = episodeMeta(ep, t, locale);
                   return (
                     <button
                       type="button"
@@ -213,10 +214,12 @@ export function PodcastImportModal({ onImport, onClose }) {
 
             <footer className="podcast-foot">
               <button type="button" className="podcast-btn podcast-btn-ghost" onClick={() => setPhase('url')}>
-                Retour
+                {t('importFunnels.podcast.back')}
               </button>
               <span className="podcast-spacer" />
-              <span className="podcast-foot-status"><b>{selected.size}</b> sélectionné{selected.size > 1 ? 's' : ''}</span>
+              <span className="podcast-foot-status">
+                <b>{selected.size}</b> {t(selected.size === 1 ? 'importFunnels.podcast.selectedSuffixOne' : 'importFunnels.podcast.selectedSuffixOther')}
+              </span>
               <button
                 type="button"
                 className="podcast-btn podcast-btn-primary"
@@ -224,8 +227,8 @@ export function PodcastImportModal({ onImport, onClose }) {
                 disabled={selected.size === 0}
               >
                 {selected.size > 0
-                  ? `Importer ${selected.size} épisode${selected.size > 1 ? 's' : ''}`
-                  : 'Importer'}
+                  ? t(selected.size === 1 ? 'importFunnels.podcast.importOne' : 'importFunnels.podcast.importOther', { count: selected.size })
+                  : t('importFunnels.podcast.importDefault')}
               </button>
             </footer>
           </>

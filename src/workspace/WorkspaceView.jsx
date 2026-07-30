@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from '../i18n/I18nContext';
 import { DiagramPanel } from '../components/diagram/DiagramPanel';
 import { FloatingSimulator } from '../components/FloatingSimulator/FloatingSimulator';
 import { ModeSelector } from '../components/ModeSelector/ModeSelector';
@@ -58,6 +59,7 @@ export function WorkspaceView({
   diagramSearchFocusTrigger,
   workspaceViewState,
 }) {
+  const { t } = useTranslation();
   const { onSelect } = useProjectActions();
   const { projectType } = project;
   const [selectedIds, setSelectedIds] = useState(() => new Set([selectedId]));
@@ -327,7 +329,7 @@ export function WorkspaceView({
 
   const renderResizeHandle = (boundary) => {
     const settingsConfig = {
-      ariaLabel: 'Redimensionner les réglages',
+      ariaLabel: t('workspace.workspaceView.resizeSettingsAriaLabel'),
       panelClass: '.workspace-panel-slot--settings',
       cssVar: '--workspace-settings-panel-width',
       minWidth: SETTINGS_PANEL_WIDTH_MIN,
@@ -337,7 +339,7 @@ export function WorkspaceView({
       onResize: setSettingsPanelWidth,
     };
     const structureConfig = {
-      ariaLabel: 'Redimensionner l’arbre',
+      ariaLabel: t('workspace.workspaceView.resizeStructureAriaLabel'),
       panelClass: '.workspace-panel-slot--structure',
       cssVar: '--col-left',
       minWidth: LEFT_PANEL_MIN_WIDTH,

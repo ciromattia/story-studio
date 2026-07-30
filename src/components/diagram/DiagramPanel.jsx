@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, X } from '../icons/LucideLocal';
 import { Tooltip } from '../common/Tooltip';
 import { CompleteDiagramTree } from './FullDiagramTree';
+import { useTranslation } from '../../i18n/I18nContext';
 import './FlowDiagram.css';
 
 function IconButton({ label, onClick, active = false, children }) {
@@ -27,19 +28,21 @@ function DiagramPanelHeader({
   controlsHostRef,
   dragHandleProps,
 }) {
+  const { t } = useTranslation();
   const isFull = variant === 'plein';
+  const title = isFull ? t('diagram.panel.titleFull') : t('diagram.panel.titleDefault');
 
   return (
     <div className="fd-panel-header" {...dragHandleProps}>
-      <div className="fd-panel-title" title={isFull ? 'Diagramme complet du pack' : 'Diagramme'}>
-        {isFull ? 'Diagramme complet du pack' : 'Diagramme'}
+      <div className="fd-panel-title" title={title}>
+        {title}
       </div>
       <div className="fd-panel-view-controls" ref={controlsHostRef} />
       <div className="fd-panel-window-controls">
-        <IconButton label="Rechercher dans le diagramme (Ctrl+F)" onClick={onSearch}>
+        <IconButton label={t('diagram.panel.searchTooltip')} onClick={onSearch}>
           <Search aria-hidden="true" />
         </IconButton>
-        <IconButton label="Fermer le diagramme" onClick={onClose}>
+        <IconButton label={t('diagram.panel.closeTooltip')} onClick={onClose}>
           <X aria-hidden="true" />
         </IconButton>
       </div>

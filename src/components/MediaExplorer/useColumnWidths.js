@@ -2,16 +2,22 @@ import { useRef, useState } from 'react';
 import { KEYS, read, write } from '../../store/persistentSettings';
 
 export const COLUMNS = [
-  { id: 'name',  label: 'Nom',        defaultWidth: 200 },
-  { id: 'usage', label: 'Usage',      defaultWidth: 120 },
-  { id: 'size',  label: 'Taille',     defaultWidth: 60  },
-  { id: 'dim',   label: 'Dimensions', defaultWidth: 80  },
-  { id: 'dur',   label: 'Durée',      defaultWidth: 72  },
-  { id: 'fmt',   label: 'Format',     defaultWidth: 100 },
-  { id: 'date',  label: 'Date',       defaultWidth: 110 },
-  { id: 'path',  label: 'Chemin',     defaultWidth: 260 },
-  { id: 'tags',  label: 'Tags',       defaultWidth: 120 },
+  { id: 'name',  defaultWidth: 200 },
+  { id: 'usage', defaultWidth: 120 },
+  { id: 'size',  defaultWidth: 60  },
+  { id: 'dim',   defaultWidth: 80  },
+  { id: 'dur',   defaultWidth: 72  },
+  { id: 'fmt',   defaultWidth: 100 },
+  { id: 'date',  defaultWidth: 110 },
+  { id: 'path',  defaultWidth: 260 },
+  { id: 'tags',  defaultWidth: 120 },
 ];
+
+// COLUMNS is a module-level constant (not a component), so it can't call the
+// i18n `t()` hook directly. Callers translate labels via this helper instead.
+export function columnLabel(t, id) {
+  return t(`mediaExplorer.columns.${id}`);
+}
 
 const DEFAULT_COL_WIDTHS = Object.fromEntries(COLUMNS.map((c) => [c.id, c.defaultWidth]));
 const OLD_COL_IDS = ['name', 'usage', 'size', 'dim', 'fmt', 'path', 'tags'];

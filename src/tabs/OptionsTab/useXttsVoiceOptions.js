@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { isTauriRuntime } from '../../utils/tauriRuntime';
-import { formatFrenchCount } from '../../utils/frenchText.js';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function useXttsVoiceOptions({ xttsSettings, onUpdateXttsSettings }) {
+  const { t } = useTranslation();
   const [xttsProbe, setXttsProbe] = useState({ state: 'idle', message: '' });
   const [xttsVoices, setXttsVoices] = useState([]);
   const [xttsVoicesLoaded, setXttsVoicesLoaded] = useState(false);
@@ -31,24 +32,29 @@ export function useXttsVoiceOptions({ xttsSettings, onUpdateXttsSettings }) {
   }, []);
 
   async function testXtts() {
-    setXttsProbe({ state: 'loading', message: 'Connexion à XTTS en cours…' });
-    setXttsLogs([`Test XTTS depuis ${xttsSettings.serverUrl}`]);
+    setXttsProbe({ state: 'loading', message: t('options.voice.xtts.connectingMessage') });
+    setXttsLogs([t('options.voice.xtts.testLogMessage', { url: xttsSettings.serverUrl })]);
     try {
       const status = await invoke('xtts_get_status', { settings: xttsSettings });
       const voices = status.voices || [];
       setXttsVoices(voices);
       setXttsVoicesLoaded(true);
-      const voicesLabel = formatFrenchCount(
-        voices.length,
-        'voix détectée',
-        'voix détectées',
-      );
-      const deviceLabel = status.device === 'cuda' ? 'GPU CUDA' : status.device === 'cpu' ? 'CPU' : 'device inconnu';
-      const modelLabel = status.model || 'modèle inconnu';
+      const voicesLabel = `${voices.length} ${t(
+        voices.length === 1 ? 'options.voice.xtts.voiceCountOne' : 'options.voice.xtts.voiceCountOther',
+      )}`;
+      const deviceLabel = status.device === 'cuda'
+        ? t('options.voice.xtts.deviceGpu')
+        : status.device === 'cpu' ? t('options.voice.xtts.deviceCpu') : t('options.voice.xtts.deviceUnknown');
+      const modelLabel = status.model || t('options.voice.xtts.modelUnknown');
       const voiceNames = voices.length > 0 ? ` • ${voices.join(', ')}` : '';
       setXttsProbe({
         state: 'ok',
-        message: `Serveur prêt • ${modelLabel} • ${deviceLabel} • ${voicesLabel}${voiceNames}`,
+        message: t('options.voice.xtts.readyMessage', {
+          model: modelLabel,
+          device: deviceLabel,
+          voicesLabel,
+          voiceNames,
+        }),
       });
     } catch (e) {
       setXttsProbe({ state: 'error', message: String(e) });

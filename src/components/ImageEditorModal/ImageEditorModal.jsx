@@ -8,6 +8,7 @@ import { FilterSlider } from './FilterSlider';
 import { LevelsControl } from './LevelsControl';
 import { exportEditedImage } from './imageEditorExport';
 import { useImageCanvasInteractions } from './useImageCanvasInteractions';
+import { useTranslation } from '../../i18n/I18nContext';
 import './ImageEditorModal.css';
 
 const DEFAULT_FILTERS = {
@@ -55,13 +56,16 @@ export function ImageEditorModal({
   onCancel,
   initialTransform,
   initialFilters,
-  title = "Recadrer et ajuster l'image",
-  confirmLabel = 'Utiliser cette image',
+  title,
+  confirmLabel,
   workspaceDir = '',
   requireManagedOutput = false,
   outputNameSourcePath = sourcePath,
   forceExport = false,
 }) {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t('imageEditor.crop.defaultTitle');
+  const resolvedConfirmLabel = confirmLabel ?? t('imageEditor.crop.defaultConfirmLabel');
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const objectUrlRef = useRef(null);
@@ -92,7 +96,7 @@ export function ImageEditorModal({
       webp: 'image/webp', bmp: 'image/bmp', gif: 'image/gif',
     };
     if (ext === 'gif') {
-      setLoadError('Le format GIF n’est pas pris en charge par l’éditeur d’image.');
+      setLoadError(t('imageEditor.crop.gifUnsupported'));
       return undefined;
     }
     const mime = mimeMap[ext] || 'image/png';
@@ -123,7 +127,7 @@ export function ImageEditorModal({
             });
           } catch (error) {
             logger.error('image-editor:init-error', error);
-            setLoadError("Impossible d'initialiser l'image.");
+            setLoadError(t('imageEditor.crop.initError'));
           }
         };
         img.onerror = () => {
@@ -131,13 +135,13 @@ export function ImageEditorModal({
             URL.revokeObjectURL(url);
             objectUrlRef.current = null;
           }
-          setLoadError('Impossible de charger l\'image.');
+          setLoadError(t('imageEditor.crop.loadError'));
         };
         img.src = url;
       })
       .catch((error) => {
         logger.error('image-editor:read-file-error', sourcePath, error);
-        setLoadError('Impossible de lire le fichier.');
+        setLoadError(t('imageEditor.crop.readError'));
       });
 
     return () => {
@@ -160,7 +164,7 @@ export function ImageEditorModal({
         filters,
         error: serializeError(error),
       });
-      setLoadError("Le rendu de l'image a echoue.");
+      setLoadError(t('imageEditor.crop.renderError'));
     }
   }, [transform, filters, imgLoaded]);
 
@@ -227,12 +231,13 @@ export function ImageEditorModal({
         outputNameSourcePath,
         workspaceDir,
         requireManagedOutput,
+        t,
       });
       logger.info('image-editor:image-saved', { sourcePath, finalPath });
       onConfirm(finalPath, { sourcePath, transform, filters });
     } catch (err) {
       logger.error('image-editor:save-error', err);
-      setLoadError(err?.userMessage || "L’export de l’image a échoué.");
+      setLoadError(err?.userMessage || t('imageEditor.crop.saveError'));
       setSaving(false);
     }
   }
@@ -241,7 +246,7 @@ export function ImageEditorModal({
     <div className="modal-overlay">
       <div className="image-editor-box" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <span>{title}</span>
+          <span>{resolvedTitle}</span>
           <Button variant="icon" className="modal-close" onClick={onCancel}>×</Button>
         </div>
 
@@ -260,40 +265,40 @@ export function ImageEditorModal({
               onMouseLeave={handleMouseUp}
               style={{ cursor: 'grab' }}
             />
-            <div className="image-editor-canvas-hint">Glisser pour repositionner · Molette pour zoomer</div>
+            <div className="image-editor-canvas-hint">{t('imageEditor.crop.canvasHint')}</div>
             <div className="image-editor-fit-btns">
-              <Tooltip text="Remplir le cadre (rogné)">
-                <Button size="sm" onClick={handleCoverFit}>Ajuster</Button>
+              <Tooltip text={t('imageEditor.crop.fitCoverTooltip')}>
+                <Button size="sm" onClick={handleCoverFit}>{t('imageEditor.crop.fitCoverButton')}</Button>
               </Tooltip>
-              <Tooltip text="Image entière visible">
-                <Button size="sm" onClick={handleContainFit}>Centrer</Button>
+              <Tooltip text={t('imageEditor.crop.fitContainTooltip')}>
+                <Button size="sm" onClick={handleContainFit}>{t('imageEditor.crop.fitContainButton')}</Button>
               </Tooltip>
             </div>
           </div>
 
           {/* Panneau filtres */}
           <div className="image-editor-filters">
-            <div className="filter-section-title">Filtres</div>
+            <div className="filter-section-title">{t('imageEditor.filters.sectionTitle')}</div>
 
-            <FilterSlider label="Luminosité" value={filters.brightness} min={-50} max={50}
+            <FilterSlider label={t('imageEditor.filters.brightness')} value={filters.brightness} min={-50} max={50}
               onChange={v => setFilter('brightness', v)} />
-            <FilterSlider label="Contraste" value={filters.contrast} min={-50} max={50}
+            <FilterSlider label={t('imageEditor.filters.contrast')} value={filters.contrast} min={-50} max={50}
               onChange={v => setFilter('contrast', v)} />
-            <FilterSlider label="Saturation" value={filters.saturation} min={-100} max={100}
+            <FilterSlider label={t('imageEditor.filters.saturation')} value={filters.saturation} min={-100} max={100}
               onChange={v => setFilter('saturation', v)} />
-            <FilterSlider label="Flou" value={filters.blur} min={0} max={8} unit="px"
+            <FilterSlider label={t('imageEditor.filters.blur')} value={filters.blur} min={0} max={8} unit="px"
               onChange={v => setFilter('blur', v)} />
-            <FilterSlider label="Épaisseur" value={filters.thickness} min={0} max={5}
+            <FilterSlider label={t('imageEditor.filters.thickness')} value={filters.thickness} min={0} max={5}
               onChange={v => setFilter('thickness', v)} />
 
             <div className="filter-group">
-              <div className="filter-group-title">Vignettage</div>
-              <div className="filter-group-help">Assombrit les bords de l’image.</div>
-              <FilterSlider label="Intensité" value={filters.vignette} min={0} max={100} unit="%" signed={false}
+              <div className="filter-group-title">{t('imageEditor.filters.vignetteTitle')}</div>
+              <div className="filter-group-help">{t('imageEditor.filters.vignetteHelp')}</div>
+              <FilterSlider label={t('imageEditor.filters.vignetteIntensity')} value={filters.vignette} min={0} max={100} unit="%" signed={false}
                 onChange={v => setFilter('vignette', v)} />
-              <FilterSlider label="Taille" value={filters.vignetteSize} min={30} max={100} unit="%" signed={false}
+              <FilterSlider label={t('imageEditor.filters.vignetteSize')} value={filters.vignetteSize} min={30} max={100} unit="%" signed={false}
                 onChange={v => setFilter('vignetteSize', v)} />
-              <FilterSlider label="Diffusion" value={filters.vignetteFeather} min={5} max={80} unit="%" signed={false}
+              <FilterSlider label={t('imageEditor.filters.vignetteFeather')} value={filters.vignetteFeather} min={5} max={80} unit="%" signed={false}
                 onChange={v => setFilter('vignetteFeather', v)} />
             </div>
 
@@ -306,37 +311,37 @@ export function ImageEditorModal({
             />
 
             <div className="filter-row filter-toggle">
-              <span className="filter-label">Niveaux de gris</span>
+              <span className="filter-label">{t('imageEditor.filters.grayscale')}</span>
               <input type="checkbox" checked={filters.grayscale}
                 onChange={e => setFilter('grayscale', e.target.checked)} />
             </div>
             <div className="filter-row filter-toggle">
-              <span className="filter-label">Inverser</span>
+              <span className="filter-label">{t('imageEditor.filters.invert')}</span>
               <input type="checkbox" checked={filters.invert}
                 onChange={e => setFilter('invert', e.target.checked)} />
             </div>
 
             <button className="filter-advanced-toggle" onClick={() => setShowAdvanced(v => !v)}>
-              {showAdvanced ? '▲ Avancé' : '▼ Avancé'}
+              {showAdvanced ? '▲' : '▼'} {t('imageEditor.filters.advancedToggle')}
             </button>
 
             {showAdvanced && (
               <>
-                <FilterSlider label="Teinte" value={filters.hue} min={0} max={360} unit="°"
+                <FilterSlider label={t('imageEditor.filters.hue')} value={filters.hue} min={0} max={360} unit="°"
                   onChange={v => setFilter('hue', v)} />
-                <FilterSlider label="Sépia" value={filters.sepia} min={0} max={100} unit="%"
+                <FilterSlider label={t('imageEditor.filters.sepia')} value={filters.sepia} min={0} max={100} unit="%"
                   onChange={v => setFilter('sepia', v)} />
               </>
             )}
 
-            <Button size="sm" className="filter-reset" onClick={resetFilters}>Réinitialiser les filtres</Button>
+            <Button size="sm" className="filter-reset" onClick={resetFilters}>{t('imageEditor.filters.resetButton')}</Button>
           </div>
         </div>
 
         <div className="modal-footer">
-          <Button onClick={onCancel}>Annuler</Button>
+          <Button onClick={onCancel}>{t('imageEditor.crop.cancelButton')}</Button>
           <Button variant="primary" onClick={handleConfirm} disabled={!imgLoaded || saving}>
-            {saving ? 'Enregistrement…' : confirmLabel}
+            {saving ? t('imageEditor.crop.savingButton') : resolvedConfirmLabel}
           </Button>
         </div>
       </div>

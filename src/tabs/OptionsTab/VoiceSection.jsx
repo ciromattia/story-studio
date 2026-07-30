@@ -2,8 +2,10 @@ import { PiperVoiceSettings } from './PiperVoiceSettings';
 import { XttsVoiceSettings } from './XttsVoiceSettings';
 import { usePiperVoiceOptions } from './usePiperVoiceOptions';
 import { useXttsVoiceOptions } from './useXttsVoiceOptions';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function VoiceSection({ className, sectionRef, xttsSettings, onUpdateXttsSettings }) {
+  const { t } = useTranslation();
   const ttsBackend = xttsSettings.backend || 'piper';
   const piperOptions = usePiperVoiceOptions({ xttsSettings, onUpdateXttsSettings });
   const xttsOptions = useXttsVoiceOptions({ xttsSettings, onUpdateXttsSettings });
@@ -15,13 +17,12 @@ export function VoiceSection({ className, sectionRef, xttsSettings, onUpdateXtts
 
   return (
     <section id="xtts" className={className} ref={sectionRef}>
-      <div className="opts-card-title">Génération de voix locale</div>
+      <div className="opts-card-title">{t('options.voice.title')}</div>
       <div className="opts-row">
         <div className="opts-row-info">
-          <div className="opts-row-label">Moteur de voix</div>
+          <div className="opts-row-label">{t('options.voice.engineLabel')}</div>
           <div className="opts-row-sub">
-            <strong>Piper</strong> fonctionne sans configuration (recommandé). <strong>XTTS</strong> est destiné
-            aux utilisateurs avancés (clonage de voix, serveur local).
+            <strong>Piper</strong> {t('options.voice.enginePiperDesc')} <strong>XTTS</strong> {t('options.voice.engineXttsDesc')}
           </div>
         </div>
         <select
@@ -29,8 +30,8 @@ export function VoiceSection({ className, sectionRef, xttsSettings, onUpdateXtts
           value={ttsBackend}
           onChange={(e) => handleTtsBackendChange(e.target.value)}
         >
-          <option value="piper">Piper (défaut)</option>
-          <option value="xtts">XTTS (avancé)</option>
+          <option value="piper">{t('options.voice.enginePiperOption')}</option>
+          <option value="xtts">{t('options.voice.engineXttsOption')}</option>
         </select>
       </div>
 

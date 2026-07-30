@@ -25,8 +25,9 @@ import { MediaDeleteDialog } from './MediaDeleteDialog';
 import { MediaSelectionBar } from './MediaSelectionBar';
 import { MediaToolResultBanner } from './MediaToolResultBanner';
 import { pathKey } from '../../utils/fileUtils';
+import { useTranslation } from '../../i18n/I18nContext';
 import { cleanPath, tagStyle } from './helpers';
-import { COLUMNS, colsToGrid, useColumnWidths } from './useColumnWidths';
+import { COLUMNS, colsToGrid, columnLabel, useColumnWidths } from './useColumnWidths';
 import { useMediaImageEdit } from './useMediaImageEdit';
 import './MediaExplorer.css';
 
@@ -35,15 +36,17 @@ const AudioSplitterModal = lazy(() => import('../AudioSplitterModal/AudioSplitte
 const ImageEditorModal = lazy(() => import('../ImageEditorModal/ImageEditorModal')
   .then((m) => ({ default: m.ImageEditorModal })));
 
+// FILTERS is a module-level constant (not a component), so labels are
+// translated via `t` when rendering the pills, keyed by `mediaExplorer.filters.<id>`.
 const FILTERS = [
-  { id: 'all', label: 'Tout' },
-  { id: 'image', label: 'Images' },
-  { id: 'audio', label: 'Audio' },
-  { id: 'zip', label: 'ZIP' },
-  { id: 'ai', label: 'IA' },
-  { id: 'imported', label: 'Importés' },
-  { id: 'recorded', label: 'Enreg.' },
-  { id: 'unused', label: 'Non utilisés' },
+  { id: 'all', labelKey: 'all' },
+  { id: 'image', labelKey: 'images' },
+  { id: 'audio', labelKey: 'audio' },
+  { id: 'zip', labelKey: 'zip' },
+  { id: 'ai', labelKey: 'ai' },
+  { id: 'imported', labelKey: 'imported' },
+  { id: 'recorded', labelKey: 'recorded' },
+  { id: 'unused', labelKey: 'unused' },
 ];
 
 
@@ -72,6 +75,7 @@ export function MediaExplorer({
   onValidateMediaToolRequest,
   onApplyMediaToolProjectAction,
 }) {
+  const { t } = useTranslation();
   const { showErrorDialog } = useErrorDialog();
   const { activeDropZone, dropOnNode } = useMediaTransfer();
   const [activeFilters, setActiveFilters] = useState(() => new Set());
@@ -425,17 +429,17 @@ export function MediaExplorer({
     if (diskErrors.length > 0 || blockedItems.length > 0) {
       const sections = [];
       if (blockedItems.length > 0) {
-        sections.push(`Médias encore utilisés :\n${blockedItems.map((name) => `• ${name}`).join('\n')}`);
+        sections.push(`${t('mediaExplorer.errors.stillUsedSectionTitle')}\n${blockedItems.map((name) => `• ${name}`).join('\n')}`);
       }
       if (diskErrors.length > 0) {
         const header = diskErrors.length === 1
-          ? 'Suppression disque refusée pour ce fichier :'
-          : `Suppression disque refusée pour ${diskErrors.length} fichiers :`;
+          ? t('mediaExplorer.errors.diskDeleteRefusedOne')
+          : t('mediaExplorer.errors.diskDeleteRefusedOther', { count: diskErrors.length });
         sections.push(`${header}\n${diskErrors.join('\n\n')}`);
       }
       showErrorDialog({
-        title: 'Retrait incomplet',
-        message: `${sections.join('\n\n')}\n\nLes fichiers concernés sont restés intacts dans la médiathèque et sur le disque.`,
+        title: t('mediaExplorer.errors.incompleteRemovalTitle'),
+        message: `${sections.join('\n\n')}\n\n${t('mediaExplorer.errors.filesIntactMessage')}`,
         variant: 'warning',
       });
     }
@@ -559,7 +563,7 @@ export function MediaExplorer({
       inputPaths: metadata.inputPaths ?? [],
       logicalName: metadata.logicalName ?? '',
       failures: [],
-      message: `Audio assemblé créé : ${basename(cleanPath(path))}`,
+      message: t('mediaExplorer.toolResult.audioAssembledMessage', { name: basename(cleanPath(path)) }),
     };
     if (request && metadata.projectAction) {
       const outcome = onApplyMediaToolProjectAction?.({
@@ -573,7 +577,7 @@ export function MediaExplorer({
           ...result,
           request: null,
           projectApplied: true,
-          message: 'Les histoires ont été remplacées par le fichier audio assemblé.',
+          message: t('mediaExplorer.toolResult.storiesReplacedMessage'),
         });
         return;
       }
@@ -581,7 +585,7 @@ export function MediaExplorer({
       setToolResult({
         ...result,
         request: null,
-        unavailableReason: outcome?.reason || 'Le remplacement du projet a été refusé.',
+        unavailableReason: outcome?.reason || t('mediaExplorer.errors.projectReplacementRefused'),
       });
       return;
     }
@@ -611,7 +615,7 @@ export function MediaExplorer({
     const request = splitterRequest;
     const sourcePath = splitterItem?.path;
     const sourceTags = sourcePath ? (mediaTags?.[sourcePath] ?? []) : [];
-    const tagsToCopy = new Set([...sourceTags, 'découpe']);
+    const tagsToCopy = new Set([...sourceTags, t('mediaExplorer.tags.splitTagName')]);
     for (const path of createdPaths) {
       onMediaCreated?.(path);
       if (onAddMediaTag) {
@@ -628,24 +632,30 @@ export function MediaExplorer({
       createdPaths,
       failures,
       message: createdPaths.length === 1
-        ? `Extrait audio créé : ${basename(cleanPath(createdPaths[0]))}`
-        : `${createdPaths.length} extraits audio créés`,
+        ? t('mediaExplorer.toolResult.audioClipCreatedMessage', { name: basename(cleanPath(createdPaths[0])) })
+        : t('mediaExplorer.toolResult.audioClipsCreatedMessageOther', { count: createdPaths.length }),
     });
 
     if (failures.length > 0) {
       const details = failures
-        .map((failure) => `• ${failure.outputFileName || 'Extrait'}\n  ${failure.error || 'Erreur inconnue'}`)
+        .map((failure) => `• ${failure.outputFileName || t('mediaExplorer.errors.unnamedClip')}\n  ${failure.error || t('mediaExplorer.errors.unknownError')}`)
         .join('\n\n');
+      const clipsCreatedText = createdPaths.length === 1
+        ? t('mediaExplorer.errors.clipsCreatedOne', { count: createdPaths.length })
+        : t('mediaExplorer.errors.clipsCreatedOther', { count: createdPaths.length });
+      const clipsFailedText = failures.length === 1
+        ? t('mediaExplorer.errors.clipsFailedOne', { count: failures.length })
+        : t('mediaExplorer.errors.clipsFailedOther', { count: failures.length });
       showErrorDialog({
-        title: 'Certaines découpes ont échoué',
-        message: `${createdPaths.length} extrait${createdPaths.length > 1 ? 's ont été créés' : ' a été créé'}, mais ${failures.length} découpe${failures.length > 1 ? 's ont échoué' : ' a échoué'} :\n\n${details}`,
+        title: t('mediaExplorer.errors.someClipsFailedTitle'),
+        message: `${clipsCreatedText}, ${t('mediaExplorer.errors.clipsResultConnector')} ${clipsFailedText} :\n\n${details}`,
         variant: 'warning',
       });
     }
   }
 
   const assemblyContextValidation = assemblyRequest
-    ? onValidateMediaToolRequest?.(assemblyRequest) ?? { valid: false, reason: 'Le contexte projet n’est plus disponible.' }
+    ? onValidateMediaToolRequest?.(assemblyRequest) ?? { valid: false, reason: t('mediaExplorer.errors.projectContextUnavailable') }
     : { valid: false, reason: '' };
   const liveAssemblyEligibility = assemblyRequest
     ? getAssemblyReplacementEligibility(project, assemblyRequest.entryIds)
@@ -656,7 +666,7 @@ export function MediaExplorer({
     replacementEligibility: liveAssemblyEligibility,
   });
   const automaticAssemblyUnavailableReason = assemblyRequest && !automaticAssemblyProjectAction
-    ? (assemblyContextValidation.reason || liveAssemblyEligibility?.reason || 'Le remplacement du projet n’est pas sûr.')
+    ? (assemblyContextValidation.reason || liveAssemblyEligibility?.reason || t('mediaExplorer.errors.projectReplacementUnsafe'))
     : '';
 
   function finishMediaToolResult() {
@@ -667,12 +677,12 @@ export function MediaExplorer({
   const viewSwitch = (
     <div className="media-view-switch-row">
       <div className="media-view-switch">
-        <Tooltip text="Vue grille"><button className={view === 'grid' ? 'is-active' : ''} type="button" onClick={() => setView('grid')}>⊞</button></Tooltip>
-        <Tooltip text="Vue liste"><button className={view === 'list' ? 'is-active' : ''} type="button" onClick={() => setView('list')}>≡</button></Tooltip>
+        <Tooltip text={t('mediaExplorer.toolbar.gridViewTooltip')}><button className={view === 'grid' ? 'is-active' : ''} type="button" onClick={() => setView('grid')}>⊞</button></Tooltip>
+        <Tooltip text={t('mediaExplorer.toolbar.listViewTooltip')}><button className={view === 'list' ? 'is-active' : ''} type="button" onClick={() => setView('list')}>≡</button></Tooltip>
       </div>
       {view === 'list' && (
         <div className="me-col-picker-wrap" ref={colPickerRef}>
-          <Tooltip text="Colonnes visibles">
+          <Tooltip text={t('mediaExplorer.toolbar.columnsTooltip')}>
           <Button
             className={`me-col-picker-btn${colPickerOpen ? ' is-active' : ''}`}
             onClick={() => setColPickerOpen((v) => !v)}
@@ -689,7 +699,7 @@ export function MediaExplorer({
                     checked={visibleCols.has(col.id)}
                     onChange={() => toggleCol(col.id)}
                   />
-                  <span>{col.label}</span>
+                  <span>{columnLabel(t, col.id)}</span>
                 </label>
               ))}
             </div>
@@ -706,7 +716,7 @@ export function MediaExplorer({
       className={`media-filter${(f.id === 'all' ? activeFilters.size === 0 : activeFilters.has(f.id)) ? ' is-active' : ''}`}
       onClick={() => toggleFilter(f.id)}
     >
-      {f.label}
+      {t(`mediaExplorer.filters.${f.labelKey}`)}
       <span>{counts[f.id] ?? 0}</span>
     </button>
   ));
@@ -735,13 +745,13 @@ export function MediaExplorer({
 
   const actionButtons = (
     <>
-      <Tooltip text="Importer audio, images, ZIP ou 7z">
+      <Tooltip text={t('mediaExplorer.toolbar.importMediaTooltip')}>
         <Button className="media-import-btn" onClick={onImportMedia || onImportStories}>
           <FilePlus className="media-btn-icon" strokeWidth={2} absoluteStrokeWidth />
         </Button>
       </Tooltip>
       {onImportMediaFolder && (
-        <Tooltip text="Importer un dossier (récursif)">
+        <Tooltip text={t('mediaExplorer.toolbar.importFolderTooltip')}>
           <Button className="media-import-btn" onClick={onImportMediaFolder}>
             <FolderPlus className="media-btn-icon" strokeWidth={2} absoluteStrokeWidth />
           </Button>
@@ -763,10 +773,10 @@ export function MediaExplorer({
             className="media-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher…"
+            placeholder={t('mediaExplorer.toolbar.searchPlaceholder')}
           />
           {query ? (
-            <button className="media-search-clear" type="button" onClick={() => setQuery('')} aria-label="Effacer la recherche">×</button>
+            <button className="media-search-clear" type="button" onClick={() => setQuery('')} aria-label={t('mediaExplorer.toolbar.clearSearchAria')}>×</button>
           ) : null}
         </div>
         <div className="me-toolbar-right">{viewSwitch}{actionButtons}</div>
@@ -892,8 +902,8 @@ export function MediaExplorer({
             outputNameSourcePath={imageEdit.editSession.item.path}
             initialTransform={imageEdit.editSession.initialTransform}
             initialFilters={imageEdit.editSession.initialFilters}
-            title="Modifier une image"
-            confirmLabel="Enregistrer comme nouveau média"
+            title={t('mediaExplorer.imageEditor.title')}
+            confirmLabel={t('mediaExplorer.imageEditor.confirmLabel')}
             workspaceDir={imageEdit.editSession.workspaceDir}
             requireManagedOutput
             forceExport
@@ -913,18 +923,18 @@ export function MediaExplorer({
           y={bgCtxMenu.y}
           onClose={() => setBgCtxMenu(null)}
           actions={[
-            { icon: <Download />, label: 'Importer des médias', fn: () => { setBgCtxMenu(null); (onImportMedia || onImportStories)?.(); } },
-            ...(onImportMediaFolder ? [{ icon: <FolderInput />, label: 'Importer un dossier', fn: () => { setBgCtxMenu(null); onImportMediaFolder(); } }] : []),
+            { icon: <Download />, label: t('mediaExplorer.contextMenu.importMedia'), fn: () => { setBgCtxMenu(null); (onImportMedia || onImportStories)?.(); } },
+            ...(onImportMediaFolder ? [{ icon: <FolderInput />, label: t('mediaExplorer.contextMenu.importFolder'), fn: () => { setBgCtxMenu(null); onImportMediaFolder(); } }] : []),
             ...(selectedCount > 0 ? [
               'sep',
               ...(selectedAudioItems.length > 0 ? [
-                { icon: <Copy />, label: `Copier ${selectedAudioItems.length} son${selectedAudioItems.length > 1 ? 's' : ''}`, fn: () => { setBgCtxMenu(null); copySelectedAudio('copy'); } },
-                { icon: <Scissors />, label: `Couper ${selectedAudioItems.length} son${selectedAudioItems.length > 1 ? 's' : ''}`, fn: () => { setBgCtxMenu(null); copySelectedAudio('cut'); } },
+                { icon: <Copy />, label: selectedAudioItems.length === 1 ? t('mediaExplorer.contextMenu.copySoundOne', { count: selectedAudioItems.length }) : t('mediaExplorer.contextMenu.copySoundOther', { count: selectedAudioItems.length }), fn: () => { setBgCtxMenu(null); copySelectedAudio('copy'); } },
+                { icon: <Scissors />, label: selectedAudioItems.length === 1 ? t('mediaExplorer.contextMenu.cutSoundOne', { count: selectedAudioItems.length }) : t('mediaExplorer.contextMenu.cutSoundOther', { count: selectedAudioItems.length }), fn: () => { setBgCtxMenu(null); copySelectedAudio('cut'); } },
               ] : []),
               ...(selectedAudioItems.length >= 2 ? [
-                { icon: <Link2 />, label: `Assembler ${selectedAudioItems.length} sons`, fn: () => { setBgCtxMenu(null); openAudioAssembly(); } },
+                { icon: <Link2 />, label: t('mediaExplorer.contextMenu.assembleSounds', { count: selectedAudioItems.length }), fn: () => { setBgCtxMenu(null); openAudioAssembly(); } },
               ] : []),
-              ...(onDeleteMedia ? [{ icon: <Trash2 />, label: `Retirer ${selectedCount} fichier${selectedCount > 1 ? 's' : ''} de la médiathèque`, fn: () => { setBgCtxMenu(null); handleDeleteRequest(visibleSelectedItems); }, danger: true }] : []),
+              ...(onDeleteMedia ? [{ icon: <Trash2 />, label: selectedCount === 1 ? t('mediaExplorer.contextMenu.removeFilesOne', { count: selectedCount }) : t('mediaExplorer.contextMenu.removeFilesOther', { count: selectedCount }), fn: () => { setBgCtxMenu(null); handleDeleteRequest(visibleSelectedItems); }, danger: true }] : []),
             ] : []),
           ]}
         />
@@ -946,7 +956,7 @@ export function MediaExplorer({
       )}
       {osDropHover && (
         <div className="media-os-drop-overlay">
-          Déposer pour importer dans les médias
+          {t('mediaExplorer.dropOverlay.text')}
         </div>
       )}
     </div>

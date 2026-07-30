@@ -7,6 +7,7 @@ import {
   SlidersHorizontal,
 } from '../icons/LucideLocal';
 import { Tooltip } from '../common/Tooltip';
+import { useTranslation } from '../../i18n/I18nContext';
 import { DEFAULT_SHORTCUT_LABELS } from '../../store/keyboardShortcuts';
 import { ValidationPill } from './ValidationPill';
 import { PackOptionsPopover } from './PackOptionsPopover';
@@ -126,6 +127,7 @@ export function Toolbar({
   onValidationOpenChange,
   onSelectIssue,
 }) {
+  const { t } = useTranslation();
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
   const successToastTimerRef = useRef(null);
@@ -155,8 +157,8 @@ export function Toolbar({
           trigger={({ openPopover }) => (
             <ToolbarButton
               id="project-menu"
-              title="Actions du projet"
-              label="Projet"
+              title={t('layout.toolbar.projectMenu.title')}
+              label={t('layout.toolbar.projectMenu.label')}
               onClick={openPopover}
               active={projectMenuOpen}
               trailing={<span className="chrome-project-caret" aria-hidden="true">▾</span>}
@@ -169,26 +171,26 @@ export function Toolbar({
 
       <div className="chrome-toolbar-center">
         <PanelSortContext items={panelOrder} onMove={onMovePanel}>
-          <div className="chrome-panel-pill" role="group" aria-label="Panneaux visibles et réorganisables">
+          <div className="chrome-panel-pill" role="group" aria-label={t('layout.toolbar.panels.groupAria')}>
             {panelOrder.map((panelId) => {
               const panel = {
                 [WORKSPACE_PANEL_IDS.STRUCTURE]: {
                   id: 'toggle-tree',
-                  title: withShortcut('Afficher/masquer l’arbre', shortcutLabels.toggleTree),
+                  title: withShortcut(t('layout.toolbar.panels.toggleTree'), shortcutLabels.toggleTree),
                   Icon: PanelLeft,
                   active: panels.showTree,
                   onClick: onToggleTree,
                 },
                 [WORKSPACE_PANEL_IDS.SETTINGS]: {
                   id: 'toggle-settings',
-                  title: withShortcut('Afficher/masquer les réglages', shortcutLabels.toggleSettings),
+                  title: withShortcut(t('layout.toolbar.panels.toggleSettings'), shortcutLabels.toggleSettings),
                   Icon: SlidersHorizontal,
                   active: panels.showSettings,
                   onClick: onToggleSettings,
                 },
                 [WORKSPACE_PANEL_IDS.DIAGRAM]: {
                   id: 'toggle-diagram',
-                  title: withShortcut('Afficher/masquer le diagramme', shortcutLabels.toggleDiagram),
+                  title: withShortcut(t('layout.toolbar.panels.toggleDiagram'), shortcutLabels.toggleDiagram),
                   Icon: Network,
                   active: panels.showDiagram,
                   onClick: onToggleDiagram,
@@ -228,8 +230,8 @@ export function Toolbar({
               trigger={(
                 <ToolbarButton
                   id="pack-options"
-                  title={withShortcut('Options', shortcutLabels.storySettings)}
-                  label="Options"
+                  title={withShortcut(t('layout.toolbar.packOptions.title'), shortcutLabels.storySettings)}
+                  label={t('layout.toolbar.packOptions.label')}
                   onClick={() => onPackOptionsOpenChange?.(true)}
                   active={packOptionsOpen}
                   trailing={<span className="chrome-pack-options-caret" aria-hidden="true">▾</span>}
@@ -253,18 +255,18 @@ export function Toolbar({
               {successToast ? (
                 <div className="validation-success-toast" role="status" aria-live="polite">
                   <CircleCheck width={13} height={13} aria-hidden="true" />
-                  <span>Pack prêt à générer</span>
+                  <span>{t('layout.toolbar.successToast')}</span>
                 </div>
               ) : null}
-              <Tooltip text={generateDisabled ? `Passe par « à corriger » avant de générer (${shortcutLabels.generate})` : withShortcut('Générer le pack', shortcutLabels.generate)}>
+              <Tooltip text={generateDisabled ? t('layout.toolbar.generate.blockedTooltip', { shortcut: shortcutLabels.generate }) : withShortcut(t('layout.toolbar.generate.label'), shortcutLabels.generate)}>
                 <button
                   className="chrome-toolbar-cta chrome-generate-main"
                   onClick={onGenerate}
                   disabled={generateDisabled}
-                  aria-label={generateDisabled ? `Passe par « à corriger » avant de générer (${shortcutLabels.generate})` : withShortcut('Générer le pack', shortcutLabels.generate)}
+                  aria-label={generateDisabled ? t('layout.toolbar.generate.blockedTooltip', { shortcut: shortcutLabels.generate }) : withShortcut(t('layout.toolbar.generate.label'), shortcutLabels.generate)}
                 >
                   <ToolbarIcon Icon={Package} />
-                  <span className="chrome-generate-main-label">Générer le pack</span>
+                  <span className="chrome-generate-main-label">{t('layout.toolbar.generate.label')}</span>
                 </button>
               </Tooltip>
             </div>

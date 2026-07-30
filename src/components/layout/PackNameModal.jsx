@@ -8,6 +8,7 @@ import { useLocalFile } from '../../hooks/useLocalFile';
 import { generateConventionName, getExportPackName } from '../../utils/packConvention';
 import { generateUuid } from '../../utils/uuid';
 import { shouldPromptRegenerateImportedUuid } from '../../store/projectHelpers';
+import { useTranslation } from '../../i18n/I18nContext';
 import './PackNameModal.css';
 
 const AGE_CHIPS = ['2', '3', '6', '9', '12'];
@@ -74,8 +75,8 @@ function countStats(project) {
   return { stories, media };
 }
 
-function filenameTokens(exportName) {
-  if (!exportName) return [{ kind: 'empty', text: 'Titre requis pour générer le nom exporté', insert: '' }];
+function filenameTokens(exportName, emptyTitleHint) {
+  if (!exportName) return [{ kind: 'empty', text: emptyTitleHint, insert: '' }];
   const tokens = [];
   let rest = String(exportName || '');
   const ageMatch = rest.match(/^(\d+\+\])/);
@@ -114,6 +115,7 @@ export function PackNameModal({
   onSaveAndGenerate,
   onClose,
 }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState(() => defaultDraft(packMetadata));
   const [saving, setSaving] = useState(null);
   const [collision, setCollision] = useState('unknown');
@@ -136,7 +138,7 @@ export function PackNameModal({
     }
     return generateConventionName(normalizedDraft);
   }, [normalizedDraft]);
-  const tokens = useMemo(() => filenameTokens(exportName), [exportName]);
+  const tokens = useMemo(() => filenameTokens(exportName, t('layout.packNameModal.emptyTitleHint')), [exportName, t]);
   const stats = useMemo(() => countStats(project), [project]);
   const hasExportName = normalizedDraft.namingMode === 'legacy'
     ? !!normalizedDraft.legacyExportName
@@ -197,54 +199,54 @@ export function PackNameModal({
   }
 
   const collisionText = collision === 'collision'
-    ? 'Un ZIP du même nom existe déjà dans le dossier d’export'
+    ? t('layout.packNameModal.preview.collision')
     : collision === 'free'
-      ? 'Nom disponible dans le dossier d’export'
+      ? t('layout.packNameModal.preview.free')
       : exportFolder
-        ? 'Statut du nom en cours de vérification'
-        : "Aucun dossier d'export disponible";
+        ? t('layout.packNameModal.preview.checking')
+        : t('layout.packNameModal.preview.noFolder');
   const generateButtonDisabled = !!saving || !hasExportName || generateDisabled;
   const generateButtonTooltip = saving
-    ? 'Une action est déjà en cours.'
+    ? t('layout.packNameModal.actions.tooltipBusy')
     : !hasExportName
-      ? 'Renseigne le titre du pack avant de générer.'
+      ? t('layout.packNameModal.actions.tooltipNeedTitle')
       : generateDisabled
-        ? 'Passe par « à corriger » avant de pouvoir générer le pack.'
-        : 'Appliquer les métadonnées et générer le pack.';
+        ? t('layout.packNameModal.actions.tooltipBlocked')
+        : t('layout.packNameModal.actions.tooltipReady');
 
   const modalContent = (
     <div className={`pack-meta-modal${embedded ? ' pack-meta-modal--embedded' : ''}`} onClick={(event) => event.stopPropagation()}>
       <header className="pack-meta-header">
         <span className="pack-meta-header-icon"><Package className="chrome-icon" strokeWidth={2} absoluteStrokeWidth /></span>
         <div className="pack-meta-heading">
-          <span className="pack-meta-eyebrow">Métadonnées du pack</span>
-          <h2 title={exportName || undefined}>{exportName || 'Métadonnées du pack'}</h2>
+          <span className="pack-meta-eyebrow">{t('layout.packNameModal.title')}</span>
+          <h2 title={exportName || undefined}>{exportName || t('layout.packNameModal.title')}</h2>
         </div>
-        <Button variant="icon" className="modal-close pack-meta-close" onClick={onClose} aria-label="Fermer">×</Button>
+        <Button variant="icon" className="modal-close pack-meta-close" onClick={onClose} aria-label={t('layout.packNameModal.close')}>×</Button>
       </header>
 
       <div className="pack-meta-body">
         <aside className="pack-meta-cover-panel">
-          <span className="pack-meta-cover-label">Couverture</span>
+          <span className="pack-meta-cover-label">{t('layout.packNameModal.cover.label')}</span>
           <div className="pack-meta-cover">
             {coverUrl ? <img src={coverUrl} alt="" /> : <Image className="pack-meta-cover-empty" strokeWidth={1.7} absoluteStrokeWidth />}
           </div>
           <div className="pack-meta-cover-copy">
-            <span>{coverUrl ? 'Définie dans la bibliothèque' : 'Aucune image racine définie'}</span>
-            <small>non éditable ici</small>
+            <span>{coverUrl ? t('layout.packNameModal.cover.defined') : t('layout.packNameModal.cover.empty')}</span>
+            <small>{t('layout.packNameModal.cover.notEditable')}</small>
           </div>
         </aside>
 
         <section className="pack-meta-form">
           <div className="pack-meta-field-row">
-            <label>Titre du pack</label>
-            <input className="pack-meta-input" value={draft.title || ''} onChange={(event) => updateField('title', event.target.value)} placeholder="Titre de mon pack" />
+            <label>{t('layout.packNameModal.fields.title.label')}</label>
+            <input className="pack-meta-input" value={draft.title || ''} onChange={(event) => updateField('title', event.target.value)} placeholder={t('layout.packNameModal.fields.title.placeholder')} />
           </div>
 
           <div className="pack-meta-field-row">
-            <label>Âge minimum</label>
+            <label>{t('layout.packNameModal.fields.age.label')}</label>
             <div className="pack-meta-age-control">
-              <div className="pack-meta-age-chips" role="group" aria-label="Âges minimum prédéfinis">
+              <div className="pack-meta-age-chips" role="group" aria-label={t('layout.packNameModal.fields.age.groupAria')}>
                 {AGE_CHIPS.map((age) => (
                   <button
                     key={age}
@@ -257,7 +259,7 @@ export function PackNameModal({
                 ))}
               </div>
               <div className={`pack-meta-age-custom ${customAgeValue ? 'is-active' : ''}`}>
-                <span>Autre :</span>
+                <span>{t('layout.packNameModal.fields.age.customLabel')}</span>
                 <div className="pack-meta-age-custom-value">
                   <input
                     className="pack-meta-input pack-meta-age-other"
@@ -265,8 +267,8 @@ export function PackNameModal({
                     onChange={(event) => updateAge(event.target.value)}
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    aria-label="Âge minimum personnalisé"
-                    placeholder="5"
+                    aria-label={t('layout.packNameModal.fields.age.customAria')}
+                    placeholder={t('layout.packNameModal.fields.age.customPlaceholder')}
                   />
                   <span aria-hidden="true">+</span>
                 </div>
@@ -275,37 +277,37 @@ export function PackNameModal({
           </div>
 
           <div className="pack-meta-field-row">
-            <label>Auteur</label>
-            <input className="pack-meta-input" value={draft.author || ''} onChange={(event) => updateField('author', event.target.value)} placeholder="Nom de l’auteur" />
+            <label>{t('layout.packNameModal.fields.author.label')}</label>
+            <input className="pack-meta-input" value={draft.author || ''} onChange={(event) => updateField('author', event.target.value)} placeholder={t('layout.packNameModal.fields.author.placeholder')} />
           </div>
 
           <div className="pack-meta-field-row">
-            <label>Version</label>
+            <label>{t('layout.packNameModal.fields.version.label')}</label>
             <div className="pack-meta-version-grid">
               <input className="pack-meta-input pack-meta-version-input" type="number" min="1" value={draft.version || 1} onChange={(event) => updateField('version', event.target.value)} />
               <div className="pack-meta-inline-field">
-                <span>Producteur</span>
-                <input className="pack-meta-input" value={draft.producer || ''} onChange={(event) => updateField('producer', event.target.value)} placeholder="RTL, France Inter... (facultatif)" />
+                <span>{t('layout.packNameModal.fields.producer.label')}</span>
+                <input className="pack-meta-input" value={draft.producer || ''} onChange={(event) => updateField('producer', event.target.value)} placeholder={t('layout.packNameModal.fields.producer.placeholder')} />
               </div>
             </div>
           </div>
 
           <div className="pack-meta-field-row">
-            <label>Bonus <span>facultatif</span></label>
-            <input className="pack-meta-input" value={draft.bonus || ''} onChange={(event) => updateField('bonus', event.target.value)} placeholder="ex. 8 chapitres" />
+            <label>{t('layout.packNameModal.fields.bonus.label')} <span>{t('layout.packNameModal.fields.bonus.tag')}</span></label>
+            <input className="pack-meta-input" value={draft.bonus || ''} onChange={(event) => updateField('bonus', event.target.value)} placeholder={t('layout.packNameModal.fields.bonus.placeholder')} />
           </div>
 
           <div className="pack-meta-field-row is-textarea">
-            <label>Description <span>changelog</span></label>
-            <textarea className="pack-meta-input pack-meta-textarea" value={draft.description || ''} onChange={(event) => updateField('description', event.target.value)} rows={3} placeholder="Public visé, contenu, changements depuis la version précédente..." />
+            <label>{t('layout.packNameModal.fields.description.label')} <span>{t('layout.packNameModal.fields.description.tag')}</span></label>
+            <textarea className="pack-meta-input pack-meta-textarea" value={draft.description || ''} onChange={(event) => updateField('description', event.target.value)} rows={3} placeholder={t('layout.packNameModal.fields.description.placeholder')} />
           </div>
 
           <div className="pack-meta-field-row">
-            <label>UUID</label>
+            <label>{t('layout.packNameModal.fields.uuid.label')}</label>
             <div className="pack-meta-uuid-control">
-              <input className="pack-meta-input pack-meta-uuid-input" value={draft.uuid || ''} onChange={(event) => updateField('uuid', event.target.value)} placeholder="UUID du pack" />
-              <Tooltip text="Générer un nouvel UUID" wrap>
-                <Button variant="icon" className="pack-meta-uuid-button" onClick={regenerateUuid} aria-label="Générer un nouvel UUID">
+              <input className="pack-meta-input pack-meta-uuid-input" value={draft.uuid || ''} onChange={(event) => updateField('uuid', event.target.value)} placeholder={t('layout.packNameModal.fields.uuid.placeholder')} />
+              <Tooltip text={t('layout.packNameModal.fields.uuid.regenerate')} wrap>
+                <Button variant="icon" className="pack-meta-uuid-button" onClick={regenerateUuid} aria-label={t('layout.packNameModal.fields.uuid.regenerate')}>
                   <RotateCcw className="chrome-icon" strokeWidth={2} absoluteStrokeWidth />
                 </Button>
               </Tooltip>
@@ -314,7 +316,7 @@ export function PackNameModal({
           {showImportedUuidHint ? (
             <div className="pack-meta-field-row">
               <span />
-              <p className="pack-meta-uuid-hint">UUID importé du pack. Tu peux le régénérer si tu le souhaites.</p>
+              <p className="pack-meta-uuid-hint">{t('layout.packNameModal.fields.uuid.importedHint')}</p>
             </div>
           ) : null}
         </section>
@@ -322,7 +324,7 @@ export function PackNameModal({
 
       <div className="pack-meta-preview">
         <div className="pack-meta-preview-head">
-          <span className="pack-meta-preview-label">Nom exporté</span>
+          <span className="pack-meta-preview-label">{t('layout.packNameModal.preview.label')}</span>
           <div className={`pack-meta-status is-${collision}`}>
             {collision === 'collision' ? <TriangleAlert className="chrome-icon" strokeWidth={2} absoluteStrokeWidth /> : <CircleCheck className="chrome-icon" strokeWidth={2} absoluteStrokeWidth />}
             <span>{collisionText}</span>
@@ -337,12 +339,12 @@ export function PackNameModal({
 
       <footer className="pack-meta-footer">
         <div className="pack-meta-summary">
-          <strong>{stats.stories}</strong> histoire{stats.stories > 1 ? 's' : ''}
-          <span>{stats.media} média{stats.media > 1 ? 's' : ''} lié{stats.media > 1 ? 's' : ''}</span>
+          <strong>{stats.stories}</strong> {stats.stories > 1 ? t('layout.packNameModal.footer.storiesMany') : t('layout.packNameModal.footer.storiesOne')}
+          <span>{stats.media} {stats.media > 1 ? t('layout.packNameModal.footer.mediaMany') : t('layout.packNameModal.footer.mediaOne')}</span>
         </div>
         <div className="pack-meta-actions">
-          <Button onClick={onClose} disabled={saving}>Annuler</Button>
-          <Button onClick={() => submit('save')} disabled={saving}>{saving === 'save' ? 'Application...' : 'Appliquer'}</Button>
+          <Button onClick={onClose} disabled={saving}>{t('layout.packNameModal.actions.cancel')}</Button>
+          <Button onClick={() => submit('save')} disabled={saving}>{saving === 'save' ? t('layout.packNameModal.actions.applying') : t('layout.packNameModal.actions.apply')}</Button>
           <Tooltip text={generateButtonTooltip} wrap>
             <Button
               variant="primary"
@@ -350,7 +352,7 @@ export function PackNameModal({
               disabled={generateButtonDisabled}
               aria-label={generateButtonTooltip}
             >
-              {saving === 'generate' ? 'Préparation...' : 'Appliquer & générer'}
+              {saving === 'generate' ? t('layout.packNameModal.actions.preparing') : t('layout.packNameModal.actions.applyAndGenerate')}
             </Button>
           </Tooltip>
         </div>

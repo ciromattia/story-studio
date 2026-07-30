@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from '../icons/LucideLocal';
+import { useTranslation } from '../../i18n/I18nContext';
 
 /**
  * Pied de modale du châssis : bouton « Précédent » (secondaire,
@@ -14,7 +15,7 @@ import { ChevronLeft, ChevronRight } from '../icons/LucideLocal';
  * @param {boolean}  [props.backDisabled=false]
  * @param {string}   [props.stepLabel]
  * @param {Function} props.onPrimary
- * @param {string}   [props.primaryLabel='Continuer']
+ * @param {string}   [props.primaryLabel]  Défaut : traduction de `funnels.footer.continue`.
  * @param {React.ReactNode} [props.primaryIcon]   Icône custom (défaut : chevron »).
  * @param {boolean}  [props.primaryDisabled=false]
  */
@@ -23,10 +24,12 @@ export function FunnelFooter({
   backDisabled = false,
   stepLabel,
   onPrimary,
-  primaryLabel = 'Continuer',
+  primaryLabel,
   primaryIcon,
   primaryDisabled = false,
 }) {
+  const { t } = useTranslation();
+  const resolvedPrimaryLabel = primaryLabel ?? t('funnels.footer.continue');
   return (
     <footer className="funnel-foot">
       <button
@@ -36,7 +39,7 @@ export function FunnelFooter({
         disabled={backDisabled}
       >
         <ChevronLeft strokeWidth={2.2} />
-        Précédent
+        {t('funnels.footer.back')}
       </button>
 
       <span className="funnel-foot-label">{stepLabel}</span>
@@ -47,7 +50,7 @@ export function FunnelFooter({
         onClick={onPrimary}
         disabled={primaryDisabled}
       >
-        <span>{primaryLabel}</span>
+        <span>{resolvedPrimaryLabel}</span>
         {primaryIcon ?? <ChevronRight strokeWidth={2.2} />}
       </button>
     </footer>

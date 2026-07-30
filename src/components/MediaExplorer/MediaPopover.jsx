@@ -4,6 +4,7 @@ import { useLocalFile } from '../../hooks/useLocalFile';
 import { createAudioPlayer, disposeAudioPlayerRef } from '../../utils/audioPlayer';
 import { Button } from '../common/Button';
 import { FilePen, Scissors } from '../icons/LucideLocal';
+import { useTranslation } from '../../i18n/I18nContext';
 import './MediaPopover.css';
 
 function fmt(secs) {
@@ -31,6 +32,7 @@ function tagStyle(name) {
 }
 
 function PopoverAudioPlayer({ path, name }) {
+  const { t } = useTranslation();
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(null);
@@ -76,7 +78,7 @@ function PopoverAudioPlayer({ path, name }) {
 
   return (
     <div className="mp-audio-player">
-      <div className="mp-waveform" onClick={handleWaveClick} title="Cliquer pour chercher">
+      <div className="mp-waveform" onClick={handleWaveClick} title={t('mediaExplorer.popover.waveformSeekTitle')}>
         {heights.map((h, i) => (
           <span
             key={i}
@@ -87,7 +89,7 @@ function PopoverAudioPlayer({ path, name }) {
         <div className="mp-waveform-progress" style={{ width: `${progress * 100}%` }} />
       </div>
       <div className="mp-transport">
-        <button className="mp-play-btn" type="button" onClick={toggle} title={playing ? 'Pause' : 'Lire'}>
+        <button className="mp-play-btn" type="button" onClick={toggle} title={playing ? t('mediaExplorer.popover.pauseTitle') : t('mediaExplorer.popover.playTitle')}>
           {playing ? '⏸' : '▶'}
         </button>
         <span className="mp-timer">{fmt(current)} / {duration != null ? fmt(duration) : '--:--'}</span>
@@ -97,6 +99,7 @@ function PopoverAudioPlayer({ path, name }) {
 }
 
 function TagEditor({ path, itemTags, allProjectTags, onAddMediaTag, onRemoveMediaTag }) {
+  const { t } = useTranslation();
   const [newTag, setNewTag] = useState('');
 
   function handleSubmit(e) {
@@ -115,18 +118,18 @@ function TagEditor({ path, itemTags, allProjectTags, onAddMediaTag, onRemoveMedi
               type="button"
               className="mp-tag-remove"
               onClick={() => onRemoveMediaTag(path, tag)}
-              title={`Retirer le tag "${tag}"`}
+              title={t('mediaExplorer.tags.removeTagTitle', { tag })}
             >×</button>
           </span>
         ))}
-        {allProjectTags.filter((t) => !itemTags.includes(t)).map((tag) => (
+        {allProjectTags.filter((tag) => !itemTags.includes(tag)).map((tag) => (
           <button
             key={tag}
             type="button"
             className="mp-tag-available"
             style={{ borderColor: tagStyle(tag).background, color: tagStyle(tag).background }}
             onClick={() => onAddMediaTag(path, tag)}
-            title={`Ajouter le tag "${tag}"`}
+            title={t('mediaExplorer.tags.addTagTitle', { tag })}
           >
             + {tag}
           </button>
@@ -137,7 +140,7 @@ function TagEditor({ path, itemTags, allProjectTags, onAddMediaTag, onRemoveMedi
           className="mp-tag-input"
           value={newTag}
           onChange={(e) => setNewTag(e.target.value)}
-          placeholder="+ Nouveau tag"
+          placeholder={t('mediaExplorer.tags.newTagPlaceholder')}
           onKeyDown={(e) => e.stopPropagation()}
         />
       </form>
@@ -149,6 +152,7 @@ export function MediaPopover({
   item, anchorRect, getMeta, onSelectNode, onClose,
   itemTags = [], allProjectTags = [], onAddMediaTag, onRemoveMediaTag, onSplit, onEditImage,
 }) {
+  const { t } = useTranslation();
   const popRef = useRef(null);
   const imageUrl = useLocalFile(item.kind === 'image' ? item.path : null);
   const meta = getMeta ? getMeta(item.path) : null;
@@ -200,7 +204,7 @@ export function MediaPopover({
     <div ref={popRef} className="media-popover" style={style} role="dialog" aria-modal="true">
       <div className="mp-header">
         <span className="mp-filename" title={item.path}>{item.name}</span>
-        <button className="mp-close-btn" type="button" onClick={onClose} title="Fermer">×</button>
+        <button className="mp-close-btn" type="button" onClick={onClose} title={t('mediaExplorer.popover.close')}>×</button>
       </div>
 
       {item.kind === 'image' && (
@@ -211,7 +215,7 @@ export function MediaPopover({
               : <div className="mp-image-placeholder" />}
           </div>
           {meta?.width ? (
-            <div className="mp-meta-row">{meta.width} × {meta.height} px</div>
+            <div className="mp-meta-row">{t('mediaExplorer.popover.dimensionsLabel', { width: meta.width, height: meta.height })}</div>
           ) : null}
           {item.exists && onEditImage ? (
             <Button
@@ -222,7 +226,7 @@ export function MediaPopover({
               }}
             >
               <FilePen width={14} height={14} strokeWidth={2} absoluteStrokeWidth />
-              Modifier l’image…
+              {t('mediaExplorer.popover.editImageButton')}
             </Button>
           ) : null}
         </>
@@ -235,9 +239,9 @@ export function MediaPopover({
             <Button
               className="mp-action-btn mp-action-btn--goto"
               onClick={handleGoTo}
-              title={`Ouvrir les réglages de « ${firstUsage.label} »`}
+              title={t('mediaExplorer.popover.openSettingsTitle', { label: firstUsage.label })}
             >
-              Voir l’utilisation dans le projet
+              {t('mediaExplorer.popover.viewUsageButton')}
             </Button>
           ) : null}
           {onSplit ? (
@@ -249,7 +253,7 @@ export function MediaPopover({
               }}
             >
               <Scissors width={14} height={14} strokeWidth={2} absoluteStrokeWidth />
-              Découper un audio
+              {t('mediaExplorer.popover.splitAudioButton')}
             </Button>
           ) : null}
         </>

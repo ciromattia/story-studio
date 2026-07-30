@@ -6,26 +6,25 @@ import {
   formatPackAudioEdgeSilence,
   getPackAudioEdgeSilenceSettings,
 } from '../../config/audioProcessing';
+import { useTranslation } from '../../i18n/I18nContext';
 import './PackOptionsPopover.css';
 
-function silenceModePresentation(leadingSeconds, trailingSeconds) {
+function silenceModePresentation(t, leadingSeconds, trailingSeconds) {
   const leadingLabel = formatPackAudioEdgeSilence(leadingSeconds);
   const trailingLabel = formatPackAudioEdgeSilence(trailingSeconds);
   const durationSummary = leadingSeconds === trailingSeconds
-    ? `${leadingLabel} au début et à la fin`
-    : `${leadingLabel} au début · ${trailingLabel} à la fin`;
+    ? t('layout.packOptionsPopover.silence.durationSame', { leading: leadingLabel })
+    : t('layout.packOptionsPopover.silence.durationDiff', { leading: leadingLabel, trailing: trailingLabel });
 
   return {
     durationSummary,
     options: [
-      ['normalize', 'Ajuster', 'Mesurer et ajuster les silences de début et de fin', `Recommandé : mesure les silences et les ramène à exactement ${leadingLabel} au début et ${trailingLabel} à la fin (coupe si trop long, complète si trop court).`],
-      ['add', 'Ajouter', `Ajouter ${leadingLabel} au début et ${trailingLabel} à la fin`, `Ajoute ${leadingLabel} au début et ${trailingLabel} à la fin sans mesurer l'existant — le silence déjà présent s'additionne.`],
-      ['off', 'Ne rien faire', 'Ne pas modifier les silences de début et de fin', 'Ne touche pas aux silences de début et de fin.'],
+      ['normalize', t('layout.packOptionsPopover.silence.normalize.label'), t('layout.packOptionsPopover.silence.normalize.aria'), t('layout.packOptionsPopover.silence.normalize.help', { leading: leadingLabel, trailing: trailingLabel })],
+      ['add', t('layout.packOptionsPopover.silence.add.label'), t('layout.packOptionsPopover.silence.add.aria', { leading: leadingLabel, trailing: trailingLabel }), t('layout.packOptionsPopover.silence.add.help', { leading: leadingLabel, trailing: trailingLabel })],
+      ['off', t('layout.packOptionsPopover.silence.off.label'), t('layout.packOptionsPopover.silence.off.aria'), t('layout.packOptionsPopover.silence.off.help')],
     ],
   };
 }
-
-const HARMONIZE_LOUDNESS_HELP = "Aligne le volume de toutes les histoires sur un même niveau (-14 LUFS) à la génération (recommandé si tes fichiers audio ne sont pas déjà préparés pour la Lunii). Un son quasi-muet ou impossible à corriger sans saturer bloque la génération. Si désactivé : le volume d'origine de chaque fichier est conservé.";
 
 export function PackOptionsPopover({
   open,
@@ -37,11 +36,13 @@ export function PackOptionsPopover({
   onOpenPreferences,
   preferencesShortcut = '',
 }) {
+  const { t } = useTranslation();
   const wrapRef = useRef(null);
   const closeTimerRef = useRef(null);
   const isSimpleProject = projectType === 'simple';
   const { leading, trailing } = getPackAudioEdgeSilenceSettings();
-  const { durationSummary: silenceDurationSummary, options: silenceOptions } = silenceModePresentation(leading, trailing);
+  const { durationSummary: silenceDurationSummary, options: silenceOptions } = silenceModePresentation(t, leading, trailing);
+  const harmonizeLoudnessHelp = t('layout.packOptionsPopover.harmonize.help');
   // 'normalize' est le défaut appliqué par le schéma quand le mode n'est pas défini.
   const activeSilenceMode = globalOptions.silenceMode ?? 'normalize';
   const activeSilenceHelp = (silenceOptions.find(([mode]) => mode === activeSilenceMode) ?? silenceOptions[0])[3];
@@ -103,29 +104,29 @@ export function PackOptionsPopover({
       {open ? (
         <>
           <div className="pack-options-hover-bridge" aria-hidden="true" />
-          <div className="pack-options-popover" role="dialog" aria-label="Options du pack">
+          <div className="pack-options-popover" role="dialog" aria-label={t('layout.packOptionsPopover.dialogAria')}>
             <div className="pack-options-well">
-              <div className="pack-options-well-title">Traitement audio du pack</div>
-              <Tooltip text={HARMONIZE_LOUDNESS_HELP} wrap className="pack-options-row-tip">
+              <div className="pack-options-well-title">{t('layout.packOptionsPopover.audioTitle')}</div>
+              <Tooltip text={harmonizeLoudnessHelp} wrap className="pack-options-row-tip">
                 <div className="pack-options-control-row">
                   <span className="pack-options-control-copy">
-                    <span className="pack-options-control-title">Harmoniser le volume</span>
+                    <span className="pack-options-control-title">{t('layout.packOptionsPopover.harmonize.label')}</span>
                   </span>
                   <span className="pack-options-control-end">
                     <Toggle
                       on={globalOptions.harmonizeLoudness !== false}
                       onChange={(value) => updateOption('harmonizeLoudness', value)}
-                      ariaLabel="Harmoniser le volume des audios vers -14 LUFS à la génération."
+                      ariaLabel={t('layout.packOptionsPopover.harmonize.toggleAria')}
                     />
                   </span>
                 </div>
               </Tooltip>
               <div className="pack-options-control-row pack-options-control-row--stack">
                 <span className="pack-options-control-copy">
-                  <span className="pack-options-control-title">Silence début / fin</span>
+                  <span className="pack-options-control-title">{t('layout.packOptionsPopover.silence.title')}</span>
                   <span className="pack-options-silence-duration">{silenceDurationSummary}</span>
                 </span>
-                <div className="pack-options-segmented" role="group" aria-label="Mode de silence début et fin">
+                <div className="pack-options-segmented" role="group" aria-label={t('layout.packOptionsPopover.silence.groupAria')}>
                   {silenceOptions.map(([mode, label, ariaLabel, help]) => (
                     <Tooltip key={mode} text={help} wrap>
                       <button
@@ -145,23 +146,23 @@ export function PackOptionsPopover({
 
               <div className="pack-options-well-sep" />
 
-              <div className="pack-options-well-title">Lecture <span>· global</span></div>
+              <div className="pack-options-well-title">{t('layout.packOptionsPopover.playback.title')} <span>{t('layout.packOptionsPopover.playback.scopeTag')}</span></div>
               <Tooltip
-                text="Enchaîne automatiquement les histoires et ignore les messages, scénarios et retours de fin tant que l'option est active."
+                text={t('layout.packOptionsPopover.autoNext.help')}
                 wrap
                 className="pack-options-row-tip"
               >
                 <div className={`pack-options-control-row ${isSimpleProject ? 'is-disabled' : ''}`}>
                   <span className="pack-options-control-copy">
-                    <span className="pack-options-control-title">Auto-next</span>
-                    <span className="pack-options-control-hint">Enchaîne la lecture des nœuds</span>
+                    <span className="pack-options-control-title">{t('layout.packOptionsPopover.autoNext.label')}</span>
+                    <span className="pack-options-control-hint">{t('layout.packOptionsPopover.autoNext.hint')}</span>
                   </span>
                   <span className="pack-options-control-end">
                     <Toggle
                       on={!!globalOptions.autoNext}
                       onChange={(value) => updateOption('autoNext', value)}
                       disabled={isSimpleProject}
-                      ariaLabel="Auto-next. Enchaîne automatiquement les histoires et ignore les fins configurées."
+                      ariaLabel={t('layout.packOptionsPopover.autoNext.toggleAria')}
                     />
                   </span>
                 </div>
@@ -180,8 +181,8 @@ export function PackOptionsPopover({
                     <Wrench strokeWidth={2} absoluteStrokeWidth />
                   </span>
                   <span className="pack-options-gateway-copy">
-                    <span className="pack-options-gateway-title">Préférences de l’application</span>
-                    <span className="pack-options-gateway-subtitle">Thème, dossiers de travail, audio, raccourcis.</span>
+                    <span className="pack-options-gateway-title">{t('layout.packOptionsPopover.preferences.title')}</span>
+                    <span className="pack-options-gateway-subtitle">{t('layout.packOptionsPopover.preferences.subtitle')}</span>
                   </span>
                   <span className="pack-options-gateway-end">
                     {preferencesShortcut ? <span className="pack-options-shortcut">{preferencesShortcut}</span> : null}

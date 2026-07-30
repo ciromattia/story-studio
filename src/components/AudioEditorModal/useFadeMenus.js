@@ -30,6 +30,7 @@ export function useFadeMenus({
   regionRef,
   trimStartRef,
   trimEndRef,
+  t,
 }) {
   const [fadePopover, setFadePopover] = useState(null);
   const [fadeContextMenu, setFadeContextMenu] = useState(null);
@@ -48,7 +49,7 @@ export function useFadeMenus({
 
   const currentFadeValue = (target) => currentFadeValuePure(target, { fadeInSec, fadeOutSec, cutFadeSec });
   const fadeLimit = (target) => fadeLimitPure(target, { outputFadeMax, cutFadeMax });
-  const fadeConfig = (target) => fadeConfigPure(target, { fadeInSec, fadeOutSec, cutFadeSec, outputFadeMax, cutFadeMax });
+  const fadeConfig = (target) => fadeConfigPure(target, { fadeInSec, fadeOutSec, cutFadeSec, outputFadeMax, cutFadeMax }, t);
 
   function fadeTargetFromPointer(e, options = {}) {
     return fadeTargetFromPointerPure(

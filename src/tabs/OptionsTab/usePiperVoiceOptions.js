@@ -4,8 +4,10 @@ import { listen } from '@tauri-apps/api/event';
 import { KEYS, write } from '../../store/persistentSettings';
 import { PIPER_DEFAULT_VOICE } from '../../store/xttsSettings';
 import { isTauriRuntime } from '../../utils/tauriRuntime';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function usePiperVoiceOptions({ xttsSettings, onUpdateXttsSettings }) {
+  const { t } = useTranslation();
   const [piperVoices, setPiperVoices] = useState([]);
   const [piperProvision, setPiperProvision] = useState({ state: 'idle', message: '' });
 
@@ -51,13 +53,13 @@ export function usePiperVoiceOptions({ xttsSettings, onUpdateXttsSettings }) {
   }
 
   async function preparePiperVoice() {
-    setPiperProvision({ state: 'loading', message: 'Préparation de la voix…' });
+    setPiperProvision({ state: 'loading', message: t('options.voice.piper.preparingMessage') });
     try {
       await invoke('piper_ensure_voice', { voice: piperVoice });
       setPiperVoices((prev) => prev.map((voice) => (
         voice.id === piperVoice ? { ...voice, installed: true } : voice
       )));
-      setPiperProvision({ state: 'ok', message: 'Voix prête.' });
+      setPiperProvision({ state: 'ok', message: t('options.voice.piper.readyMessage') });
     } catch (e) {
       setPiperProvision({ state: 'error', message: `${e}` });
     }

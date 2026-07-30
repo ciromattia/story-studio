@@ -7,6 +7,7 @@ import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { RotateCcw } from '../icons/LucideLocal';
 import { Tooltip } from '../common/Tooltip';
 import { basename } from '../../utils/fileUtils';
+import { useTranslation } from '../../i18n/I18nContext';
 import {
   NUDGE_STEP,
   SKIP_STEP,
@@ -30,6 +31,7 @@ import { AudioEditorFadeOverlays } from './AudioEditorFadeOverlays';
 import './AudioEditorModal.css';
 
 export function AudioEditorModal({ filePath, savePath, workspaceDir, onConfirm, onCancel }) {
+  const { t } = useTranslation();
   const containerRef = useRef(null);
   const wsRef = useRef(null);
   const regionRef = useRef(null);
@@ -155,6 +157,7 @@ export function AudioEditorModal({ filePath, savePath, workspaceDir, onConfirm, 
     regionRef,
     trimStartRef,
     trimEndRef,
+    t,
   });
 
   const filename = basename(filePath);
@@ -299,7 +302,7 @@ export function AudioEditorModal({ filePath, savePath, workspaceDir, onConfirm, 
       if (!mounted) return;
       if (wsRef.current === ws) wsRef.current = null;
       setIsLoading(false);
-      setError('Impossible de charger le fichier audio.');
+      setError(t('audioEditor.errors.loadFailed'));
     });
 
     ws.on('play', () => { if (mounted) setIsPlaying(true); });
@@ -490,7 +493,7 @@ export function AudioEditorModal({ filePath, savePath, workspaceDir, onConfirm, 
     <div className="modal-overlay" onClick={isBlockingAction ? undefined : onCancel}>
       <div className="modal-box audio-editor-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <span>Éditer l'audio — {filename}</span>
+          <span>{t('audioEditor.header.title', { filename })}</span>
           <Button variant="icon" className="modal-close" onClick={onCancel} disabled={isBlockingAction}>×</Button>
         </div>
 
@@ -509,7 +512,7 @@ export function AudioEditorModal({ filePath, savePath, workspaceDir, onConfirm, 
           >
             {isLoading && (
               <div className="audio-editor-loading">
-                {audioUrl ? "Analyse de la forme d'onde…" : 'Chargement du fichier…'}
+                {audioUrl ? t('audioEditor.loading.waveform') : t('audioEditor.loading.file')}
               </div>
             )}
             <div ref={containerRef} className="audio-editor-waveform" />
@@ -539,7 +542,7 @@ export function AudioEditorModal({ filePath, savePath, workspaceDir, onConfirm, 
 
           {/* Zoom */}
           <div className="audio-editor-row audio-editor-zoom-row">
-            <span className="audio-editor-label">Zoom</span>
+            <span className="audio-editor-label">{t('audioEditor.zoom.label')}</span>
             <input
               type="range"
               min={ZOOM_MIN}
@@ -551,59 +554,59 @@ export function AudioEditorModal({ filePath, savePath, workspaceDir, onConfirm, 
               disabled={isLoading}
             />
             <span className="audio-editor-zoom-val">×{(zoom / 20).toFixed(1)}</span>
-            <span className="audio-editor-hint">Ctrl+molette / +/- · ← → 50ms · Début/Fin</span>
+            <span className="audio-editor-hint">{t('audioEditor.zoom.hint')}</span>
           </div>
 
           <section className="audio-editor-selection">
             <div className="audio-editor-selection-stats">
-              <span>Entrée <strong>{formatTime(trimStart)}</strong></span>
-              <span>Sortie <strong>{formatTime(trimEnd)}</strong></span>
-              <span>Durée <strong>{formatTime(trimDuration)}</strong></span>
+              <span>{t('audioEditor.selection.in')} <strong>{formatTime(trimStart)}</strong></span>
+              <span>{t('audioEditor.selection.out')} <strong>{formatTime(trimEnd)}</strong></span>
+              <span>{t('audioEditor.selection.duration')} <strong>{formatTime(trimDuration)}</strong></span>
             </div>
             <Button
               className="audio-editor-preview-btn"
               onClick={previewCurrentSelection}
               disabled={!canOperate || applyMode === 'preview'}
             >
-              Prévisualiser l'extrait
+              {t('audioEditor.selection.preview')}
             </Button>
           </section>
 
           {editInfo?.original_available && (
             <div className="audio-editor-restore-row">
-              <Tooltip text="Restaurer le fichier avant édition">
+              <Tooltip text={t('audioEditor.restore.tooltip')}>
                 <Button size="sm" className="audio-editor-restore-btn" onClick={handleRestoreOriginal} disabled={isBlockingAction}>
                   <RotateCcw />
-                  Restaurer l'original
+                  {t('audioEditor.restore.button')}
                 </Button>
               </Tooltip>
             </div>
           )}
 
           {isPreviewPending && (
-            <div className="audio-editor-preview-status">Génération de l'aperçu audio…</div>
+            <div className="audio-editor-preview-status">{t('audioEditor.preview.generating')}</div>
           )}
           {error && <div className="audio-editor-error">{error}</div>}
         </div>
 
         <div className="audio-editor-footer">
-          <Button onClick={onCancel} disabled={isBlockingAction}>Annuler</Button>
+          <Button onClick={onCancel} disabled={isBlockingAction}>{t('audioEditor.footer.cancel')}</Button>
           <Tooltip
             text={isPreviewPending
-              ? "L'aperçu du dernier réglage est en cours"
+              ? t('audioEditor.footer.pendingTooltip')
               : canValidate
-                ? 'Valider les modifications'
-                : 'Aucune modification à valider'}
+                ? t('audioEditor.footer.validate')
+                : t('audioEditor.footer.noChangesTooltip')}
             placement="above"
           >
             <Button variant="primary" onClick={handleApply} disabled={!canValidate}>
               {isPreviewPending
-                ? "Génération de l'aperçu…"
+                ? t('audioEditor.footer.generatingPreview')
                 : applyMode === 'trim' || applyMode === 'cut'
-                ? 'Application…'
+                ? t('audioEditor.footer.applying')
                 : canValidate
-                  ? 'Valider les modifications'
-                  : 'Aucune modification'}
+                  ? t('audioEditor.footer.validate')
+                  : t('audioEditor.footer.noChanges')}
             </Button>
           </Tooltip>
         </div>

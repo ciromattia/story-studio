@@ -1,5 +1,6 @@
 import { Button } from '../common/Button';
 import { formatTime } from './audioEditorConstants';
+import { useTranslation } from '../../i18n/I18nContext';
 
 // Menu contextuel + popover de réglage d'un fondu, positionnés au pointeur.
 export function AudioEditorFadeOverlays({
@@ -11,6 +12,7 @@ export function AudioEditorFadeOverlays({
   onSetFadeValue,
   onPopoverOk,
 }) {
+  const { t } = useTranslation();
   return (
     <>
       {fadeContextMenu && (
@@ -22,12 +24,12 @@ export function AudioEditorFadeOverlays({
         >
           <button className="audio-editor-fade-context-item" onClick={onOpenContextFadePopover}>
             {currentFadeValue(fadeContextMenu.target) > 0
-              ? 'Modifier le fondu'
+              ? t('audioEditor.fade.edit')
               : fadeContextMenu.target === 'in'
-                ? 'Ajouter un fondu en entrée'
+                ? t('audioEditor.fade.addIn')
                 : fadeContextMenu.target === 'out'
-                  ? 'Ajouter un fondu en sortie'
-                  : 'Ajouter un fondu'}
+                  ? t('audioEditor.fade.addOut')
+                  : t('audioEditor.fade.addGeneric')}
           </button>
         </div>
       )}
@@ -55,8 +57,8 @@ export function AudioEditorFadeOverlays({
               <span className="audio-editor-zoom-val">{formatTime(config.value)}</span>
             </div>
             <div className="audio-editor-fade-popover-actions">
-              <Button size="sm" onClick={() => onSetFadeValue(fadePopover.target, 0)}>Retirer</Button>
-              <Button size="sm" variant="primary" onClick={onPopoverOk}>OK</Button>
+              <Button size="sm" onClick={() => onSetFadeValue(fadePopover.target, 0)}>{t('audioEditor.fade.remove')}</Button>
+              <Button size="sm" variant="primary" onClick={onPopoverOk}>{t('audioEditor.fade.ok')}</Button>
             </div>
           </div>
         );

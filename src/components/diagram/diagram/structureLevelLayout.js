@@ -22,6 +22,7 @@ function maxDepth(node) {
 }
 
 export function getStructureLevelLayout(project, metrics, options = {}) {
+  const t = options.t ?? ((key) => key);
   const projection = buildStructureProjection(project, options);
   const horizontalGap = Math.max(18, metrics.colGap * 1.5);
   const rowPitch = metrics.nodeHeight + Math.max(74, metrics.rowGap);
@@ -109,7 +110,7 @@ export function getStructureLevelLayout(project, metrics, options = {}) {
       entry: {
         id: END_NODE_ID,
         type: 'end-node',
-        name: project.endNodeName || 'Message de fin',
+        name: project.endNodeName || t('diagram.presentation.defaultEndNodeName'),
         icon: project.globalOptions?.nightMode ? 'moon' : 'stop',
       },
       x: endNodeX,

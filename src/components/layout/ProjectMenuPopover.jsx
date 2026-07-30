@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { FilePen, FolderOpen, House, Save } from '../icons/LucideLocal';
+import { useTranslation } from '../../i18n/I18nContext';
 import './ProjectMenuPopover.css';
 
 function ToolbarIcon({ Icon, className = 'chrome-icon' }) {
@@ -30,6 +31,7 @@ export function ProjectMenuPopover({
   onSaveProjectAs,
   saveState,
 }) {
+  const { t } = useTranslation();
   const wrapRef = useRef(null);
   const closeTimerRef = useRef(null);
 
@@ -88,20 +90,20 @@ export function ProjectMenuPopover({
           <div className="project-menu-bridge" aria-hidden="true" />
           <div className="project-menu" role="menu">
             <div className="project-menu-head">
-              <strong>Projet</strong>
-              <span>{saveState === 'ok' ? 'Enregistré' : 'Fichier et enregistrement'}</span>
+              <strong>{t('layout.projectMenuPopover.head.title')}</strong>
+              <span>{saveState === 'ok' ? t('layout.projectMenuPopover.head.subtitleSaved') : t('layout.projectMenuPopover.head.subtitleDefault')}</span>
             </div>
             <ProjectMenuItem onClick={() => handleAction(onNewProject)}>
               <ToolbarIcon Icon={House} />
               <span>
-                <strong>Retour à l’accueil</strong>
+                <strong>{t('layout.projectMenuPopover.items.backHome')}</strong>
                 <small>{shortcutLabels.newProject}</small>
               </span>
             </ProjectMenuItem>
             <ProjectMenuItem onClick={() => handleAction(onOpenProject)}>
               <ToolbarIcon Icon={FolderOpen} />
               <span>
-                <strong>Ouvrir un projet</strong>
+                <strong>{t('layout.projectMenuPopover.items.openProject')}</strong>
                 <small>{shortcutLabels.openProject}</small>
               </span>
             </ProjectMenuItem>
@@ -109,14 +111,14 @@ export function ProjectMenuPopover({
             <ProjectMenuItem onClick={() => handleAction(onSaveProject)}>
               <ToolbarIcon Icon={Save} />
               <span>
-                <strong>Enregistrer</strong>
+                <strong>{t('layout.projectMenuPopover.items.saveProject')}</strong>
                 <small>{shortcutLabels.saveProject}</small>
               </span>
             </ProjectMenuItem>
             <ProjectMenuItem onClick={() => handleAction(onSaveProjectAs)}>
               <ToolbarIcon Icon={FilePen} />
               <span>
-                <strong>Enregistrer sous...</strong>
+                <strong>{t('layout.projectMenuPopover.items.saveAs')}</strong>
                 <small>{shortcutLabels.saveAs}</small>
               </span>
             </ProjectMenuItem>

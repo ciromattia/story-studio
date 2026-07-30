@@ -4,6 +4,7 @@ import { RenderQueuePanel } from '../RenderQueuePanel/RenderQueuePanel';
 import { SDQueuePanel } from '../SDQueuePanel/SDQueuePanel';
 import { collectMediaLibrary } from '../../store/mediaLibrary';
 import { KEYS, read, write } from '../../store/persistentSettings';
+import { useTranslation } from '../../i18n/I18nContext';
 import './BottomWorkspacePanel.css';
 
 const DEFAULT_HEIGHT = 270;
@@ -50,6 +51,7 @@ export function BottomWorkspacePanel({
   onValidateMediaToolRequest,
   onApplyMediaToolProjectAction,
 }) {
+  const { t } = useTranslation();
   const [height, setHeight] = useState(loadHeight);
   const dragRef = useRef(null);
 
@@ -103,7 +105,7 @@ export function BottomWorkspacePanel({
           className={tabClassName('media')}
           onClick={() => onActiveTabChange('media')}
         >
-          Médias
+          {t('shell.bottomPanel.mediaTab')}
           <span>{mediaCount}</span>
         </button>
         <button
@@ -111,7 +113,7 @@ export function BottomWorkspacePanel({
           className={tabClassName('queue')}
           onClick={() => onActiveTabChange('queue')}
         >
-          File de rendu
+          {t('shell.bottomPanel.queueTab')}
           {activeCount > 0 && <span>{activeCount}</span>}
         </button>
         <button
@@ -119,11 +121,11 @@ export function BottomWorkspacePanel({
           className={tabClassName('ai')}
           onClick={() => onActiveTabChange('ai')}
         >
-          File IA
+          {t('shell.bottomPanel.aiQueueTab')}
           {aiActiveCount > 0 ? <span>{aiActiveCount}</span> : aiDoneCount > 0 ? <span>✓</span> : null}
         </button>
         <div className="bottom-workspace-spacer" />
-        <button type="button" className="bottom-workspace-close" onClick={onClose} title="Réduire">×</button>
+        <button type="button" className="bottom-workspace-close" onClick={onClose} title={t('shell.bottomPanel.collapseButtonTitle')}>×</button>
       </div>
       <div className="bottom-workspace-body">
         {activeTab === 'media' ? (

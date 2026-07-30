@@ -1,0 +1,66 @@
+export default {
+  header: {
+    title: 'Edit audio — {{filename}}',
+  },
+  loading: {
+    waveform: 'Analyzing waveform…',
+    file: 'Loading file…',
+  },
+  errors: {
+    loadFailed: "Couldn't load the audio file.",
+  },
+  zoom: {
+    label: 'Zoom',
+    hint: 'Ctrl+wheel / +/- · ← → 50ms · Home/End',
+  },
+  selection: {
+    in: 'In',
+    out: 'Out',
+    duration: 'Duration',
+    preview: 'Preview clip',
+  },
+  restore: {
+    tooltip: 'Restore the file to before editing',
+    button: 'Restore original',
+  },
+  preview: {
+    generating: 'Generating audio preview…',
+  },
+  footer: {
+    cancel: 'Cancel',
+    pendingTooltip: 'The latest preview is still being generated',
+    validate: 'Apply changes',
+    noChangesTooltip: 'No changes to apply',
+    generatingPreview: 'Generating preview…',
+    applying: 'Applying…',
+    noChanges: 'No changes',
+  },
+  transport: {
+    fadeInActive: 'Fade in {{time}}',
+    fadeInAdd: 'Add a fade in',
+    fadeOutActive: 'Fade out {{time}}',
+    fadeOutAdd: 'Add a fade out',
+    markIn: 'Mark in point at cursor position (i)',
+    markOut: 'Mark out point at cursor position (o)',
+    pause: 'Pause (Space)',
+    playPause: 'Play / Pause (Space)',
+    stop: 'Stop',
+    skipBack: 'Skip back 5s',
+    skipForward: 'Skip forward 5s',
+    goToIn: 'Go to in point (Shift+I)',
+    goToOut: 'Go to out point (Shift+O)',
+    keepSelection: 'Keep selection (Ctrl+K)',
+    deleteSelection: 'Delete selection (Ctrl+X)',
+  },
+  fade: {
+    edit: 'Edit fade',
+    addIn: 'Add a fade in',
+    addOut: 'Add a fade out',
+    addGeneric: 'Add a fade',
+    remove: 'Remove',
+    ok: 'OK',
+    labelIn: 'Fade in',
+    labelOut: 'Fade out',
+    labelCut: 'Cut fade',
+  },
+};

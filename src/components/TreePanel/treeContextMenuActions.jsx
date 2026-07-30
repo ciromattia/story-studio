@@ -23,6 +23,7 @@ import {
 // Construit les actions du menu contextuel de l'arbre (pendant tree du
 // buildDiagramContextActions du diagramme).
 export function buildTreeContextActions({
+  t,
   nodeId,
   nodeType,
   project,
@@ -65,68 +66,68 @@ export function buildTreeContextActions({
   const actions = [];
 
   if (nodeType === END_NODE_ID) {
-    actions.push({ icon: <IconTrash />, label: 'Supprimer le message de fin', fn: () => onRemoveEndNode?.(), danger: true });
+    actions.push({ icon: <IconTrash />, label: t('tree.contextMenu.deleteEndNode'), fn: () => onRemoveEndNode?.(), danger: true });
     return actions;
   }
 
   if (projectType === 'pack') {
-    actions.push({ icon: <IconFolderPlus />, label: 'Créer un dossier', fn: () => onAddMenu(targetMenuId) });
-    actions.push({ icon: <IconStory />, label: 'Importer audio ou archive', fn: () => onAddStory(targetMenuId) });
+    actions.push({ icon: <IconFolderPlus />, label: t('tree.contextMenu.createFolder'), fn: () => onAddMenu(targetMenuId) });
+    actions.push({ icon: <IconStory />, label: t('tree.contextMenu.importAudioOrArchive'), fn: () => onAddStory(targetMenuId) });
     if (onImportFolder) {
-      actions.push({ icon: <IconImport />, label: 'Importer un dossier', fn: () => onImportFolder(targetMenuId) });
+      actions.push({ icon: <IconImport />, label: t('tree.contextMenu.importFolder'), fn: () => onImportFolder(targetMenuId) });
     }
 
     const hasEndNode = hasVisibleEndNode(project);
     if (isRootCtx && !hasEndNode) {
       actions.push('sep');
-      actions.push({ icon: <IconMoon />, label: 'Ajouter un message de fin', fn: () => onAddEndNode?.() });
+      actions.push({ icon: <IconMoon />, label: t('tree.contextMenu.addEndNode'), fn: () => onAddEndNode?.() });
     }
 
     if (nodeType === 'root' && onDemoteRootToMenu && (project.rootEntries ?? []).length > 0) {
       actions.push('sep');
-      actions.push({ icon: <IconArrowUpLeft />, label: 'Sortir de la racine', fn: onDemoteRootToMenu });
+      actions.push({ icon: <IconArrowUpLeft />, label: t('tree.contextMenu.exitRoot'), fn: onDemoteRootToMenu });
     }
 
     if (nodeType === 'menu' && onSetMenuAsRoot && project.rootEntries?.[0]?.id === nodeId) {
       actions.push('sep');
-      actions.push({ icon: <IconHouse />, label: 'Définir comme racine', fn: () => onSetMenuAsRoot(nodeId) });
+      actions.push({ icon: <IconHouse />, label: t('tree.contextMenu.setAsRoot'), fn: () => onSetMenuAsRoot(nodeId) });
     }
 
     if (nodeType === 'zip') {
       const item = getEntry(nodeId);
       if (item?.zipPath) {
         actions.push('sep');
-        actions.push({ icon: <IconPlay />, label: 'Simuler ce pack…', fn: () => onSimulateZip(item.zipPath) });
-        actions.push({ icon: <IconPen />, label: "Extraire l'histoire", fn: () => onUnpackZip(nodeId) });
+        actions.push({ icon: <IconPlay />, label: t('tree.contextMenu.simulatePack'), fn: () => onSimulateZip(item.zipPath) });
+        actions.push({ icon: <IconPen />, label: t('tree.contextMenu.extractStory'), fn: () => onUnpackZip(nodeId) });
       }
     }
 
     if (onSimulateNode && (nodeType === 'root' || nodeType === 'menu' || nodeType === 'story')) {
       actions.push('sep');
-      actions.push({ icon: <IconPlay />, label: 'Simuler depuis ici', fn: () => onSimulateNode(nodeId) });
+      actions.push({ icon: <IconPlay />, label: t('tree.contextMenu.simulateFromHere'), fn: () => onSimulateNode(nodeId) });
     }
 
     if ((nodeType === 'zip' || nodeType === 'story' || nodeType === 'menu') && parentMenuId != null) {
       actions.push('sep');
-      actions.push({ icon: <IconArrowUpLeft />, label: 'Sortir du dossier', fn: () => onMoveToMenu(nodeId, parentMenuId, null) });
+      actions.push({ icon: <IconArrowUpLeft />, label: t('tree.contextMenu.exitFolder'), fn: () => onMoveToMenu(nodeId, parentMenuId, null) });
     }
 
     if (nodeType === 'menu' || nodeType === 'story' || nodeType === 'zip') {
       actions.push('sep');
-      actions.push({ icon: <IconCopy />, label: 'Dupliquer', fn: () => onDuplicate(nodeId) });
-      actions.push({ icon: <IconClipboardPaste />, label: 'Copier', fn: () => handleCopy(nodeId) });
-      actions.push({ icon: <IconScissors />, label: 'Couper', fn: () => handleCut(nodeId) });
+      actions.push({ icon: <IconCopy />, label: t('tree.contextMenu.duplicate'), fn: () => onDuplicate(nodeId) });
+      actions.push({ icon: <IconClipboardPaste />, label: t('tree.contextMenu.copy'), fn: () => handleCopy(nodeId) });
+      actions.push({ icon: <IconScissors />, label: t('tree.contextMenu.cut'), fn: () => handleCut(nodeId) });
     }
 
     if (clipboardRef.current?.entries?.length) {
-      actions.push({ icon: <IconClipboardPaste />, label: 'Coller ici', fn: () => handlePaste(nodeId) });
+      actions.push({ icon: <IconClipboardPaste />, label: t('tree.contextMenu.pasteHere'), fn: () => handlePaste(nodeId) });
     }
 
     if (nodeType === 'story') {
       const hasAudio = !!getEntry(nodeId)?.audio;
       actions.push({
         icon: <IconImport />,
-        label: hasAudio ? 'Remplacer le fichier audio…' : 'Choisir un fichier audio…',
+        label: hasAudio ? t('tree.contextMenu.replaceAudio') : t('tree.contextMenu.chooseAudio'),
         fn: () => handleReplaceAudio(nodeId, nodeType),
       });
     }
@@ -137,8 +138,8 @@ export function buildTreeContextActions({
       actions.push({
         icon: <IconStory />,
         label: audioClip?.mode === 'cut'
-          ? (audioCount > 1 ? `Déplacer ${audioCount} sons ici` : "Déplacer l'audio ici")
-          : (audioCount > 1 ? `Coller ${audioCount} sons ici` : "Coller l'audio ici"),
+          ? t(audioCount > 1 ? 'tree.contextMenu.moveAudioHereOther' : 'tree.contextMenu.moveAudioHereOne', { count: audioCount })
+          : t(audioCount > 1 ? 'tree.contextMenu.pasteAudioHereOther' : 'tree.contextMenu.pasteAudioHereOne', { count: audioCount }),
         fn: () => handlePasteMedia(nodeId, nodeType, 'audio'),
       });
     }
@@ -146,7 +147,7 @@ export function buildTreeContextActions({
     if ((isRootCtx || nodeType === 'menu' || nodeType === 'story') && imageClipboard.get()) {
       actions.push({
         icon: <IconImport />,
-        label: imageClipboard.getEntry()?.mode === 'cut' ? "Déplacer l'image ici" : "Coller l'image ici",
+        label: imageClipboard.getEntry()?.mode === 'cut' ? t('tree.contextMenu.moveImageHere') : t('tree.contextMenu.pasteImageHere'),
         fn: () => handlePasteMedia(nodeId, nodeType, 'image'),
       });
     }
@@ -160,7 +161,7 @@ export function buildTreeContextActions({
       if (audioContext.stories.length === 1) {
         actions.push({
           icon: <IconScissors />,
-          label: 'Découper l’audio dans Médias…',
+          label: t('tree.contextMenu.splitAudioInMedia'),
           fn: () => {
             closeContextMenu();
             onOpenMediaAudioTool({
@@ -175,8 +176,8 @@ export function buildTreeContextActions({
         actions.push({
           icon: <IconStory />,
           label: replacementEligibility.valid
-            ? 'Assembler et remplacer les histoires…'
-            : `Assembler ${audioContext.stories.length} audios…`,
+            ? t('tree.contextMenu.assembleAndReplaceStories')
+            : t('tree.contextMenu.assembleAudios', { count: audioContext.stories.length }),
           fn: () => {
             closeContextMenu();
             onOpenMediaAudioTool({
@@ -206,7 +207,9 @@ export function buildTreeContextActions({
           : () => onDeleteItem(nodeId);
       actions.push({
         icon: <IconTrash />,
-        label: selectedForDelete.length > 1 ? `Supprimer ${selectedForDelete.length} éléments` : 'Supprimer',
+        label: selectedForDelete.length > 1
+          ? t('tree.contextMenu.deleteMany', { count: selectedForDelete.length })
+          : t('tree.contextMenu.delete'),
         fn: deleteFn,
         danger: true,
       });
@@ -245,8 +248,8 @@ export function buildTreeContextActions({
       };
 
       const headerLabel = isMultiTarget
-        ? `Couleur (${colorTargetIds.length + (includesRoot ? 1 : 0)} éléments)`
-        : 'Couleur';
+        ? t('tree.contextMenu.colorHeaderMany', { count: colorTargetIds.length + (includesRoot ? 1 : 0) })
+        : t('tree.contextMenu.colorHeader');
 
       actions.push('sep');
       actions.push({
@@ -271,7 +274,7 @@ export function buildTreeContextActions({
               <button
                 type="button"
                 className={`ctx-color-clear${currentColor === null ? ' is-active' : ''}`}
-                title={currentColor === '__mixed__' ? 'Couleurs différentes — cliquer pour effacer' : 'Aucune couleur'}
+                title={currentColor === '__mixed__' ? t('tree.contextMenu.colorMixedTooltip') : t('tree.contextMenu.colorNoneTooltip')}
                 onClick={() => {
                   applyColor(null);
                   closeContextMenu();
@@ -290,16 +293,16 @@ export function buildTreeContextActions({
   const entryForReveal = !isRootCtx ? getEntry(nodeId) : null;
   const revealFiles = [];
   if (nodeType === 'story' && entryForReveal) {
-    if (entryForReveal.audio) revealFiles.push({ label: "l'audio", path: entryForReveal.audio });
-    if (entryForReveal.image) revealFiles.push({ label: "l'image", path: entryForReveal.image });
+    if (entryForReveal.audio) revealFiles.push({ label: t('tree.contextMenu.audioFileLabel'), path: entryForReveal.audio });
+    if (entryForReveal.image) revealFiles.push({ label: t('tree.contextMenu.imageFileLabel'), path: entryForReveal.image });
   }
   if (revealFiles.length > 0) {
     actions.push('sep');
     if (revealFiles.length === 1) {
-      actions.push({ icon: <IconFolderOpen />, label: "Afficher dans l'explorateur", fn: () => revealItemInDir(revealFiles[0].path) });
+      actions.push({ icon: <IconFolderOpen />, label: t('tree.contextMenu.revealInExplorer'), fn: () => revealItemInDir(revealFiles[0].path) });
     } else {
       revealFiles.forEach(rf => {
-        actions.push({ icon: <IconFolderOpen />, label: `Afficher ${rf.label} dans l'explorateur`, fn: () => revealItemInDir(rf.path) });
+        actions.push({ icon: <IconFolderOpen />, label: t('tree.contextMenu.revealFileInExplorer', { file: rf.label }), fn: () => revealItemInDir(rf.path) });
       });
     }
   }

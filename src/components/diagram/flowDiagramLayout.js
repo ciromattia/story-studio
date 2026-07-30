@@ -8,7 +8,16 @@ import {
 import { canMoveEntryToContainer } from '../tree/treeOperations.js';
 import { compactNavigationPresentation } from './diagram/navigationPresentation.js';
 
-export const TYPE_LABELS = { root: 'Racine', menu: 'Dossier', story: 'Histoire', zip: 'ZIP', ref: 'Lien', 'end-node': 'Message de fin' };
+export function getTypeLabels(t) {
+  return {
+    root: t('diagram.types.root'),
+    menu: t('diagram.types.menu'),
+    story: t('diagram.types.story'),
+    zip: t('diagram.types.zip'),
+    ref: t('diagram.types.ref'),
+    'end-node': t('diagram.types.endNode'),
+  };
+}
 // Re-exporte depuis la source unique (useZipCover importe MIME d'ici).
 export { MIME } from '../../utils/mimeTypes.js';
 const ZOOM_MIN = 0.08;
@@ -57,7 +66,7 @@ function storyTargetMode(target) {
   return normalized.startsWith('story_play:') ? 'story_play' : 'story';
 }
 
-function collectNavigationTransitions(entries, parentMenu = null, transitions = [], project = null, rootEntries = entries) {
+function collectNavigationTransitions(entries, parentMenu = null, transitions = [], project = null, rootEntries = entries, t = (key) => key) {
   const projectType = project?.projectType ?? null;
   for (const entry of entries ?? []) {
     if (entry.type === 'story') {
@@ -98,11 +107,13 @@ function collectNavigationTransitions(entries, parentMenu = null, transitions = 
             to: effectiveReturnTarget,
             kind: 'after-end',
             source: 'sequence',
-            label: mode === 'story_home_step' ? 'Fin -> retour' : mode === 'story_play' ? 'Fin -> lecture' : mode === 'story' ? 'Fin -> titre' : 'Fin',
+            label: mode === 'story_home_step' ? t('diagram.presentation.endReturnLabel') : mode === 'story_play' ? t('diagram.presentation.endPlayLabel') : mode === 'story' ? t('diagram.presentation.endTitleLabel') : t('diagram.presentation.endLabel'),
             localEnd: {
               kind: 'sequence',
               stepCount: sequence.length,
-              label: `Scénario de fin · ${sequence.length} étape${sequence.length > 1 ? 's' : ''}`,
+              label: sequence.length > 1
+                ? t('diagram.presentation.sequenceSteps', { count: sequence.length })
+                : t('diagram.presentation.sequenceStep', { count: sequence.length }),
             },
           });
         }
@@ -140,7 +151,7 @@ function collectNavigationTransitions(entries, parentMenu = null, transitions = 
             localEnd: {
               kind: 'prompt',
               stepCount: 1,
-              label: 'Message de fin personnalisé',
+              label: t('diagram.presentation.customEndMessage'),
             },
           });
         }
@@ -205,14 +216,14 @@ function collectNavigationTransitions(entries, parentMenu = null, transitions = 
     }
 
     if (entry.type === 'menu') {
-      collectNavigationTransitions(entry.children ?? [], entry, transitions, project, rootEntries);
+      collectNavigationTransitions(entry.children ?? [], entry, transitions, project, rootEntries, t);
     }
   }
 
   return transitions;
 }
 
-export function getCompleteNavigationEdges(project, layout) {
+export function getCompleteNavigationEdges(project, layout, t = (key) => key) {
   const nodeMap = new Map(layout.nodes.map((node) => [node.entry.id, node]));
   const visibleTargetId = (targetId) => (
     nodeMap.has(targetId) ? targetId : (layout.hiddenStoryGroupByStoryId?.get(targetId) ?? targetId)
@@ -220,7 +231,7 @@ export function getCompleteNavigationEdges(project, layout) {
   const nodeVisualHeight = layout.metrics?.nodeVisualHeight ?? layout.metrics?.nodeHeight ?? 0;
   const visualBottom = (node) => node.y + Math.min(node.height, nodeVisualHeight || node.height);
 
-  const regularEdges = collectNavigationTransitions(project.rootEntries ?? [], null, [], project, project.rootEntries ?? [])
+  const regularEdges = collectNavigationTransitions(project.rootEntries ?? [], null, [], project, project.rootEntries ?? [], t)
     .map((edge) => {
       const from = nodeMap.get(edge.from);
       const displayTo = visibleTargetId(edge.to);

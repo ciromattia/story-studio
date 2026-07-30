@@ -1,5 +1,6 @@
 import { lazy, Suspense, useRef, useState, useEffect } from 'react';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
+import { useTranslation } from '../../i18n/I18nContext';
 import { audioClipboard } from '../../store/fieldClipboard';
 import { useMediaTransfer } from '../../store/MediaTransferContext';
 import { pickAudio } from '../../hooks/useFileDialog';
@@ -50,6 +51,7 @@ export function AudioField({
   xttsTarget = null,
   emptyBadge = null,
 }) {
+  const { t } = useTranslation();
   const { notifyCutPaste } = useMediaTransfer();
   const {
     savePath,
@@ -313,29 +315,29 @@ export function AudioField({
                 </div>
                 <span className="audio-empty-text">
                   {file && !fileAvailable
-                    ? 'Fichier audio introuvable — cliquer pour en choisir un autre'
-                    : (label || 'Cliquer pour importer un fichier audio')}
+                    ? t('editorsStory.audioField.fileMissingClickOther')
+                    : (label || t('editorsStory.audioField.clickToImport'))}
                 </span>
-                {!file && required ? <span className="audio-required-badge">Requis</span> : null}
+                {!file && required ? <span className="audio-required-badge">{t('editorsStory.audioField.requiredBadge')}</span> : null}
                 {!file && emptyBadge ? <span className="audio-silent-badge">{emptyBadge}</span> : null}
                 <span className="audio-empty-plus">+</span>
               </div>
-              <div className="audio-bar-actions" aria-label="Actions audio">
-                <Tooltip text="Enregistrer l'audio">
-                  <Button variant="icon" size="sm" onPointerDown={stopButtonEvent} onClick={(e) => { e.stopPropagation(); handleMic(); }} aria-label="Enregistrer l'audio">
+              <div className="audio-bar-actions" aria-label={t('editorsStory.audioField.actionsAria')}>
+                <Tooltip text={t('editorsStory.audioField.recordTooltip')}>
+                  <Button variant="icon" size="sm" onPointerDown={stopButtonEvent} onClick={(e) => { e.stopPropagation(); handleMic(); }} aria-label={t('editorsStory.audioField.recordTooltip')}>
                     <Mic className="mic-btn-icon" strokeWidth={2} absoluteStrokeWidth />
                   </Button>
                 </Tooltip>
                 {ttsAvailable && (
-                  <Tooltip text="Générer une voix depuis un texte">
-                    <Button variant="icon" size="sm" onPointerDown={stopButtonEvent} onClick={(e) => { e.stopPropagation(); handleTts(); }} aria-label="Générer une voix depuis un texte">
+                  <Tooltip text={t('editorsStory.audioField.generateVoiceTooltip')}>
+                    <Button variant="icon" size="sm" onPointerDown={stopButtonEvent} onClick={(e) => { e.stopPropagation(); handleTts(); }} aria-label={t('editorsStory.audioField.generateVoiceTooltip')}>
                       <Speech className="audio-action-icon" strokeWidth={2} absoluteStrokeWidth />
                     </Button>
                   </Tooltip>
                 )}
               </div>
               {file && !fileAvailable && onClear && (
-                <Tooltip text="Retirer le lien cassé">
+                <Tooltip text={t('editorsStory.audioField.removeBrokenLinkTooltip')}>
                   <button
                     className="audio-clear-btn"
                     type="button"
@@ -344,7 +346,7 @@ export function AudioField({
                       e.stopPropagation();
                       onClear();
                     }}
-                    aria-label="Retirer le lien cassé"
+                    aria-label={t('editorsStory.audioField.removeBrokenLinkTooltip')}
                   >×</button>
                 </Tooltip>
               )}
@@ -353,11 +355,11 @@ export function AudioField({
         ) : (
           <div className="audio-empty-row">
           <div className={`audio-bar ${isPlaying ? 'is-playing' : ''}`}>
-            <Tooltip text={isPlaying ? 'Pause' : 'Écouter'}>
+            <Tooltip text={isPlaying ? t('editorsStory.audioField.pauseTooltip') : t('editorsStory.audioField.listenTooltip')}>
               <button
                 className="play-btn"
                 onClick={handlePlay}
-                aria-label={isPlaying ? 'Mettre en pause' : 'Lire'}
+                aria-label={isPlaying ? t('editorsStory.audioField.pauseAria') : t('editorsStory.audioField.playAria')}
               >
                 {isPlaying
                   ? <span className="audio-pause-icon"><span className="audio-pause-bar" /><span className="audio-pause-bar" /></span>
@@ -372,12 +374,12 @@ export function AudioField({
               </Tooltip>
             </div>
 
-            <Tooltip text="Se déplacer dans l'audio" className="audio-wave-tip">
+            <Tooltip text={t('editorsStory.audioField.scrubTooltip')} className="audio-wave-tip">
               <button
                 type="button"
                 className="wave"
                 onPointerDown={handleWaveScrub}
-                aria-label="Se déplacer dans l'audio"
+                aria-label={t('editorsStory.audioField.scrubAria')}
                 style={{ '--audio-progress': `${progressRatio * 100}%` }}
               >
                 {FILLED_WAVE_HEIGHTS.map((h, i) => (
@@ -387,12 +389,12 @@ export function AudioField({
               </button>
             </Tooltip>
 
-            <span className="audio-duration" aria-label="Temps de lecture">
+            <span className="audio-duration" aria-label={t('editorsStory.audioField.playbackTimeAria')}>
               {formatAudioTime(currentTime)} / {formatAudioDuration(duration)}
             </span>
 
             {onClear && (
-              <Tooltip text="Retirer de ce champ">
+              <Tooltip text={t('editorsStory.audioField.removeFromFieldTooltip')}>
                 <button
                   className="audio-clear-btn"
                   onClick={(e) => {
@@ -400,24 +402,24 @@ export function AudioField({
                     stopPlayback(true);
                     onClear();
                   }}
-                  aria-label="Retirer l'audio de ce champ"
+                  aria-label={t('editorsStory.audioField.removeFromFieldAria')}
                 >×</button>
               </Tooltip>
             )}
-            <div className="audio-bar-actions" aria-label="Actions audio">
-              <Tooltip text="Remplacer par un enregistrement">
-                <Button variant="icon" size="sm" onClick={handleMic} aria-label="Remplacer par un enregistrement">
+            <div className="audio-bar-actions" aria-label={t('editorsStory.audioField.actionsAria')}>
+              <Tooltip text={t('editorsStory.audioField.replaceWithRecordingTooltip')}>
+                <Button variant="icon" size="sm" onClick={handleMic} aria-label={t('editorsStory.audioField.replaceWithRecordingTooltip')}>
                   <Mic className="mic-btn-icon" strokeWidth={2} absoluteStrokeWidth />
                 </Button>
               </Tooltip>
               {ttsAvailable && (
-                <Tooltip text="Générer une nouvelle voix depuis un texte">
-                  <Button variant="icon" size="sm" onClick={handleTts} aria-label="Générer une nouvelle voix depuis un texte">
+                <Tooltip text={t('editorsStory.audioField.generateNewVoiceTooltip')}>
+                  <Button variant="icon" size="sm" onClick={handleTts} aria-label={t('editorsStory.audioField.generateNewVoiceTooltip')}>
                     <Speech className="audio-action-icon" strokeWidth={2} absoluteStrokeWidth />
                   </Button>
                 </Tooltip>
               )}
-              <Tooltip text="Éditer l'audio">
+              <Tooltip text={t('editorsStory.audioField.editAudioTooltip')}>
                 <Button
                   variant="icon"
                   size="sm"
@@ -425,7 +427,7 @@ export function AudioField({
                     stopPlayback(true);
                     setShowAudioEditor(true);
                   }}
-                  aria-label="Éditer l'audio"
+                  aria-label={t('editorsStory.audioField.editAudioTooltip')}
                 >
                   <Scissors className="audio-action-icon" strokeWidth={2} absoluteStrokeWidth />
                 </Button>
@@ -442,7 +444,7 @@ export function AudioField({
         <div className="modal-overlay">
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ width: 360 }}>
             <div className="modal-header">
-              <span>Projet non enregistré</span>
+              <span>{t('editorsStory.audioField.unsavedProjectTitle')}</span>
               <Button
                 variant="icon"
                 className="modal-close"
@@ -455,13 +457,13 @@ export function AudioField({
             <div className="audio-notice-body">
               {pendingGeneratedSource === 'tts' ? (
                 <>
-                  L'audio genere sera stocke dans <strong>voix-generees/</strong> a cote du fichier <strong>.mbah</strong>.
-                  Enregistre d'abord le projet pour pouvoir utiliser XTTS.
+                  {t('editorsStory.audioField.ttsNoticePrefix')} <strong>voix-generees/</strong> {t('editorsStory.audioField.ttsNoticeMiddle')} <strong>.mbah</strong>.
+                  {' '}{t('editorsStory.audioField.ttsNoticeSuffix')}
                 </>
               ) : (
                 <>
-                  L'audio sera stocke dans <strong>enregistrements/</strong> a cote du fichier <strong>.mbah</strong>.
-                  Enregistre d'abord le projet pour pouvoir enregistrer.
+                  {t('editorsStory.audioField.recordNoticePrefix')} <strong>enregistrements/</strong> {t('editorsStory.audioField.recordNoticeMiddle')} <strong>.mbah</strong>.
+                  {' '}{t('editorsStory.audioField.recordNoticeSuffix')}
                 </>
               )}
             </div>
@@ -470,10 +472,10 @@ export function AudioField({
                 onClick={() => { setShowNoSaveWarning(false); setPendingGeneratedSource(null); }}
                 disabled={savingGeneratedAudio}
               >
-                Annuler
+                {t('editorsStory.audioField.cancelButton')}
               </Button>
               <Button variant="primary" onClick={handleSaveAndContinue} disabled={savingGeneratedAudio}>
-                {savingGeneratedAudio ? 'Enregistrement…' : 'Enregistrer le projet…'}
+                {savingGeneratedAudio ? t('editorsStory.audioField.savingButton') : t('editorsStory.audioField.saveProjectButton')}
               </Button>
             </div>
           </div>
@@ -544,18 +546,18 @@ export function AudioField({
           onClose={() => setCtxMenu(null)}
           actions={[
             ...(onPick ? [
-              { icon: <FolderInput />, label: file ? "Remplacer l'audio…" : 'Choisir un fichier audio…', fn: handleReplace },
+              { icon: <FolderInput />, label: file ? t('editorsStory.audioField.contextMenu.replaceAudio') : t('editorsStory.audioField.contextMenu.chooseAudio'), fn: handleReplace },
             ] : []),
             ...(file ? [
               ...(onPick ? ['sep'] : []),
-              { icon: <Copy />, label: 'Copier', fn: () => audioClipboard.set(file) },
-              { icon: <Scissors />, label: 'Couper', fn: () => audioClipboard.set(file, { mode: 'cut' }) },
-              { icon: <FolderOpen />, label: 'Afficher dans l\'explorateur', fn: () => revealItemInDir(file) },
+              { icon: <Copy />, label: t('editorsStory.audioField.contextMenu.copy'), fn: () => audioClipboard.set(file) },
+              { icon: <Scissors />, label: t('editorsStory.audioField.contextMenu.cut'), fn: () => audioClipboard.set(file, { mode: 'cut' }) },
+              { icon: <FolderOpen />, label: t('editorsStory.audioField.contextMenu.revealInExplorer'), fn: () => revealItemInDir(file) },
             ] : []),
             ...(audioClipboard.get() && onPick ? [
               {
                 icon: <ClipboardPaste />,
-                label: audioClipboard.getEntry()?.mode === 'cut' ? 'Déplacer ici' : 'Coller',
+                label: audioClipboard.getEntry()?.mode === 'cut' ? t('editorsStory.audioField.contextMenu.moveHere') : t('editorsStory.audioField.contextMenu.paste'),
                 fn: pasteClipboardAudio,
               },
             ] : []),

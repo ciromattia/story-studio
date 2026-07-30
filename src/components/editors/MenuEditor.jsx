@@ -6,30 +6,32 @@ import { Toggle } from '../common/Toggle';
 import { TextImagePromptModal } from '../TextImageGenerator/TextImagePromptModal';
 import { Trash2 } from '../icons/LucideLocal';
 import { formatFrenchCount } from '../../utils/frenchText.js';
+import { useTranslation } from '../../i18n/I18nContext';
 import './EditorPanel.css';
 
 const MENU_BEHAVIOR_CONTROLS = [
   {
     key: 'wheel',
-    label: 'Molette de sélection',
-    desc: "L'enfant peut parcourir les histoires de ce dossier avec la molette.",
+    labelKey: 'behaviorWheelLabel',
+    descKey: 'behaviorWheelDesc',
     def: true,
   },
   {
     key: 'autoplay',
-    label: 'Lecture automatique',
-    desc: "Après l'audio de sélection, enchaîne automatiquement vers le contenu du dossier, sans appui sur OK.",
+    labelKey: 'behaviorAutoplayLabel',
+    descKey: 'behaviorAutoplayDesc',
     def: false,
   },
   {
     key: 'pause',
-    label: 'Bouton Pause',
-    desc: "L'enfant peut mettre en pause l'audio de sélection du dossier.",
+    labelKey: 'behaviorPauseLabel',
+    descKey: 'behaviorPauseDesc',
     def: false,
   },
 ];
 
 export const MenuEditor = memo(function MenuEditor({ node, onUpdate, onDelete }) {
+  const { t } = useTranslation();
   const isImportedContinuation = !!node.importedContinuation;
   const nativeGraph = node.nativeGraph ?? null;
   const nativeGraphStageCount = nativeGraph?.stageCount ?? nativeGraph?.document?.stageNodes?.length ?? 0;
@@ -47,23 +49,23 @@ export const MenuEditor = memo(function MenuEditor({ node, onUpdate, onDelete })
     <>
       <div className="card">
         <div className="card-title-row">
-          <div className="card-title">Dossier</div>
-          <div className="card-copy card-copy--inline">Page de choix où l'enfant sélectionne une histoire à la molette. Configure ici son nom, son visuel et l'audio d'invitation.</div>
+          <div className="card-title">{t('editorsCore.menuEditor.title')}</div>
+          <div className="card-copy card-copy--inline">{t('editorsCore.menuEditor.description')}</div>
         </div>
 
         <div className="field-row field-row--flush">
-          <span className="field-label">Nom</span>
+          <span className="field-label">{t('editorsCore.menuEditor.nameLabel')}</span>
           <input
             className="field-input"
             value={node.name || ''}
             onChange={(e) => onUpdate({ name: e.target.value })}
-            placeholder="Nom du dossier"
+            placeholder={t('editorsCore.menuEditor.namePlaceholder')}
           />
           <span className="menu-count">
             {formatFrenchCount(
               node.children?.length ?? node.items?.length ?? 0,
-              'élément',
-              'éléments',
+              t('editorsCore.menuEditor.itemSingular'),
+              t('editorsCore.menuEditor.itemPlural'),
             )}
           </span>
         </div>
@@ -71,20 +73,30 @@ export const MenuEditor = memo(function MenuEditor({ node, onUpdate, onDelete })
 
         {node.importedContinuation && (
           <div className="sequence-note sequence-note--spaced">
-            Continuation native importée depuis {node.importedContinuation.sourceStoryName || 'une histoire'}
-            {node.importedContinuation.sourceStepName ? ` · étape ${node.importedContinuation.sourceStepName}` : ''}.
+            {t('editorsCore.menuEditor.importedContinuationNote', {
+              sourceName: node.importedContinuation.sourceStoryName
+                || t('editorsCore.menuEditor.importedContinuationDefaultSource'),
+            })}
+            {node.importedContinuation.sourceStepName
+              ? t('editorsCore.menuEditor.importedContinuationStepSuffix', { stepName: node.importedContinuation.sourceStepName })
+              : ''}.
           </div>
         )}
         {nativeGraph ? (
           <div className="sequence-note sequence-note--spaced">
-            Graphe interactif natif attaché à ce pack extrait : {nativeGraphStageCount} stages, {nativeGraphActionCount} actions.
+            {t('editorsCore.menuEditor.nativeGraphNote', {
+              stageCount: nativeGraphStageCount,
+              actionCount: nativeGraphActionCount,
+            })}
           </div>
         ) : null}
         {node.autoBlackImage ? (
           <>
             <AudioField
-              label="Audio de sélection"
-              description={isImportedContinuation ? 'Optionnel pour cette continuation' : "Invite l'enfant à choisir une histoire"}
+              label={t('editorsCore.menuEditor.selectionAudioLabel')}
+              description={isImportedContinuation
+                ? t('editorsCore.menuEditor.selectionAudioDescOptional')
+                : t('editorsCore.menuEditor.selectionAudioDescRequired')}
               file={node.audio}
               required={!isImportedContinuation}
               ttsTextSuggestion={node.name || ''}
@@ -98,8 +110,8 @@ export const MenuEditor = memo(function MenuEditor({ node, onUpdate, onDelete })
           <div className="media-split">
             <div className="media-split-left">
               <div className="media-col-header">
-                Image
-                <span className="media-col-subtitle">Image de menu (320×240)</span>
+                {t('editorsCore.menuEditor.imageColHeader')}
+                <span className="media-col-subtitle">{t('editorsCore.menuEditor.imageColSubtitle')}</span>
               </div>
               <ImageField
                 fieldId={`${node.id}:image`}
@@ -107,10 +119,10 @@ export const MenuEditor = memo(function MenuEditor({ node, onUpdate, onDelete })
                 extraActions={[
                   {
                     key: 'generate-text',
-                    label: 'Générer une image-titre',
+                    label: t('editorsCore.menuEditor.generateTitleImageLabel'),
                     icon: '✦',
                     onClick: handleRegenerate,
-                    title: 'Créer une image-titre à partir du nom du dossier',
+                    title: t('editorsCore.menuEditor.generateTitleImageTitle'),
                   },
                 ]}
                 onPick={(f) => onUpdate({ image: f, autoGenerateImage: false })}
@@ -120,14 +132,18 @@ export const MenuEditor = memo(function MenuEditor({ node, onUpdate, onDelete })
             <div className="media-split-divider" />
             <div className="media-split-right">
               <div className="media-col-header">
-                Son
+                {t('editorsCore.menuEditor.soundColHeader')}
                 <span className="media-col-subtitle">
-                  {isImportedContinuation ? 'Audio de sélection — optionnel pour cette continuation' : "Audio de sélection — invite l'enfant à choisir une histoire"}
+                  {isImportedContinuation
+                    ? t('editorsCore.menuEditor.soundColSubtitleOptional')
+                    : t('editorsCore.menuEditor.soundColSubtitleRequired')}
                 </span>
               </div>
                 <AudioField
-                  label="Audio de sélection"
-                description={isImportedContinuation ? 'Optionnel pour cette continuation' : "Invite l'enfant à choisir une histoire"}
+                  label={t('editorsCore.menuEditor.selectionAudioLabel')}
+                description={isImportedContinuation
+                  ? t('editorsCore.menuEditor.selectionAudioDescOptional')
+                  : t('editorsCore.menuEditor.selectionAudioDescRequired')}
                 file={node.audio}
                 required={!isImportedContinuation}
                 ttsTextSuggestion={node.name || ''}
@@ -144,8 +160,13 @@ export const MenuEditor = memo(function MenuEditor({ node, onUpdate, onDelete })
       {nativeGraph ? (
         <div className="card">
           <div className="card-title-row">
-            <div className="card-title">Graphe interactif importé</div>
-            <div className="card-copy card-copy--inline">{nativeGraphStageCount} stages · {nativeGraphActionCount} actions</div>
+            <div className="card-title">{t('editorsCore.menuEditor.nativeGraphCardTitle')}</div>
+            <div className="card-copy card-copy--inline">
+              {t('editorsCore.menuEditor.nativeGraphCardCopy', {
+                stageCount: nativeGraphStageCount,
+                actionCount: nativeGraphActionCount,
+              })}
+            </div>
           </div>
           <NativeGraphEditor
             graph={nativeGraph}
@@ -156,9 +177,9 @@ export const MenuEditor = memo(function MenuEditor({ node, onUpdate, onDelete })
 
       <div className="card menu-behavior-card">
         <div className="card-title-row">
-          <div className="card-title">Réglages du dossier</div>
+          <div className="card-title">{t('editorsCore.menuEditor.settingsTitle')}</div>
           <div className="card-copy card-copy--inline">
-            Règle ce que l'enfant peut faire sur cet écran de choix.
+            {t('editorsCore.menuEditor.settingsDesc')}
           </div>
         </div>
 
@@ -167,25 +188,25 @@ export const MenuEditor = memo(function MenuEditor({ node, onUpdate, onDelete })
           <Toggle
             on={node.autoBlackImage || false}
             onChange={(v) => onUpdate({ autoBlackImage: v })}
-            ariaLabel="Écran sans image"
+            ariaLabel={t('editorsCore.menuEditor.transparentScreenAria')}
           />
             <div className="menu-behavior-copy">
-              <span className="during-play-control-title">Écran transparent</span>
+              <span className="during-play-control-title">{t('editorsCore.menuEditor.transparentScreenTitle')}</span>
               <span className="menu-behavior-desc">
-                Aucune image ne sera affichée pendant la lecture de l'audio de sélection.
+                {t('editorsCore.menuEditor.transparentScreenDesc')}
               </span>
             </div>
           </label>
-          {MENU_BEHAVIOR_CONTROLS.map(({ key, label, desc, def }) => (
+          {MENU_BEHAVIOR_CONTROLS.map(({ key, labelKey, descKey, def }) => (
             <label key={key} className="sequence-control menu-behavior-control">
               <Toggle
                 on={node.controlSettings?.[key] ?? def}
                 onChange={(v) => onUpdate({ controlSettings: { ...node.controlSettings, [key]: v } })}
-                ariaLabel={label}
+                ariaLabel={t(`editorsCore.menuEditor.${labelKey}`)}
               />
               <div className="menu-behavior-copy">
-                <span className="during-play-control-title">{label}</span>
-                <span className="menu-behavior-desc">{desc}</span>
+                <span className="during-play-control-title">{t(`editorsCore.menuEditor.${labelKey}`)}</span>
+                <span className="menu-behavior-desc">{t(`editorsCore.menuEditor.${descKey}`)}</span>
               </div>
             </label>
           ))}
@@ -198,18 +219,19 @@ export const MenuEditor = memo(function MenuEditor({ node, onUpdate, onDelete })
             className="card-danger-trash"
             type="button"
             onClick={onDelete}
-            aria-label="Supprimer ce dossier"
-            title="Supprimer ce dossier"
+            aria-label={t('editorsCore.menuEditor.deleteAriaLabel')}
+            title={t('editorsCore.menuEditor.deleteTitle')}
           >
             <Trash2 className="card-danger-icon" />
           </button>
-          <span className="card-danger-title">Supprimer ce dossier</span>
+          <span className="card-danger-title">{t('editorsCore.menuEditor.deleteTitle')}</span>
           <p className="card-danger-desc">
             {(() => {
               const count = node.children?.length ?? node.items?.length ?? 0;
-              return count > 0
-                ? `Le dossier et les ${count} élément${count > 1 ? 's' : ''} qu'il contient seront retirés du projet. Leurs médias resteront dans la médiathèque.`
-                : 'Le dossier sera retiré du projet.';
+              if (count === 0) return t('editorsCore.menuEditor.deleteDescEmpty');
+              return t(count > 1
+                ? 'editorsCore.menuEditor.deleteDescCountOther'
+                : 'editorsCore.menuEditor.deleteDescCountOne', { count });
             })()}
           </p>
         </div>

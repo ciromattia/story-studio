@@ -1,12 +1,15 @@
+import { useTranslation } from '../i18n/I18nContext';
+
 export function WorkspaceEmptyState({ onShowTree, onShowSettings, onShowDiagram }) {
+  const { t } = useTranslation();
   return (
     <div className="workspace-empty-state">
-      <p>Aucun panneau affiché</p>
-      <span>Réactive une vue pour reprendre l’édition.</span>
+      <p>{t('workspace.emptyState.title')}</p>
+      <span>{t('workspace.emptyState.subtitle')}</span>
       <div className="workspace-empty-state-actions">
-        <button type="button" onClick={onShowTree}>Arbre</button>
-        <button type="button" onClick={onShowSettings}>Réglages</button>
-        <button type="button" onClick={onShowDiagram}>Diagramme</button>
+        <button type="button" onClick={onShowTree}>{t('workspace.emptyState.showTree')}</button>
+        <button type="button" onClick={onShowSettings}>{t('workspace.emptyState.showSettings')}</button>
+        <button type="button" onClick={onShowDiagram}>{t('workspace.emptyState.showDiagram')}</button>
       </div>
     </div>
   );

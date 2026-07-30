@@ -1,5 +1,6 @@
 import { lazy, Suspense, useMemo, useRef, useEffect, useState } from 'react';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
+import { useTranslation } from '../../i18n/I18nContext';
 import { imageClipboard } from '../../store/fieldClipboard';
 import { useMediaTransfer } from '../../store/MediaTransferContext';
 import { pickImage } from '../../hooks/useFileDialog';
@@ -18,19 +19,20 @@ import { Copy, Scissors, FolderOpen, ClipboardPaste, Sparkles, Image as ImageIco
 import './ImageField.css';
 
 function SdResultThumb({ path, onPick, onRemove }) {
+  const { t } = useTranslation();
   const url = useLocalFile(path);
   return (
     <div className="image-sd-thumb-wrap">
-      <Tooltip text="Utiliser cette image">
+      <Tooltip text={t('editorsStory.imageField.useThisImage')}>
         <button className="image-sd-thumb" onClick={() => onPick(path)}>
           {url ? <img src={url} alt="" /> : <div className="image-sd-thumb-placeholder" />}
         </button>
       </Tooltip>
-      <Tooltip text="Supprimer" className="image-sd-thumb-remove-wrap">
+      <Tooltip text={t('editorsStory.imageField.remove')} className="image-sd-thumb-remove-wrap">
         <button
           className="image-sd-thumb-remove"
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
-          aria-label="Supprimer"
+          aria-label={t('editorsStory.imageField.remove')}
         >×</button>
       </Tooltip>
     </div>
@@ -46,9 +48,11 @@ export function ImageField({
   compact = false,
   align = 'center',
   fieldId = null,
-  formatHint = 'Format recommandé : 320 × 240 px',
+  formatHint = null,
   badge = null,
 }) {
+  const { t } = useTranslation();
+  const effectiveFormatHint = formatHint ?? t('editorsStory.imageField.formatHintDefault');
   const { notifyCutPaste } = useMediaTransfer();
   const {
     pathAudit,
@@ -195,7 +199,7 @@ export function ImageField({
       onContextMenu={handleContextMenu}
     >
       {label && <div className="media-label">{label}</div>}
-      <Tooltip text={displayPath || 'Cliquer pour choisir'} wrap={!!displayPath} className="image-drop-wrap">
+      <Tooltip text={displayPath || t('editorsStory.imageField.clickToChoose')} wrap={!!displayPath} className="image-drop-wrap">
       <div
         ref={dropRef}
         data-drop-kind="image"
@@ -208,10 +212,10 @@ export function ImageField({
             <div className="image-placeholder">
               <span className="image-placeholder-icon"><ImageIcon style={{ width: 24, height: 24 }} /></span>
               <span className="image-placeholder-text image-placeholder-text--strong">
-                {file && !fileAvailable ? 'Image introuvable' : 'Cliquer pour choisir une image'}
+                {file && !fileAvailable ? t('editorsStory.imageField.imageNotFound') : t('editorsStory.imageField.clickToChoose')}
               </span>
               <span className="image-placeholder-text">
-                {file && !fileAvailable ? 'Le fichier lié est inaccessible' : formatHint}
+                {file && !fileAvailable ? t('editorsStory.imageField.fileUnreachable') : effectiveFormatHint}
               </span>
             </div>
           )
@@ -220,19 +224,19 @@ export function ImageField({
         {showFilledState ? (
           <div className="image-overlay">
             <div className="image-overlay-actions">
-              <button className="overlay-btn" onClick={e => { e.stopPropagation(); handlePick(); }}>Remplacer</button>
-              <button className="overlay-btn" onClick={handleEdit}>Éditer</button>
+              <button className="overlay-btn" onClick={e => { e.stopPropagation(); handlePick(); }}>{t('editorsStory.imageField.overlayReplace')}</button>
+              <button className="overlay-btn" onClick={handleEdit}>{t('editorsStory.imageField.overlayEdit')}</button>
               {onClear && (
-                <button className="overlay-btn overlay-btn-danger" onClick={e => { e.stopPropagation(); onClear(); }}>Retirer</button>
+                <button className="overlay-btn overlay-btn-danger" onClick={e => { e.stopPropagation(); onClear(); }}>{t('editorsStory.imageField.overlayRemove')}</button>
               )}
             </div>
           </div>
         ) : (
           <div className="image-overlay">
             {(file && !fileAvailable) && onClear ? (
-              <button className="overlay-btn overlay-btn-danger" onClick={e => { e.stopPropagation(); onClear(); }}>Retirer</button>
+              <button className="overlay-btn overlay-btn-danger" onClick={e => { e.stopPropagation(); onClear(); }}>{t('editorsStory.imageField.overlayRemove')}</button>
             ) : (
-              <span>Choisir</span>
+              <span>{t('editorsStory.imageField.overlayChoose')}</span>
             )}
           </div>
         )}
@@ -246,7 +250,7 @@ export function ImageField({
               className={`image-gen-btn${isGeneratingForField ? ' is-generating' : ''}`}
               onClick={() => onOpenSDGenerate({
                 currentImagePath: fileAvailable ? file : null,
-                currentImageLabel: label || 'image actuelle',
+                currentImageLabel: label || t('editorsStory.imageField.currentImageLabel'),
                 fieldId,
               })}
               disabled={isGeneratingForField}
@@ -254,7 +258,7 @@ export function ImageField({
               <span className="image-gen-btn-icon" aria-hidden="true">
                 {isGeneratingForField ? <span className="image-gen-spinner" /> : <Sparkles style={{ width: 12, height: 12 }} />}
               </span>
-              <span>{isGeneratingForField ? 'Génération…' : 'Générer IA'}</span>
+              <span>{isGeneratingForField ? t('editorsStory.imageField.generatingLabel') : t('editorsStory.imageField.generateAiLabel')}</span>
             </Button>
           )}
           {extraActions.map((action) => (
@@ -303,14 +307,14 @@ export function ImageField({
           onClose={() => setCtxMenu(null)}
           actions={[
             ...(file ? [
-              { icon: <Copy />, label: 'Copier', fn: () => imageClipboard.set(file) },
-              { icon: <Scissors />, label: 'Couper', fn: () => imageClipboard.set(file, { mode: 'cut' }) },
-              { icon: <FolderOpen />, label: 'Afficher dans l\'explorateur', fn: () => revealItemInDir(file) },
+              { icon: <Copy />, label: t('editorsStory.imageField.contextMenu.copy'), fn: () => imageClipboard.set(file) },
+              { icon: <Scissors />, label: t('editorsStory.imageField.contextMenu.cut'), fn: () => imageClipboard.set(file, { mode: 'cut' }) },
+              { icon: <FolderOpen />, label: t('editorsStory.imageField.contextMenu.revealInExplorer'), fn: () => revealItemInDir(file) },
             ] : []),
             ...(imageClipboard.get() && onPick ? [
               {
                 icon: <ClipboardPaste />,
-                label: imageClipboard.getEntry()?.mode === 'cut' ? 'Déplacer ici' : 'Coller',
+                label: imageClipboard.getEntry()?.mode === 'cut' ? t('editorsStory.imageField.contextMenu.moveHere') : t('editorsStory.imageField.contextMenu.paste'),
                 fn: pasteClipboardImage,
               },
             ] : []),

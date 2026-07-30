@@ -3,6 +3,7 @@
 
 import { Search } from '../icons/LucideLocal';
 import { NodeColorFilterChips } from '../tree/NodeColorFilterChips.jsx';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function TreeSearchBar({
   searchTerm,
@@ -14,6 +15,7 @@ export function TreeSearchBar({
   onToggleColor,
   onClearSearch,
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className="tree-search-controls"
@@ -39,7 +41,7 @@ export function TreeSearchBar({
           ref={inputRef}
           className="tree-search-input"
           type="text"
-          placeholder="Rechercher…"
+          placeholder={t('tree.searchBar.placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={(e) => {

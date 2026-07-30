@@ -17,6 +17,7 @@ function setNodeColor({ nodeId, nodeType, color, onUpdateMedia, onUpdateMenu, on
 }
 
 export function buildDiagramContextActions({
+  t,
   project,
   projectIndex,
   selectedIds,
@@ -48,7 +49,7 @@ export function buildDiagramContextActions({
   closeContextMenu,
 }) {
   if (nodeId === END_NODE_ID) {
-    return [{ icon: <Trash2 />, label: 'Supprimer le message de fin', fn: () => onRemoveEndNode?.(), danger: true }];
+    return [{ icon: <Trash2 />, label: t('diagram.contextMenu.deleteEndMessage'), fn: () => onRemoveEndNode?.(), danger: true }];
   }
 
   const entry = findEntryById(project, nodeId, projectIndex);
@@ -57,41 +58,41 @@ export function buildDiagramContextActions({
     : (findParentMenuId(project, nodeId, projectIndex) ?? null);
   const actions = [];
 
-  actions.push({ icon: <FolderPlus />, label: 'Ajouter un dossier', fn: () => onAddMenu?.(menuId) });
-  actions.push({ icon: <Music />, label: 'Importer audio ou archive', fn: () => onAddStory?.(menuId) });
+  actions.push({ icon: <FolderPlus />, label: t('diagram.contextMenu.addFolder'), fn: () => onAddMenu?.(menuId) });
+  actions.push({ icon: <Music />, label: t('diagram.contextMenu.importAudioOrArchive'), fn: () => onAddStory?.(menuId) });
 
   const hasEndNode = !!(project.nightModeAudio || project.globalOptions?.nightMode || project.globalOptions?.endNode);
   if (nodeType === 'root' && !hasEndNode) {
     actions.push('sep');
-    actions.push({ icon: <Moon />, label: 'Ajouter un message de fin', fn: () => onAddEndNode?.() });
+    actions.push({ icon: <Moon />, label: t('diagram.contextMenu.addEndMessage'), fn: () => onAddEndNode?.() });
   }
 
   if (nodeType === 'menu' && onSetMenuAsRoot && project.rootEntries?.[0]?.id === nodeId) {
     actions.push('sep');
-    actions.push({ icon: <House />, label: 'Définir comme racine', fn: () => onSetMenuAsRoot(nodeId) });
+    actions.push({ icon: <House />, label: t('diagram.contextMenu.setAsRoot'), fn: () => onSetMenuAsRoot(nodeId) });
   }
 
   if (nodeType === 'zip' && entry?.zipPath) {
     actions.push('sep');
-    actions.push({ icon: <Play />, label: 'Simuler ce pack…', fn: () => onSimulateZip?.(entry.zipPath) });
-    actions.push({ icon: <FilePen />, label: "Extraire l'histoire", fn: () => onUnpackZip?.(nodeId) });
+    actions.push({ icon: <Play />, label: t('diagram.contextMenu.simulatePack'), fn: () => onSimulateZip?.(entry.zipPath) });
+    actions.push({ icon: <FilePen />, label: t('diagram.contextMenu.extractStory'), fn: () => onUnpackZip?.(nodeId) });
   }
 
   if ((nodeType === 'zip' || nodeType === 'story' || nodeType === 'menu') && menuId != null) {
     actions.push('sep');
-    actions.push({ icon: '↖', label: 'Sortir du dossier', fn: () => onMoveToMenu?.(nodeId, menuId, null) });
+    actions.push({ icon: '↖', label: t('diagram.contextMenu.moveOutOfFolder'), fn: () => onMoveToMenu?.(nodeId, menuId, null) });
   }
 
   if (nodeType === 'menu' || nodeType === 'story' || nodeType === 'zip') {
     actions.push('sep');
-    actions.push({ icon: '⧉', label: 'Dupliquer', fn: () => onDuplicate?.(nodeId) });
-    actions.push({ icon: <Copy />, label: 'Copier', fn: () => handleCopy(nodeId) });
-    actions.push({ icon: <Scissors />, label: 'Couper', fn: () => handleCut(nodeId) });
+    actions.push({ icon: '⧉', label: t('diagram.contextMenu.duplicate'), fn: () => onDuplicate?.(nodeId) });
+    actions.push({ icon: <Copy />, label: t('diagram.contextMenu.copy'), fn: () => handleCopy(nodeId) });
+    actions.push({ icon: <Scissors />, label: t('diagram.contextMenu.cut'), fn: () => handleCut(nodeId) });
   }
 
   if (clipboardRef.current?.entries?.length) {
     if (!actions.some((action) => action === 'sep')) actions.push('sep');
-    actions.push({ icon: <ClipboardPaste />, label: 'Coller ici', fn: () => handlePaste(nodeId) });
+    actions.push({ icon: <ClipboardPaste />, label: t('diagram.contextMenu.pasteHere'), fn: () => handlePaste(nodeId) });
   }
 
   if ((nodeType === 'root' || nodeType === 'menu' || nodeType === 'story') && audioClipboard.get()) {
@@ -101,8 +102,8 @@ export function buildDiagramContextActions({
     actions.push({
       icon: <Music />,
       label: audioClip?.mode === 'cut'
-        ? (audioCount > 1 ? `Déplacer ${audioCount} sons ici` : "Déplacer l'audio ici")
-        : (audioCount > 1 ? `Coller ${audioCount} sons ici` : "Coller l'audio ici"),
+        ? (audioCount > 1 ? t('diagram.contextMenu.moveAudioHereMany', { count: audioCount }) : t('diagram.contextMenu.moveAudioHereOne'))
+        : (audioCount > 1 ? t('diagram.contextMenu.pasteAudioHereMany', { count: audioCount }) : t('diagram.contextMenu.pasteAudioHereOne')),
       fn: () => handlePasteMedia(nodeId, nodeType, 'audio'),
     });
   }
@@ -111,7 +112,7 @@ export function buildDiagramContextActions({
     if (!actions.some((action) => action === 'sep')) actions.push('sep');
     actions.push({
       icon: <ImageIcon />,
-      label: imageClipboard.getEntry()?.mode === 'cut' ? "Déplacer l'image ici" : "Coller l'image ici",
+      label: imageClipboard.getEntry()?.mode === 'cut' ? t('diagram.contextMenu.moveImageHere') : t('diagram.contextMenu.pasteImageHere'),
       fn: () => handlePasteMedia(nodeId, nodeType, 'image'),
     });
   }
@@ -125,7 +126,7 @@ export function buildDiagramContextActions({
     if (audioContext.stories.length === 1) {
       actions.push({
         icon: <Scissors />,
-        label: 'Découper l’audio dans Médias…',
+        label: t('diagram.contextMenu.splitAudioInMedia'),
         fn: () => {
           closeContextMenu();
           onOpenMediaAudioTool({
@@ -140,8 +141,8 @@ export function buildDiagramContextActions({
       actions.push({
         icon: <Music />,
         label: replacementEligibility.valid
-          ? 'Assembler et remplacer les histoires…'
-          : `Assembler ${audioContext.stories.length} audios…`,
+          ? t('diagram.contextMenu.assembleAndReplace')
+          : t('diagram.contextMenu.assembleAudios', { count: audioContext.stories.length }),
         fn: () => {
           closeContextMenu();
           onOpenMediaAudioTool({
@@ -167,7 +168,7 @@ export function buildDiagramContextActions({
         : () => onDeleteItem?.(nodeId);
     actions.push({
       icon: <Trash2 />,
-      label: selectedForDelete.length > 1 ? `Supprimer ${selectedForDelete.length} éléments` : 'Supprimer',
+      label: selectedForDelete.length > 1 ? t('diagram.contextMenu.deleteMany', { count: selectedForDelete.length }) : t('diagram.contextMenu.delete'),
       fn: deleteFn,
       danger: true,
     });
@@ -204,8 +205,8 @@ export function buildDiagramContextActions({
     };
 
     const headerLabel = isMultiTarget
-      ? `Couleur (${colorTargetIds.length + (includesRoot ? 1 : 0)} éléments)`
-      : 'Couleur';
+      ? t('diagram.contextMenu.colorHeaderMany', { count: colorTargetIds.length + (includesRoot ? 1 : 0) })
+      : t('diagram.contextMenu.colorHeader');
 
     actions.push('sep');
     actions.push({
@@ -230,7 +231,7 @@ export function buildDiagramContextActions({
             <button
               type="button"
               className={`ctx-color-clear${currentColor === null ? ' is-active' : ''}`}
-              title={currentColor === '__mixed__' ? 'Couleurs différentes — cliquer pour effacer' : 'Aucune couleur'}
+              title={currentColor === '__mixed__' ? t('diagram.contextMenu.colorMixedTitle') : t('diagram.contextMenu.colorNoneTitle')}
               onClick={() => {
                 applyColor(null);
                 closeContextMenu();

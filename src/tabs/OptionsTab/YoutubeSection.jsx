@@ -4,8 +4,10 @@ import { listen } from '@tauri-apps/api/event';
 import { Button } from '../../components/common/Button';
 import { KEYS, read as readSetting, write } from '../../store/persistentSettings';
 import { isTauriRuntime } from '../../utils/tauriRuntime';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function YoutubeSection({ className, sectionRef }) {
+  const { t } = useTranslation();
   const [ytDlpPath, setYtDlpPath] = useState(() => readSetting(KEYS.YTDLP_CUSTOM_PATH, { defaultValue: '' }));
   const [ytDlpUpdate, setYtDlpUpdate] = useState({ state: 'idle', message: '' });
 
@@ -30,10 +32,10 @@ export function YoutubeSection({ className, sectionRef }) {
   }
 
   async function handleUpdateYtDlp() {
-    setYtDlpUpdate({ state: 'loading', message: 'Mise à jour de yt-dlp…' });
+    setYtDlpUpdate({ state: 'loading', message: t('options.youtube.updatingMessage') });
     try {
       await invoke('update_ytdlp');
-      setYtDlpUpdate({ state: 'ok', message: 'yt-dlp est à jour.' });
+      setYtDlpUpdate({ state: 'ok', message: t('options.youtube.updatedMessage') });
     } catch (e) {
       setYtDlpUpdate({ state: 'error', message: `${e}` });
     }
@@ -41,21 +43,19 @@ export function YoutubeSection({ className, sectionRef }) {
 
   return (
     <section id="youtube" className={className} ref={sectionRef}>
-      <div className="opts-card-title">YouTube (yt-dlp)</div>
+      <div className="opts-card-title">{t('options.youtube.title')}</div>
       <div className="opts-help">
-        Le funnel « Pack depuis YouTube » télécharge automatiquement yt-dlp au premier usage et le
-        garde à jour. YouTube bloquant les versions périmées, ces réglages ne servent qu'en cas de souci.
+        {t('options.youtube.intro')}
       </div>
       <div className="opts-row">
         <div className="opts-row-info">
-          <div className="opts-row-label">Mettre à jour yt-dlp maintenant</div>
+          <div className="opts-row-label">{t('options.youtube.updateLabel')}</div>
           <div className="opts-row-sub">
-            Force le téléchargement de la dernière version. Utile si un import échoue avec un message
-            de version obsolète.
+            {t('options.youtube.updateSub')}
           </div>
         </div>
         <Button onClick={handleUpdateYtDlp} disabled={ytDlpUpdate.state === 'loading'} style={{ flexShrink: 0 }}>
-          {ytDlpUpdate.state === 'loading' ? 'Mise à jour…' : 'Mettre à jour'}
+          {ytDlpUpdate.state === 'loading' ? t('options.youtube.updatingButton') : t('options.youtube.updateButton')}
         </Button>
       </div>
       {ytDlpUpdate.state !== 'idle' && (
@@ -65,18 +65,17 @@ export function YoutubeSection({ className, sectionRef }) {
       )}
       <div className="opts-row">
         <div className="opts-row-info">
-          <div className="opts-row-label">Chemin yt-dlp personnalisé</div>
+          <div className="opts-row-label">{t('options.youtube.customPathLabel')}</div>
           <div className="opts-row-sub">
-            Laisse vide pour utiliser la version gérée automatiquement. Renseigne le chemin complet
-            d'un exécutable <code>yt-dlp.exe</code> sous Windows ou <code>yt-dlp</code> sous
-            Linux/macOS pour l'utiliser à la place (le téléchargement auto est alors ignoré).
+            {t('options.youtube.customPathSubPart1')} <code>yt-dlp.exe</code> {t('options.youtube.customPathSubPart2')} <code>yt-dlp</code>{' '}
+            {t('options.youtube.customPathSubPart3')}
           </div>
         </div>
         <input
           className="xtts-input"
           type="text"
           spellCheck={false}
-          placeholder="Chemin complet vers yt-dlp"
+          placeholder={t('options.youtube.customPathPlaceholder')}
           value={ytDlpPath}
           onChange={(event) => handleYtDlpPathChange(event.target.value)}
           style={{ flex: 1, minWidth: 0 }}

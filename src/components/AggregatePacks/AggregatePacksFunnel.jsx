@@ -42,6 +42,7 @@ import { basename, basenameNoExt } from '../../utils/fileUtils';
 import { logger } from '../../utils/logger';
 import { useLocalFile } from '../../hooks/useLocalFile';
 import { createAudioPlayer, disposeAudioPlayerRef } from '../../utils/audioPlayer';
+import { useTranslation } from '../../i18n/I18nContext';
 import './AggregatePacksFunnel.css';
 
 const AudioEditorModal = lazy(() => import('../AudioEditorModal/AudioEditorModal')
@@ -57,18 +58,20 @@ const GenerateVoiceModal = lazy(() => import('../GenerateVoiceModal/GenerateVoic
 const PackNameModal = lazy(() => import('../layout/PackNameModal')
   .then((module) => ({ default: module.PackNameModal })));
 
-const STEPS = [
-  { key: 'packs', label: 'Packs' },
-  { key: 'audio', label: 'Audio' },
-  { key: 'image', label: 'Image' },
-  { key: 'metadata', label: 'Métadonnées' },
-];
+function buildSteps(t) {
+  return [
+    { key: 'packs', label: t('importFunnels.aggregate.stepPacks') },
+    { key: 'audio', label: t('importFunnels.aggregate.stepAudio') },
+    { key: 'image', label: t('importFunnels.aggregate.stepImage') },
+    { key: 'metadata', label: t('importFunnels.aggregate.stepMetadata') },
+  ];
+}
 
-function formatBytes(bytes) {
+function formatBytes(bytes, t) {
   if (!bytes || bytes <= 0) return '';
   const mb = bytes / (1024 * 1024);
-  if (mb >= 1) return `${mb.toFixed(mb >= 10 ? 0 : 1)} Mo`;
-  return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+  if (mb >= 1) return `${mb.toFixed(mb >= 10 ? 0 : 1)} ${t('importFunnels.aggregate.unitMb')}`;
+  return `${Math.max(1, Math.round(bytes / 1024))} ${t('importFunnels.aggregate.unitKb')}`;
 }
 
 function getSquareOne(data) {
@@ -80,7 +83,7 @@ function getPackStoryCount(data) {
   return Math.max(0, stages.filter((stage) => !stage?.squareOne).length);
 }
 
-function defaultMetadataForPacks(packs) {
+function defaultMetadataForPacks(packs, t) {
   const parsed = packs
     .map((pack) => parseConventionName(pack.name || pack.fileName))
     .filter(Boolean);
@@ -89,17 +92,17 @@ function defaultMetadataForPacks(packs) {
     .filter((age) => Number.isFinite(age) && age > 0);
   return {
     ...DEFAULT_PACK_METADATA,
-    title: 'Mes histoires du soir',
+    title: t('importFunnels.aggregate.defaultTitle'),
     minAge: ages.length ? String(Math.min(...ages)) : '3',
     version: 1,
   };
 }
 
-function buildAggregateProject({ packs, rootAudio, rootImage, metadata }) {
+function buildAggregateProject({ packs, rootAudio, rootImage, metadata, t }) {
   return normalizeProjectData({
     version: 1,
-    projectName: metadata.title || 'Pack agrégé',
-    rootName: metadata.title || 'Menu racine',
+    projectName: metadata.title || t('importFunnels.aggregate.defaultProjectName'),
+    rootName: metadata.title || t('importFunnels.aggregate.defaultRootName'),
     packMetadata: metadata,
     projectType: 'pack',
     rootAudio,
@@ -127,13 +130,14 @@ function buildAggregateProject({ packs, rootAudio, rootImage, metadata }) {
 }
 
 export function AggregatePacksFunnel({ onClose }) {
+  const { t } = useTranslation();
   const { xttsSettings, onUpdateXttsSettings } = useProjectContext();
   const [step, setStep] = useState(0);
   const [packs, setPacks] = useState([]);
   const [loadingPacks, setLoadingPacks] = useState(false);
   const [rootAudio, setRootAudio] = useState('');
   const [rootImage, setRootImage] = useState('');
-  const [metadata, setMetadata] = useState(() => defaultMetadataForPacks([]));
+  const [metadata, setMetadata] = useState(() => defaultMetadataForPacks([], t));
   const [outputDir, setOutputDir] = useState(() => getLastExportDir() || '');
   const [phase, setPhase] = useState('collect'); // collect | generating | done
   const [progress, setProgress] = useState(0);
@@ -166,10 +170,10 @@ export function AggregatePacksFunnel({ onClose }) {
   useEffect(() => {
     if (packs.length === 0) return;
     setMetadata((current) => {
-      if (current.title && current.title !== 'Mes histoires du soir') return current;
-      return { ...current, ...defaultMetadataForPacks(packs) };
+      if (current.title && current.title !== t('importFunnels.aggregate.defaultTitle')) return current;
+      return { ...current, ...defaultMetadataForPacks(packs, t) };
     });
-  }, [packs]);
+  }, [packs, t]);
 
   async function ensureSessionDir() {
     if (sessionDirRef.current) return sessionDirRef.current;
@@ -216,7 +220,7 @@ export function AggregatePacksFunnel({ onClose }) {
             sizeBytes,
           });
         } catch (packError) {
-          setError(`Pack ignoré : ${basename(path) || path}\n${packError}`);
+          setError(t('importFunnels.aggregate.packIgnored', { name: basename(path) || path, error: packError }));
         }
       }
       if (nextPacks.length) setPacks((current) => [...current, ...nextPacks]);
@@ -323,7 +327,7 @@ export function AggregatePacksFunnel({ onClose }) {
     const selected = await openDialog({
       directory: true,
       multiple: false,
-      title: 'Dossier de sortie du pack',
+      title: t('importFunnels.aggregate.outputDialogTitle'),
       defaultPath: outputDir || getLastExportDir() || undefined,
     });
     if (!selected) return;
@@ -393,7 +397,7 @@ export function AggregatePacksFunnel({ onClose }) {
     } catch (generationError) {
       window.clearInterval(timer);
       unlisten?.();
-      setError(`La génération a échoué : ${generationError?.message ?? generationError}`);
+      setError(t('importFunnels.aggregate.generationFailed', { error: generationError?.message ?? generationError }));
       setPhase('collect');
       if (sessionDirRef.current) {
         await invoke('cleanup_session_workspace', { path: sessionDirRef.current }).catch(() => {});
@@ -420,23 +424,24 @@ export function AggregatePacksFunnel({ onClose }) {
     || (step === 1 && !rootAudio)
     || (step === 2 && !rootImage)
   );
-  const previewProject = buildAggregateProject({ packs, rootAudio, rootImage, metadata });
+  const previewProject = buildAggregateProject({ packs, rootAudio, rootImage, metadata, t });
+  const STEPS = buildSteps(t);
   const generationPhases = [
-    { label: 'Agrégation des packs', status: progress >= 0.28 ? 'done' : 'active' },
-    { label: 'Harmonisation du volume', status: progress < 0.28 ? 'todo' : progress >= 0.55 ? 'done' : 'active' },
-    { label: 'Encodage des images 320x240', status: progress < 0.55 ? 'todo' : progress >= 0.8 ? 'done' : 'active' },
-    { label: 'Construction du ZIP', status: progress < 0.8 ? 'todo' : progress >= 1 ? 'done' : 'active' },
+    { label: t('importFunnels.aggregate.phaseAggregate'), status: progress >= 0.28 ? 'done' : 'active' },
+    { label: t('importFunnels.aggregate.phaseLoudness'), status: progress < 0.28 ? 'todo' : progress >= 0.55 ? 'done' : 'active' },
+    { label: t('importFunnels.aggregate.phaseImages'), status: progress < 0.55 ? 'todo' : progress >= 0.8 ? 'done' : 'active' },
+    { label: t('importFunnels.aggregate.phaseZip'), status: progress < 0.8 ? 'todo' : progress >= 1 ? 'done' : 'active' },
   ];
 
   return (
     <FunnelShell
       icon={<Package />}
-      title="Agréger des packs"
-      subtitle="Génère un nouveau pack à partir de plusieurs archives."
+      title={t('importFunnels.aggregate.shellTitle')}
+      subtitle={t('importFunnels.aggregate.shellSubtitle')}
       onClose={handleClose}
       showChrome={phase === 'collect'}
       size="wide"
-      ariaLabel="Agréger des packs"
+      ariaLabel={t('importFunnels.aggregate.shellTitle')}
       stepper={(
         <FunnelStepper
           steps={STEPS}
@@ -449,9 +454,9 @@ export function AggregatePacksFunnel({ onClose }) {
         <FunnelFooter
           onBack={() => setStep((current) => Math.max(0, current - 1))}
           backDisabled={step === 0}
-          stepLabel={`Étape ${step + 1} / ${STEPS.length}`}
+          stepLabel={t('importFunnels.aggregate.stepLabel', { current: step + 1, total: STEPS.length })}
           onPrimary={handlePrimary}
-          primaryLabel={step === STEPS.length - 1 ? 'Générer le pack' : 'Continuer'}
+          primaryLabel={step === STEPS.length - 1 ? t('importFunnels.aggregate.primaryGenerate') : t('importFunnels.aggregate.primaryContinue')}
           primaryIcon={step === STEPS.length - 1 ? <Package /> : null}
           primaryDisabled={primaryDisabled}
         />
@@ -459,8 +464,8 @@ export function AggregatePacksFunnel({ onClose }) {
     >
       {phase === 'generating' && (
         <FunnelGenerationState
-          title="Génération du pack…"
-          hint="Ne ferme pas la fenêtre."
+          title={t('importFunnels.aggregate.generatingTitle')}
+          hint={t('importFunnels.aggregate.generatingHint')}
           phases={generationPhases}
           progress={progress}
         />
@@ -468,19 +473,24 @@ export function AggregatePacksFunnel({ onClose }) {
 
       {phase === 'done' && (
         <FunnelDoneState
-          title="Pack généré"
+          title={t('importFunnels.aggregate.doneTitle')}
           fileName={result?.fileName}
           meta={[
-            formatBytes(result?.sizeBytes),
-            `${result?.storyCount ?? totalStories} histoire${(result?.storyCount ?? totalStories) > 1 ? 's' : ''}`,
-            `${result?.packCount ?? packs.length} packs agrégés`,
+            formatBytes(result?.sizeBytes, t),
+            t(
+              (result?.storyCount ?? totalStories) === 1
+                ? 'importFunnels.aggregate.doneStoryCountOne'
+                : 'importFunnels.aggregate.doneStoryCountOther',
+              { count: result?.storyCount ?? totalStories },
+            ),
+            t('importFunnels.aggregate.donePackCountAggregated', { count: result?.packCount ?? packs.length }),
           ].filter(Boolean).join(' · ')}
         >
           <FunnelToolButton icon={<FolderOpen />} accent="neutral" onClick={() => outputDir && openPath(outputDir)}>
-            Ouvrir le dossier
+            {t('importFunnels.aggregate.openFolder')}
           </FunnelToolButton>
           <button type="button" className="funnel-btn funnel-btn-primary" onClick={handleClose}>
-            <span>Terminer</span>
+            <span>{t('importFunnels.aggregate.finish')}</span>
             <House />
           </button>
         </FunnelDoneState>
@@ -490,18 +500,18 @@ export function AggregatePacksFunnel({ onClose }) {
         <div className="funnel-step-content aggregate-step">
           <FunnelSectionHeader
             icon={<Package />}
-            title="Sélection des packs"
-            description="Glisse plusieurs .zip ou .7z — l'ordre définit le menu agrégé."
+            title={t('importFunnels.aggregate.selectPacksTitle')}
+            description={t('importFunnels.aggregate.selectPacksDescription')}
           />
           <FunnelDropZone
             icon={<Upload />}
-            title="Dépose tes archives ici"
-            hint="Formats acceptés : .zip, .7z · plusieurs à la fois"
+            title={t('importFunnels.aggregate.dropZoneTitle')}
+            hint={t('importFunnels.aggregate.dropZoneHint')}
             onFiles={addPackPaths}
             disabled={loadingPacks}
           >
             <FunnelToolButton icon={<FolderOpen />} accent="neutral" onClick={handleBrowsePacks} disabled={loadingPacks}>
-              Parcourir…
+              {t('importFunnels.aggregate.browse')}
             </FunnelToolButton>
           </FunnelDropZone>
 
@@ -514,27 +524,31 @@ export function AggregatePacksFunnel({ onClose }) {
                   <span className="aggregate-pack-copy">
                     <span className="aggregate-pack-name" title={pack.fileName}>{pack.fileName}</span>
                     <span className="aggregate-pack-meta">
-                      {[formatBytes(pack.sizeBytes), `${pack.storyCount} scène${pack.storyCount > 1 ? 's' : ''}`].filter(Boolean).join(' · ')}
+                      {[formatBytes(pack.sizeBytes, t), t(pack.storyCount === 1 ? 'importFunnels.aggregate.storyCountShortOne' : 'importFunnels.aggregate.storyCountShortOther', { count: pack.storyCount })].filter(Boolean).join(' · ')}
                     </span>
                   </span>
-                  <button type="button" className="aggregate-icon-btn" onClick={() => movePack(index, -1)} disabled={index === 0} aria-label="Monter">
+                  <button type="button" className="aggregate-icon-btn" onClick={() => movePack(index, -1)} disabled={index === 0} aria-label={t('importFunnels.aggregate.moveUp')}>
                     <MoveUp />
                   </button>
-                  <button type="button" className="aggregate-icon-btn" onClick={() => movePack(index, 1)} disabled={index === packs.length - 1} aria-label="Descendre">
+                  <button type="button" className="aggregate-icon-btn" onClick={() => movePack(index, 1)} disabled={index === packs.length - 1} aria-label={t('importFunnels.aggregate.moveDown')}>
                     <MoveDown />
                   </button>
-                  <button type="button" className="aggregate-icon-btn" onClick={() => removePack(pack.id)} aria-label="Retirer">
+                  <button type="button" className="aggregate-icon-btn" onClick={() => removePack(pack.id)} aria-label={t('importFunnels.aggregate.remove')}>
                     <Trash2 />
                   </button>
                 </div>
               ))}
               <div className="aggregate-pack-list-foot">
-                <span>{packs.length} pack{packs.length > 1 ? 's' : ''} · {totalStories} scène{totalStories > 1 ? 's' : ''}</span>
-                <span>{formatBytes(totalSize)}</span>
+                <span>
+                  {t(packs.length === 1 ? 'importFunnels.aggregate.packCountOne' : 'importFunnels.aggregate.packCountOther', { count: packs.length })}
+                  {' · '}
+                  {t(totalStories === 1 ? 'importFunnels.aggregate.storyCountShortOne' : 'importFunnels.aggregate.storyCountShortOther', { count: totalStories })}
+                </span>
+                <span>{formatBytes(totalSize, t)}</span>
               </div>
             </div>
           )}
-          {loadingPacks && <div className="aggregate-inline-note">Lecture des métadonnées…</div>}
+          {loadingPacks && <div className="aggregate-inline-note">{t('importFunnels.aggregate.loadingPacks')}</div>}
           {error && <div className="funnel-error" role="alert">{error}</div>}
         </div>
       )}
@@ -543,15 +557,15 @@ export function AggregatePacksFunnel({ onClose }) {
         <div className="funnel-step-content aggregate-step">
           <FunnelSectionHeader
             icon={<Mic />}
-            title="Audio du menu"
-            description="La voix qui annonce le menu agrégé sur la Boîte à Histoires."
+            title={t('importFunnels.aggregate.audioStepTitle')}
+            description={t('importFunnels.aggregate.audioStepDescription')}
           />
           <div className="aggregate-audio-card">
             <button
               type="button"
               className="aggregate-play-btn"
               disabled={!audioUrl}
-              aria-label={audioPlaying ? "Mettre l'audio en pause" : "Lire l'audio"}
+              aria-label={audioPlaying ? t('importFunnels.aggregate.pauseAudio') : t('importFunnels.aggregate.playAudio')}
               onClick={toggleAudioPreview}
             >
               {audioPlaying ? <Pause /> : <Play />}
@@ -561,18 +575,18 @@ export function AggregatePacksFunnel({ onClose }) {
                 <span key={index} style={{ height: `${10 + ((index * 13) % 30)}px` }} />
               ))}
             </div>
-            <div className="aggregate-selected-file" title={rootAudio}>{rootAudio ? basename(rootAudio) : 'Aucun audio choisi'}</div>
+            <div className="aggregate-selected-file" title={rootAudio}>{rootAudio ? basename(rootAudio) : t('importFunnels.aggregate.noAudioSelected')}</div>
           </div>
           <div className="aggregate-tool-grid">
             <FunnelToolButton icon={<FolderOpen />} accent="neutral" block onClick={handlePickAudio}>
-              Choisir un audio
+              {t('importFunnels.aggregate.chooseAudio')}
             </FunnelToolButton>
             <FunnelToolButton icon={<Mic />} accent="violet" variant="solid" block onClick={handleRecordAudio}>
-              Enregistrer au micro
+              {t('importFunnels.aggregate.recordAudio')}
             </FunnelToolButton>
             {ttsAvailable && (
               <FunnelToolButton icon={<Speech />} accent="violet" variant="solid" block onClick={handleGenerateVoice}>
-                Générer une voix
+                {t('importFunnels.aggregate.generateVoice')}
               </FunnelToolButton>
             )}
             <FunnelToolButton icon={<Scissors />} accent="neutral" block onClick={async () => {
@@ -580,7 +594,7 @@ export function AggregatePacksFunnel({ onClose }) {
               await ensureSessionDir();
               setAudioEditorOpen(true);
             }} disabled={!rootAudio}>
-              Édition audio
+              {t('importFunnels.aggregate.editAudio')}
             </FunnelToolButton>
           </div>
         </div>
@@ -590,21 +604,28 @@ export function AggregatePacksFunnel({ onClose }) {
         <div className="funnel-step-content aggregate-step">
           <FunnelSectionHeader
             icon={<Image />}
-            title="Image de couverture"
-            description="Image affichée à l'écran de la Boîte à Histoires."
+            title={t('importFunnels.aggregate.imageStepTitle')}
+            description={t('importFunnels.aggregate.imageStepDescription')}
           />
           <div className="aggregate-image-layout">
             <div className="aggregate-image-preview">
               {imageUrl ? <img src={imageUrl} alt="" /> : (
                 <div className="aggregate-image-placeholder">
-                  <strong>{metadata.title || 'Mes histoires du soir'}</strong>
-                  <span>{packs.length} pack{packs.length > 1 ? 's' : ''} agrégé{packs.length > 1 ? 's' : ''}</span>
+                  <strong>{metadata.title || t('importFunnels.aggregate.defaultTitle')}</strong>
+                  <span>
+                    {t(
+                      packs.length === 1
+                        ? 'importFunnels.aggregate.imagePlaceholderPackCountOne'
+                        : 'importFunnels.aggregate.imagePlaceholderPackCountOther',
+                      { count: packs.length },
+                    )}
+                  </span>
                 </div>
               )}
             </div>
             <div className="aggregate-image-actions">
               <FunnelToolButton icon={<FolderOpen />} accent="neutral" onClick={handlePickImage}>
-                Choisir une image
+                {t('importFunnels.aggregate.chooseImage')}
               </FunnelToolButton>
               <FunnelToolButton
                 icon={<Sparkles />}
@@ -615,19 +636,19 @@ export function AggregatePacksFunnel({ onClose }) {
                     await ensureSessionDir();
                     setTextImageOpen(true);
                   } catch (sessionError) {
-                    setError(`Impossible de préparer la session : ${sessionError?.message ?? sessionError}`);
+                    setError(t('importFunnels.aggregate.prepareSessionFailed', { error: sessionError?.message ?? sessionError }));
                   }
                 }}
               >
-                Générer une image-titre
+                {t('importFunnels.aggregate.generateTitleImage')}
               </FunnelToolButton>
               <FunnelToolButton icon={<Crop />} accent="violet" variant="outline" onClick={async () => {
                 await ensureSessionDir();
                 setImageEditorOpen(true);
               }} disabled={!rootImage}>
-                Retouche image
+                {t('importFunnels.aggregate.editImage')}
               </FunnelToolButton>
-              <div className="aggregate-inline-note">320 × 240 · recadrage automatique à la génération.</div>
+              <div className="aggregate-inline-note">{t('importFunnels.aggregate.imageAutoCropHint')}</div>
             </div>
           </div>
         </div>
@@ -637,9 +658,9 @@ export function AggregatePacksFunnel({ onClose }) {
         <div className="funnel-step-content aggregate-step aggregate-metadata-step">
           <FunnelSectionHeader
             icon={<Package />}
-            title="Métadonnées"
-            description="Panneau PackNameModal pré-rempli, cohérent avec Modifier un pack."
-            trailing={<span className="funnel-badge">Pré-rempli</span>}
+            title={t('importFunnels.aggregate.metadataStepTitle')}
+            description={t('importFunnels.aggregate.metadataStepDescription')}
+            trailing={<span className="funnel-badge">{t('importFunnels.aggregate.metadataPrefilledBadge')}</span>}
           />
           <Suspense fallback={null}>
             <PackNameModal
@@ -694,8 +715,8 @@ export function AggregatePacksFunnel({ onClose }) {
           <GenerateVoiceModal
             savePath={null}
             xttsSettings={xttsSettings}
-            label="Audio du menu"
-            initialText={metadata.title || 'Mes histoires du soir'}
+            label={t('importFunnels.aggregate.voiceMenuLabel')}
+            initialText={metadata.title || t('importFunnels.aggregate.defaultTitle')}
             filenameHint={`menu-${metadata.title || 'agregation'}`}
             target={null}
             onUpdateXttsSettings={onUpdateXttsSettings}
@@ -723,7 +744,7 @@ export function AggregatePacksFunnel({ onClose }) {
       {textImageOpen && (
         <Suspense fallback={null}>
           <TextImagePromptModal
-            defaultText={metadata.title || 'Mes histoires du soir'}
+            defaultText={metadata.title || t('importFunnels.aggregate.defaultTitle')}
             workspaceDir={sessionDirRef.current || ''}
             onConfirm={(path) => {
               if (path) setRootImage(path);

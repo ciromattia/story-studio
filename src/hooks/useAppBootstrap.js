@@ -11,6 +11,12 @@ import {
   setCurrentShortcuts,
 } from '../store/keyboardShortcuts';
 import { applyThemePreference, loadThemePreference, saveThemePreference } from '../store/themePreference';
+import {
+  applyLocaleToDocument,
+  loadLanguagePreference,
+  resolveLocale,
+  saveLanguagePreference,
+} from '../store/languagePreference';
 import { logger, installGlobalErrorHandlers, setLogLevel } from '../utils/logger';
 import { loadVerboseLoggingPref, verboseLevelName } from '../store/loggingPreference';
 import { isTauriRuntime } from '../utils/tauriRuntime';
@@ -38,6 +44,8 @@ export function useAppBootstrap() {
   const [xttsSettings, setXttsSettings] = useState(() => loadXttsSettings());
   const [keyboardShortcuts, setKeyboardShortcuts] = useState(() => loadKeyboardShortcuts());
   const [themePreference, setThemePreference] = useState(() => loadThemePreference());
+  const [languagePreference, setLanguagePreference] = useState(() => loadLanguagePreference());
+  const locale = resolveLocale(languagePreference);
   const [recentProjects, setRecentProjects] = useState(() => getRecentProjects());
   const [copyImportedFilesEnabled, setCopyImportedFilesEnabled] = usePersistentState(KEYS.COPY_FILES, false, BOOL_CODEC);
   const [configuredWorkspaceDir, setConfiguredWorkspaceDir] = useState(() => readSetting(KEYS.WORKSPACE_DIR, { defaultValue: '' }));
@@ -86,6 +94,11 @@ export function useAppBootstrap() {
   }, [themePreference]);
 
   useEffect(() => {
+    saveLanguagePreference(languagePreference);
+    applyLocaleToDocument(locale);
+  }, [languagePreference, locale]);
+
+  useEffect(() => {
     if (!copyImportedFilesEnabled) dismissedTransferPromptRef.current = null;
   }, [copyImportedFilesEnabled]);
 
@@ -98,6 +111,9 @@ export function useAppBootstrap() {
     keyboardShortcutsRef,
     themePreference,
     setThemePreference,
+    languagePreference,
+    setLanguagePreference,
+    locale,
     recentProjects,
     setRecentProjects,
     copyImportedFilesEnabled,

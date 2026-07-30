@@ -5,33 +5,41 @@ import { encodeMenuNavigationTarget } from '../../../store/navigationTargets';
 import { getGeneratedStoryNavigation } from '../../../store/generatedNavigation';
 import { generatedTargetIdToSelectValue, NavigationTargetSelect } from './storyUtils';
 import { StoryDisclosure } from './StoryDisclosure';
+import { useTranslation } from '../../../i18n/I18nContext';
 import {
   createSilentStoryTitleUpdate,
   isExplicitSilentStoryTitle,
   TITLE_CONTROL_DEFAULTS,
 } from '../../../store/storyTitleStage';
 
-const PLAY_CONTROLS = [
-  {
-    key: 'pause',
-    label: 'Bouton Pause',
-    onText: "L'enfant peut utiliser le bouton pause pendant l'histoire.",
-    offText: "L'enfant ne peut pas utiliser le bouton pause pendant l'histoire.",
-    def: false,
-  },
-];
+function getPlayControls(t) {
+  return [
+    {
+      key: 'pause',
+      label: t('editorsStory.duringPlay.pauseLabel'),
+      onText: t('editorsStory.duringPlay.pauseOnText'),
+      offText: t('editorsStory.duringPlay.pauseOffText'),
+      def: false,
+    },
+  ];
+}
 
-const TITLE_CONTROLS = [
-  { key: 'autoplay', label: "Lancer l'histoire automatiquement", tip: "L'histoire se lance toute seule à la fin de l'audio de sélection, sans attendre que l'enfant appuie sur OK.", def: false },
-  { key: 'ok',       label: 'Bouton OK',            tip: "L'enfant peut appuyer sur OK pour lancer l'histoire.",                   def: true },
-  { key: 'home',     label: 'Bouton Accueil',        tip: "L'enfant peut revenir au menu parent en appuyant sur le bouton Accueil.", def: true },
-  { key: 'pause',    label: 'Bouton pause',          tip: "L'enfant peut mettre en pause l'audio de sélection.",                    def: false },
-  { key: 'wheel',    label: 'Molette',              tip: "L'enfant peut tourner la molette pour parcourir les autres histoires.",   def: true },
-];
+function getTitleControls(t) {
+  return [
+    { key: 'autoplay', label: t('editorsStory.duringPlay.autoplayLabel'), tip: t('editorsStory.duringPlay.autoplayTip'), def: false },
+    { key: 'ok',       label: t('editorsStory.duringPlay.okLabel'),       tip: t('editorsStory.duringPlay.okTip'),       def: true },
+    { key: 'home',     label: t('editorsStory.duringPlay.homeLabel'),     tip: t('editorsStory.duringPlay.homeTip'),     def: true },
+    { key: 'pause',    label: t('editorsStory.duringPlay.pauseSelectionLabel'), tip: t('editorsStory.duringPlay.pauseSelectionTip'), def: false },
+    { key: 'wheel',    label: t('editorsStory.duringPlay.wheelLabel'),    tip: t('editorsStory.duringPlay.wheelTip'),    def: true },
+  ];
+}
 
 let duringPlaySelectionAdvancedOpen = false;
 
 export function DuringPlaySection({ node, project = null, allMenus = [], allStories = [], parentMenu = null, onUpdate }) {
+  const { t } = useTranslation();
+  const PLAY_CONTROLS = getPlayControls(t);
+  const TITLE_CONTROLS = getTitleControls(t);
   const [showAdvanced, setShowAdvanced] = useState(duringPlaySelectionAdvancedOpen);
   const controls = node.controlSettings ?? {};
   const titleControls = node.titleControlSettings ?? {};
@@ -49,9 +57,9 @@ export function DuringPlaySection({ node, project = null, allMenus = [], allStor
   return (
     <div className="card during-play-card">
       <div className="card-title-row">
-        <div className="card-title">Pendant l'histoire</div>
+        <div className="card-title">{t('editorsStory.duringPlay.sectionTitle')}</div>
         <div className="card-copy card-copy--inline">
-          Choisis les boutons utilisables pendant la lecture de l'histoire.
+          {t('editorsStory.duringPlay.sectionDesc')}
         </div>
       </div>
 
@@ -79,20 +87,20 @@ export function DuringPlaySection({ node, project = null, allMenus = [], allStor
                 controlSettings: { ...controls, home: v },
                 ...(v ? {} : { returnOnHome: null, returnOnHomeNone: true }),
               })}
-              ariaLabel="Bouton Accueil"
+              ariaLabel={t('editorsStory.duringPlay.homeAria')}
             />
             <Tooltip
               text={homeEnabled
-                ? "L'enfant peut appuyer sur le bouton Accueil pendant l'histoire."
-                : "L'enfant ne peut pas appuyer sur le bouton Accueil pendant l'histoire."}
+                ? t('editorsStory.duringPlay.homeEnabledTip')
+                : t('editorsStory.duringPlay.homeDisabledTip')}
               placement="above"
               style={{ minWidth: 0 }}
             >
-              <span className="during-play-control-title">Bouton Accueil</span>
+              <span className="during-play-control-title">{t('editorsStory.duringPlay.homeAria')}</span>
             </Tooltip>
             {homeEnabled ? (
               <>
-                <span className="during-play-destination-label">Destination</span>
+                <span className="during-play-destination-label">{t('editorsStory.duringPlay.destinationLabel')}</span>
                 <div className="during-play-home-select">
                   <NavigationTargetSelect
                     value={homeSelectValue}
@@ -100,7 +108,7 @@ export function DuringPlaySection({ node, project = null, allMenus = [], allStor
                     allMenus={allMenus}
                     allStories={allStories}
                     currentStoryId={node.id}
-                    emptyLabel="Retour au menu d'accueil"
+                    emptyLabel={t('editorsStory.duringPlay.returnToHomeMenu')}
                     includeDefault={includeHomeDefaultOption}
                     includeStoryPlay={false}
                     size="compact"
@@ -122,9 +130,9 @@ export function DuringPlaySection({ node, project = null, allMenus = [], allStor
       >
         <div className="story-advanced-row">
           <div className="story-advanced-copy">
-            <div className="story-advanced-title">Écran de sélection</div>
+            <div className="story-advanced-title">{t('editorsStory.duringPlay.selectionScreenTitle')}</div>
             <div className="story-advanced-desc">
-              Boutons actifs pendant l'audio de sélection, avant que l'histoire ne commence.
+              {t('editorsStory.duringPlay.selectionScreenDesc')}
             </div>
           </div>
         </div>
@@ -145,17 +153,17 @@ export function DuringPlaySection({ node, project = null, allMenus = [], allStor
             ))}
             <label className="sequence-control">
               <Tooltip
-                text="Ne joue aucun audio de sélection avant le lancement de l'histoire."
+                text={t('editorsStory.duringPlay.silentSelectionTip')}
                 placement="above"
               >
-                <span style={{ flex: 1 }}>Écran de sélection silencieux</span>
+                <span style={{ flex: 1 }}>{t('editorsStory.duringPlay.silentSelectionLabel')}</span>
               </Tooltip>
               <Toggle
                 on={silentSelectionEnabled}
                 onChange={(enabled) => onUpdate(enabled
                   ? createSilentStoryTitleUpdate(node.titleControlSettings)
                   : { silentTitleStage: false })}
-                ariaLabel="Écran de sélection silencieux"
+                ariaLabel={t('editorsStory.duringPlay.silentSelectionLabel')}
               />
             </label>
           </div>

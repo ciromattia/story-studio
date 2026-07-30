@@ -3,6 +3,7 @@ import { ProjectSimulator, ZipSimulator } from '../../tabs/EmulatorTab';
 import { revokeUrlCache } from '../../tabs/EmulatorTab/useUrlCache';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { useFloatingSimulator } from '../../hooks/useFloatingSimulator';
+import { useTranslation } from '../../i18n/I18nContext';
 import './FloatingSimulator.css';
 
 function EmbeddedSimulator({ project, initialSelectionId, initialZipPath = null, onActiveNodeChange, onClose, dragHandleProps = null }) {
@@ -63,6 +64,7 @@ export function FloatingSimulator({
   hostSelector,
   escapeEnabled = true,
 }) {
+  const { t } = useTranslation();
   const { position, size, beginDrag, beginResize } = useFloatingSimulator(hostSelector);
 
   const handleClose = useCallback(() => {
@@ -94,7 +96,7 @@ export function FloatingSimulator({
       <button
         type="button"
         className="floating-simulator-resize"
-        aria-label="Redimensionner le simulateur"
+        aria-label={t('simulator.floating.resizeAriaLabel')}
         onPointerDown={beginResize}
       />
     </div>

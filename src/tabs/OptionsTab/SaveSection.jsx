@@ -1,4 +1,5 @@
 import { Toggle } from '../../components/common/Toggle';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function SaveSection({
   className,
@@ -8,21 +9,23 @@ export function SaveSection({
   autoSaveBackupLimit,
   onAutoSaveBackupLimitChange,
 }) {
+  const { t } = useTranslation();
+
   return (
     <section id="save" className={className} ref={sectionRef}>
-      <div className="opts-card-title">Enregistrement</div>
+      <div className="opts-card-title">{t('options.save.title')}</div>
       <div className="opts-row">
         <div className="opts-row-info">
-          <div className="opts-row-label">Enregistrement automatique</div>
-          <div className="opts-row-sub">Activé par défaut : enregistre le projet toutes les 5 minutes si des modifications sont en attente. Un projet jamais enregistré est copié dans le dossier sauvegardes/ de l'emplacement de travail.</div>
+          <div className="opts-row-label">{t('options.save.autoSaveLabel')}</div>
+          <div className="opts-row-sub">{t('options.save.autoSaveSub')}</div>
         </div>
         <Toggle on={autoSaveEnabled} onChange={onAutoSaveChange} />
       </div>
       {autoSaveEnabled && (
         <div className="opts-row">
           <div className="opts-row-info">
-            <div className="opts-row-label">Versions de sécurité</div>
-            <div className="opts-row-sub">Nombre de copies `.mbah` conservées avant chaque enregistrement automatique.</div>
+            <div className="opts-row-label">{t('options.save.backupLimitLabel')}</div>
+            <div className="opts-row-sub">{t('options.save.backupLimitSub')}</div>
           </div>
           <input
             className="xtts-input opts-number"
@@ -35,7 +38,7 @@ export function SaveSection({
         </div>
       )}
       <div className="opts-help">
-        Raccourcis : <strong>Ctrl+S</strong> pour enregistrer, <strong>Ctrl+Maj+S</strong> pour enregistrer sous
+        {t('options.save.helpIntro')} <strong>Ctrl+S</strong> {t('options.save.helpSave')} <strong>Ctrl+Maj+S</strong> {t('options.save.helpSaveAs')}
       </div>
     </section>
   );

@@ -8,6 +8,7 @@ import { isTtsAvailable, PIPER_DEFAULT_VOICE } from '../../store/xttsSettings';
 import { useErrorDialog } from '../common/Dialog';
 import { generateTextImage } from '../TextImageGenerator/generateTextImage';
 import { CircleStop, Moon, Pause, Sparkles, Speech, Trash2 } from '../icons/LucideLocal';
+import { useTranslation } from '../../i18n/I18nContext';
 import {
   generatedTargetIdToSelectValue,
   NavigationTargetSelect,
@@ -28,15 +29,19 @@ import { TREE_COLOR_PALETTE } from '../tree/treeOperations';
 const STORY_DEFAULTS = { autoplay: false, pause: true, wheel: false, home: true };
 const MENU_DEFAULTS = { autoplay: false, pause: false, wheel: true };
 
-const SHARED_DURING_CONTROL_KEYS = [
-  { key: 'pause',    label: 'Bouton Pause',         desc: 'Autorise la pause pendant la lecture' },
-];
+function getSharedDuringControlKeys(t) {
+  return [
+    { key: 'pause', label: t('editorsStory.multiEditor.pauseButtonLabel'), desc: t('editorsStory.multiEditor.pauseButtonDesc') },
+  ];
+}
 
-const MENU_CONTROL_KEYS = [
-  { key: 'wheel',    label: 'Molette de sélection', desc: 'Autorise la molette pour choisir une histoire' },
-  { key: 'autoplay', label: 'Lecture automatique',  desc: "Après l'audio de présentation, enchaîne automatiquement vers le contenu du dossier, sans attendre OK" },
-  { key: 'pause',    label: 'Bouton pause',         desc: "Autorise la pause pendant l'audio de présentation" },
-];
+function getMenuControlKeys(t) {
+  return [
+    { key: 'wheel',    label: t('editorsStory.multiEditor.selectionWheelLabel'), desc: t('editorsStory.multiEditor.selectionWheelDesc') },
+    { key: 'autoplay', label: t('editorsStory.multiEditor.autoplayLabel'),       desc: t('editorsStory.multiEditor.autoplayDesc') },
+    { key: 'pause',    label: t('editorsStory.multiEditor.pauseMenuLabel'),      desc: t('editorsStory.multiEditor.pauseMenuDesc') },
+  ];
+}
 
 function getDefaults(type) {
   return type === 'menu' ? MENU_DEFAULTS : STORY_DEFAULTS;
@@ -51,6 +56,7 @@ export const MultiEditor = memo(function MultiEditor({
   onBulkUpdateItems,
   onBulkDeleteItems,
 }) {
+  const { t } = useTranslation();
   const ids = useMemo(() => [...selectedIds], [selectedIds]);
 
   const nodes = useMemo(
@@ -59,19 +65,19 @@ export const MultiEditor = memo(function MultiEditor({
         return {
           id: 'root',
           type: 'root',
-          name: project?.rootName || project?.packMetadata?.title || project?.projectName || 'Menu racine',
+          name: project?.rootName || project?.packMetadata?.title || project?.projectName || t('editorsStory.multiEditor.rootMenuNameFallback'),
         };
       }
       if (id === 'end-node') {
         return {
           id: 'end-node',
           type: 'end-node',
-          name: project?.endNodeName || 'Message de fin',
+          name: project?.endNodeName || t('editorsStory.multiEditor.endMessageNameFallback'),
         };
       }
       return findEntryById(project, id, projectIndex);
     }).filter(Boolean),
-    [ids, project, projectIndex],
+    [ids, project, projectIndex, t],
   );
 
   const {
@@ -82,6 +88,8 @@ export const MultiEditor = memo(function MultiEditor({
     workspaceDir,
   } = useProjectContext();
   const { showErrorDialog } = useErrorDialog();
+  const SHARED_DURING_CONTROL_KEYS = getSharedDuringControlKeys(t);
+  const MENU_CONTROL_KEYS = getMenuControlKeys(t);
   const [batchImageGenerating, setBatchImageGenerating] = useState(false);
   const [batchAudioGenerating, setBatchAudioGenerating] = useState(false);
   const [batchError, setBatchError] = useState('');
@@ -107,11 +115,11 @@ export const MultiEditor = memo(function MultiEditor({
   const hasEndNode = !!project?.nightModeAudio || !!project?.globalOptions?.nightMode || !!project?.globalOptions?.endNode;
 
   const bannerParts = [];
-  if (storyCount > 0) bannerParts.push(`${storyCount} histoire${storyCount > 1 ? 's' : ''}`);
+  if (storyCount > 0) bannerParts.push(`${storyCount} ${storyCount > 1 ? t('editorsStory.multiEditor.storiesLabelOther') : t('editorsStory.multiEditor.storiesLabelOne')}`);
   if (zipCount > 0) bannerParts.push(`${zipCount} ZIP`);
-  if (menuCount > 0) bannerParts.push(`${menuCount} dossier${menuCount > 1 ? 's' : ''}`);
-  if (rootCount > 0) bannerParts.push('menu racine');
-  if (endNodeCount > 0) bannerParts.push(project?.endNodeName || 'message de fin');
+  if (menuCount > 0) bannerParts.push(`${menuCount} ${menuCount > 1 ? t('editorsStory.multiEditor.foldersLabelOther') : t('editorsStory.multiEditor.foldersLabelOne')}`);
+  if (rootCount > 0) bannerParts.push(t('editorsStory.multiEditor.rootMenuBanner'));
+  if (endNodeCount > 0) bannerParts.push(project?.endNodeName || t('editorsStory.multiEditor.endMessageNameFallback'));
 
   function handleControlChange(key, value) {
     onBulkUpdateItems(editableIds, (entry) => ({
@@ -181,7 +189,7 @@ export const MultiEditor = memo(function MultiEditor({
     if (!targetId) return null;
     if (targetId === 'root') {
       const destination = getDefaultPackEntryDestination(project);
-      if (!destination) return { label: 'Menu racine', selectValue: null, kind: 'menu' };
+      if (!destination) return { label: t('editorsStory.multiEditor.rootMenuNameFallback'), selectValue: null, kind: 'menu' };
       const generatedTargetId = destination.type === 'story'
         ? `story:${destination.id}`
         : destination.type === 'menu'
@@ -224,16 +232,16 @@ export const MultiEditor = memo(function MultiEditor({
     : '__mixed__';
   const storyReturnEmptyLabel = storyAfterPlayDestination?.label
     || (storyAfterPlaySummary?.hasDifferentDestinations
-      ? 'Destination propre à chaque histoire'
-      : 'Destination par défaut de chaque histoire');
+      ? t('editorsStory.multiEditor.ownDestinationEachStory')
+      : t('editorsStory.multiEditor.defaultDestinationEachStory'));
   const usesStorySpecificEndReturn = onlyStories && hasEndNode && !project?.nightModeReturn;
 
   const batchBusy = batchImageGenerating || batchAudioGenerating;
   const playbackControlKeys = onlyMenus ? MENU_CONTROL_KEYS : SHARED_DURING_CONTROL_KEYS;
-  const playbackControlTitle = onlyMenus ? 'Comportement des dossiers' : "Pendant l'histoire";
+  const playbackControlTitle = onlyMenus ? t('editorsStory.multiEditor.folderBehaviorTitle') : t('editorsStory.multiEditor.duringPlayTitle');
   const batchGenerationDescription = canGenerateTextImages
-    ? "Crée d'un coup une image-titre pour chaque histoire ou dossier avec image sélectionné, ou un audio (le nom prononcé) pour les éléments sélectionnés compatibles. Les packs ZIP importés sont ignorés."
-    : "Crée d'un coup un audio (le nom prononcé) pour les éléments sélectionnés compatibles. Les images-titres ne sont proposées que pour les histoires et les dossiers avec image.";
+    ? t('editorsStory.multiEditor.generateDescWithImages')
+    : t('editorsStory.multiEditor.generateDescAudioOnly');
 
   function getSelectedVoice() {
     if ((xttsSettings?.backend || 'piper') === 'piper') {
@@ -250,7 +258,7 @@ export const MultiEditor = memo(function MultiEditor({
   }
 
   function getNodeTitle(node) {
-    return (node.name && node.name.trim()) ? node.name.trim() : 'Sans titre';
+    return (node.name && node.name.trim()) ? node.name.trim() : t('editorsStory.multiEditor.untitled');
   }
 
   async function handleGenerateTextImagesFromNames() {
@@ -277,7 +285,7 @@ export const MultiEditor = memo(function MultiEditor({
             );
           }
         } catch {
-          errors.push(`${text} : image-titre impossible à générer`);
+          errors.push(t('editorsStory.multiEditor.imageGenerationFailed', { text }));
         }
       }
 
@@ -302,10 +310,10 @@ export const MultiEditor = memo(function MultiEditor({
 
     const voice = getSelectedVoice();
     if (!voice) {
-      const msg = 'Choisis une voix XTTS une première fois (depuis le bouton TTS d’un audio) avant de lancer la génération groupée.';
+      const msg = t('editorsStory.multiEditor.xttsVoiceMissing');
       setBatchError(msg);
       showErrorDialog({
-        title: 'Génération audio',
+        title: t('editorsStory.multiEditor.audioGenerationDialogTitle'),
         message: msg,
         variant: 'warning',
       });
@@ -328,7 +336,7 @@ export const MultiEditor = memo(function MultiEditor({
         try {
           await onQueueXttsGenerate?.({
             target,
-            targetLabel: `${text} — titre`,
+            targetLabel: t('editorsStory.multiEditor.titleAudioTargetLabel', { text }),
             voiceLabel: voice,
             request: {
               text,
@@ -340,7 +348,7 @@ export const MultiEditor = memo(function MultiEditor({
             },
           });
         } catch {
-          errors.push(`${text} : job XTTS non ajouté`);
+          errors.push(t('editorsStory.multiEditor.xttsJobFailed', { text }));
         }
       }
 
@@ -359,11 +367,11 @@ export const MultiEditor = memo(function MultiEditor({
       {(canGenerateTextImages || titleAudioNodes.length > 0) && (
         <div className="card">
           <div className="card-title-row">
-            <div className="card-title">Génération groupée</div>
+            <div className="card-title">{t('editorsStory.multiEditor.batchGenerationTitle')}</div>
           </div>
           <div className="editor-setting-row is-action-row">
             <div className="editor-setting-copy">
-              <div className="editor-setting-title">Générer à partir des noms</div>
+              <div className="editor-setting-title">{t('editorsStory.multiEditor.generateFromNamesTitle')}</div>
               <div className="editor-setting-desc">
                 {batchGenerationDescription}
               </div>
@@ -377,7 +385,7 @@ export const MultiEditor = memo(function MultiEditor({
                   disabled={batchBusy}
                 >
                   <Sparkles className="batch-generate-btn-icon" strokeWidth={2} absoluteStrokeWidth />
-                  {batchImageGenerating ? 'Images…' : 'Images-titres'}
+                  {batchImageGenerating ? t('editorsStory.multiEditor.imagesGeneratingLabel') : t('editorsStory.multiEditor.imageTitlesLabel')}
                 </button>
               ) : null}
               {isTtsAvailable(xttsSettings) && titleAudioNodes.length > 0 && (
@@ -388,7 +396,7 @@ export const MultiEditor = memo(function MultiEditor({
                   disabled={batchBusy}
                 >
                   <Speech className="batch-generate-btn-icon" strokeWidth={2} absoluteStrokeWidth />
-                  {batchAudioGenerating ? 'Audios…' : 'Audios titres'}
+                  {batchAudioGenerating ? t('editorsStory.multiEditor.audiosGeneratingLabel') : t('editorsStory.multiEditor.audioTitlesLabel')}
                 </button>
               )}
             </div>
@@ -417,9 +425,9 @@ export const MultiEditor = memo(function MultiEditor({
           return (
             <div className="card during-play-card">
               <div className="card-title-row">
-                <div className="card-title">Pendant l'histoire</div>
+                <div className="card-title">{t('editorsStory.multiEditor.duringPlayTitle')}</div>
                 <div className="card-copy card-copy--inline">
-                  Choisis les boutons utilisables pendant la lecture de l'histoire.
+                  {t('editorsStory.multiEditor.duringPlayDesc')}
                 </div>
               </div>
 
@@ -430,18 +438,18 @@ export const MultiEditor = memo(function MultiEditor({
                       on={pauseState.value}
                       mixed={pauseState.isMixed}
                       onChange={(v) => handleControlChange('pause', v)}
-                      ariaLabel="Bouton Pause"
+                      ariaLabel={t('editorsStory.multiEditor.pauseButtonLabel')}
                     />
                     <Tooltip
                       text={pauseState.isMixed
-                        ? 'Réglage différent selon les histoires sélectionnées.'
+                        ? t('editorsStory.multiEditor.pauseMixedTooltip')
                         : pauseState.value
-                          ? "L'enfant peut utiliser le bouton pause pendant l'histoire."
-                          : "L'enfant ne peut pas utiliser le bouton pause pendant l'histoire."}
+                          ? t('editorsStory.multiEditor.pauseOnTooltip')
+                          : t('editorsStory.multiEditor.pauseOffTooltip')}
                       placement="above"
                       style={{ minWidth: 0 }}
                     >
-                      <span className="during-play-control-title">Bouton Pause</span>
+                      <span className="during-play-control-title">{t('editorsStory.multiEditor.pauseButtonLabel')}</span>
                     </Tooltip>
                   </label>
                 </div>
@@ -457,22 +465,22 @@ export const MultiEditor = memo(function MultiEditor({
                           ...(v ? {} : { returnOnHome: null, returnOnHomeNone: true }),
                         }));
                       }}
-                      ariaLabel="Bouton Accueil"
+                      ariaLabel={t('editorsStory.multiEditor.homeButtonAria')}
                     />
                     <Tooltip
                       text={homeState.isMixed
-                        ? 'Réglage différent selon les histoires sélectionnées.'
+                        ? t('editorsStory.multiEditor.homeMixedTooltip')
                         : homeState.value
-                          ? "L'enfant peut appuyer sur le bouton Accueil pendant l'histoire."
-                          : "L'enfant ne peut pas appuyer sur le bouton Accueil pendant l'histoire."}
+                          ? t('editorsStory.multiEditor.homeOnTooltip')
+                          : t('editorsStory.multiEditor.homeOffTooltip')}
                       placement="above"
                       style={{ minWidth: 0 }}
                     >
-                      <span className="during-play-control-title">Bouton Accueil</span>
+                      <span className="during-play-control-title">{t('editorsStory.multiEditor.homeButtonAria')}</span>
                     </Tooltip>
                     {showHomeDestination ? (
                       <>
-                        <span className="during-play-destination-label">Destination</span>
+                        <span className="during-play-destination-label">{t('editorsStory.multiEditor.destinationLabel')}</span>
                         <div className="during-play-home-select">
                           <NavigationTargetSelect
                             value={homeSelectValue}
@@ -486,7 +494,7 @@ export const MultiEditor = memo(function MultiEditor({
                             allMenus={allMenus}
                             allStories={allStories.filter((s) => !ids.includes(s.id))}
                             currentStoryId={null}
-                            emptyLabel="Retour direct au menu parent"
+                            emptyLabel={t('editorsStory.multiEditor.returnDirectToParent')}
                             includeStoryPlay={false}
                             size="compact"
                           />
@@ -512,9 +520,9 @@ export const MultiEditor = memo(function MultiEditor({
           return (
             <div className="editor-setting-row is-toggle-row">
               <div className="editor-setting-copy">
-                <div className="editor-setting-title">Pas d'image</div>
+                <div className="editor-setting-title">{t('editorsStory.multiEditor.noBlackImageTitle')}</div>
                 <div className="editor-setting-desc">
-                  Ces dossiers n'envoient aucune image à la Lunii — l'écran conserve l'affichage précédent pendant la sélection.
+                  {t('editorsStory.multiEditor.noBlackImageDesc')}
                 </div>
               </div>
               <div className="editor-setting-control">
@@ -552,10 +560,9 @@ export const MultiEditor = memo(function MultiEditor({
         {onlyStories && (
           <div className="editor-setting-row">
             <div className="editor-setting-copy">
-              <div className="editor-setting-title">Bouton Accueil</div>
+              <div className="editor-setting-title">{t('editorsStory.multiEditor.homeButtonRowTitle')}</div>
               <div className="editor-setting-desc">
-                Destination quand l'enfant appuie sur Accueil pendant la lecture.
-                Sans réglage spécifique : retour au dossier parent.
+                {t('editorsStory.multiEditor.homeButtonRowDesc')}
               </div>
             </div>
             <div className="editor-setting-control">
@@ -568,7 +575,7 @@ export const MultiEditor = memo(function MultiEditor({
                 allMenus={allMenus}
                 allStories={allStories.filter((s) => !ids.includes(s.id))}
                 currentStoryId={null}
-                emptyLabel="Retour direct au menu parent"
+                emptyLabel={t('editorsStory.multiEditor.returnDirectToParent')}
                 includeStoryPlay={false}
               />
             </div>
@@ -583,25 +590,25 @@ export const MultiEditor = memo(function MultiEditor({
         onlyStories ? (
           <div className="card">
             <div className="card-title-row">
-              <div className="card-title">Après la lecture</div>
+              <div className="card-title">{t('editorsStory.multiEditor.afterPlayTitle')}</div>
               <div className="card-copy card-copy--inline">
-                Que se passe-t-il quand ces histoires se terminent.
+                {t('editorsStory.multiEditor.afterPlayDescStories')}
               </div>
             </div>
 
             <div className="after-play-route">
               <div className="after-play-route-head">
-                <div className="after-play-route-title">Résumé du parcours</div>
+                <div className="after-play-route-title">{t('editorsStory.multiEditor.routeSummaryTitle')}</div>
               </div>
               <div className="after-play-route-list">
                 <span className="after-play-route-chip">
                   <span className="after-play-route-icon"><CircleStop strokeWidth={2} absoluteStrokeWidth /></span>
-                  <span>Histoires terminées</span>
+                  <span>{t('editorsStory.multiEditor.storiesFinishedChip')}</span>
                 </span>
                 <span className="after-play-route-arrow" aria-hidden="true">→</span>
                 <span className="after-play-route-chip">
                   <span className="after-play-route-icon"><Moon strokeWidth={2} absoluteStrokeWidth /></span>
-                  <span>{project?.endNodeName || 'Message de fin'}{project?.globalOptions?.nightMode ? ' (mode nuit)' : ''}</span>
+                  <span>{project?.endNodeName || t('editorsStory.multiEditor.endMessageNameFallback')}{project?.globalOptions?.nightMode ? t('editorsStory.multiEditor.nightModeSuffix') : ''}</span>
                 </span>
                 <span className="after-play-route-arrow" aria-hidden="true">→</span>
                 <span className="after-play-route-chip is-destination">
@@ -609,9 +616,9 @@ export const MultiEditor = memo(function MultiEditor({
                     {usesStorySpecificEndReturn
                       ? (storyAfterPlayDestination?.label
                         || (storyAfterPlaySummary?.hasDifferentDestinations
-                          ? 'Selon chaque histoire'
-                          : 'Destination par défaut de chaque histoire'))
-                      : 'Destination du message de fin'}
+                          ? t('editorsStory.multiEditor.specificDestinationLabel')
+                          : t('editorsStory.multiEditor.defaultDestinationEachStory')))
+                      : t('editorsStory.multiEditor.endMessageDestination')}
                   </span>
                 </span>
               </div>
@@ -621,13 +628,13 @@ export const MultiEditor = memo(function MultiEditor({
               <div className="after-play-destination-copy">
                 <span className="field-label">
                   {usesStorySpecificEndReturn
-                    ? 'Destination après le message de fin'
-                    : 'Message de fin commun'}
+                    ? t('editorsStory.multiEditor.destinationAfterEndMessage')
+                    : t('editorsStory.multiEditor.endMessageCommon')}
                 </span>
                 <div className="after-play-muted">
                   {usesStorySpecificEndReturn
-                    ? 'Le message de fin conserve une destination propre à chaque histoire sélectionnée.'
-                    : "La Lunii continue automatiquement après chaque audio d'histoire pour jouer ce message. Pour modifier la destination, sélectionne le message de fin dans l'arbre à gauche."}
+                    ? t('editorsStory.multiEditor.specificDestinationDesc')
+                    : t('editorsStory.multiEditor.endMessageCommonDesc')}
                 </div>
               </div>
               {usesStorySpecificEndReturn ? (
@@ -654,14 +661,14 @@ export const MultiEditor = memo(function MultiEditor({
         ) : (
           <div className="card">
             <div className="card-title-row">
-              <div className="card-title">Après la lecture</div>
+              <div className="card-title">{t('editorsStory.multiEditor.afterPlayTitle')}</div>
             </div>
             <div className="editor-setting-row is-note-row">
               <Moon className="editor-setting-icon" />
               <div className="editor-setting-copy">
-                <div className="editor-setting-title">Destination gérée par le message de fin</div>
+                <div className="editor-setting-title">{t('editorsStory.multiEditor.destinationManagedTitle')}</div>
                 <div className="editor-setting-desc">
-                  La destination après chaque histoire est gérée par le message de fin du pack. Pour la modifier, sélectionne le message de fin dans l'arbre à gauche.
+                  {t('editorsStory.multiEditor.destinationManagedDesc')}
                 </div>
               </div>
             </div>
@@ -681,23 +688,23 @@ export const MultiEditor = memo(function MultiEditor({
             return (
               <div className="card">
                 <div className="card-title-row">
-                  <div className="card-title">Après la lecture</div>
+                  <div className="card-title">{t('editorsStory.multiEditor.afterPlayTitle')}</div>
                   <div className="card-copy card-copy--inline">
-                    Que se passe-t-il quand ces histoires se terminent.
+                    {t('editorsStory.multiEditor.afterPlayDescStories')}
                   </div>
                 </div>
 
                 <div className="after-play-main-row">
                   <div className="after-play-end-row">
-                    <span className="after-play-end-label">À la fin</span>
-                    <div className="story-end-mode" role="group" aria-label="Comportement à la fin des histoires">
+                    <span className="after-play-end-label">{t('editorsStory.multiEditor.atEndLabel')}</span>
+                    <div className="story-end-mode" role="group" aria-label={t('editorsStory.multiEditor.endBehaviorAriaLabelPlural')}>
                       <button
                         type="button"
                         className={`story-end-mode-btn ${!isMixed && !value ? 'is-active' : ''}`}
                         aria-pressed={!isMixed && !value}
                         onClick={() => handleStoryAutoContinuationChange(false)}
                       >
-                        Rester sur l'écran
+                        {t('editorsStory.multiEditor.stayOnScreen')}
                       </button>
                       <button
                         type="button"
@@ -705,7 +712,7 @@ export const MultiEditor = memo(function MultiEditor({
                         aria-pressed={!isMixed && value}
                         onClick={() => handleStoryAutoContinuationChange(true)}
                       >
-                        Enchaîner
+                        {t('editorsStory.multiEditor.continueLabel')}
                       </button>
                     </div>
                   </div>
@@ -713,32 +720,32 @@ export const MultiEditor = memo(function MultiEditor({
 
                 <div className="after-play-route">
                   <div className="after-play-route-head">
-                    <div className="after-play-route-title">Résumé du parcours</div>
-                    {isMixed ? <div className="after-play-route-context">Comportements différents</div> : null}
+                    <div className="after-play-route-title">{t('editorsStory.multiEditor.routeSummaryTitle')}</div>
+                    {isMixed ? <div className="after-play-route-context">{t('editorsStory.multiEditor.differentBehaviors')}</div> : null}
                   </div>
                   <div className="after-play-route-list">
                     <span className="after-play-route-chip">
                       <span className="after-play-route-icon"><CircleStop strokeWidth={2} absoluteStrokeWidth /></span>
-                      <span>Histoires terminées</span>
+                      <span>{t('editorsStory.multiEditor.storiesFinishedChip')}</span>
                     </span>
                     <span className="after-play-route-arrow" aria-hidden="true">→</span>
                     {isMixed ? (
                       <span className="after-play-route-chip is-destination">
-                        <span>Selon chaque histoire</span>
+                        <span>{t('editorsStory.multiEditor.specificDestinationLabel')}</span>
                       </span>
                     ) : value ? (
                       <span className="after-play-route-chip is-destination">
                         <span>
                           {storyAfterPlayDestination?.label
                             || (hasDifferentDestinations
-                              ? 'Destination propre à chaque histoire'
-                              : 'Destination par défaut de chaque histoire')}
+                              ? t('editorsStory.multiEditor.ownDestinationEachStory')
+                              : t('editorsStory.multiEditor.defaultDestinationEachStory'))}
                         </span>
                       </span>
                     ) : (
                       <span className="after-play-route-chip">
                         <span className="after-play-route-icon"><Pause strokeWidth={2} absoluteStrokeWidth /></span>
-                        <span>Attente sur l'écran</span>
+                        <span>{t('editorsStory.multiEditor.waitingOnScreen')}</span>
                       </span>
                     )}
                   </div>
@@ -747,9 +754,9 @@ export const MultiEditor = memo(function MultiEditor({
                 {showDestination && (
                   <div className="after-play-destination-row">
                     <div className="after-play-destination-copy">
-                      <span className="field-label">Destination après l'histoire</span>
+                      <span className="field-label">{t('editorsStory.multiEditor.destinationAfterStory')}</span>
                       <div className="after-play-muted">
-                        L'écran ou le menu affiché à la sortie automatique.
+                        {t('editorsStory.multiEditor.screenOrMenuAtExit')}
                       </div>
                     </div>
                     <div className="after-play-destination-select">
@@ -776,13 +783,13 @@ export const MultiEditor = memo(function MultiEditor({
           })() : (
           <div className="card">
             <div className="card-title-row">
-              <div className="card-title">Après la lecture</div>
+              <div className="card-title">{t('editorsStory.multiEditor.afterPlayTitle')}</div>
             </div>
             <div className="editor-setting-row">
               <div className="editor-setting-copy">
-                <div className="editor-setting-title">Destination de fin d'histoire</div>
+                <div className="editor-setting-title">{t('editorsStory.multiEditor.endOfStoryDestinationTitle')}</div>
                 <div className="editor-setting-desc">
-                  Destination à la fin de l'histoire — suit le dossier parent si rien n’est choisi ici.
+                  {t('editorsStory.multiEditor.endOfStoryDestinationDesc')}
                 </div>
               </div>
               <div className="editor-setting-control">
@@ -795,7 +802,7 @@ export const MultiEditor = memo(function MultiEditor({
                   allMenus={allMenus}
                   allStories={allStories.filter((s) => !ids.includes(s.id))}
                   currentStoryId={null}
-                  emptyLabel="Suit la destination du dossier parent"
+                  emptyLabel={t('editorsStory.multiEditor.followParentFolder')}
                 />
               </div>
             </div>
@@ -805,7 +812,7 @@ export const MultiEditor = memo(function MultiEditor({
 
       {!allSameType && (
         <div className="multiselect-mixed-note">
-          Sélection mixte (histoires et dossiers) — seuls les contrôles de lecture peuvent être modifiés en groupe ici. Pour le reste, sélectionne un seul type d'élément à la fois.
+          {t('editorsStory.multiEditor.mixedSelectionNote')}
         </div>
       )}
 
@@ -815,11 +822,11 @@ export const MultiEditor = memo(function MultiEditor({
           <div className="card">
             <div className="editor-setting-row is-action-row">
               <div className="editor-setting-copy">
-                <div className="editor-setting-title">Couleur</div>
+                <div className="editor-setting-title">{t('editorsStory.multiEditor.colorLabel')}</div>
                 <div className="editor-setting-desc">
                   {currentColor === '__mixed__'
-                    ? `Couleurs différentes sur ${colorableIds.length} éléments — choisir pour uniformiser.`
-                    : `Pastille affichée à gauche du nom dans l'arbre (${colorableIds.length} éléments).`}
+                    ? t('editorsStory.multiEditor.colorMixedDesc', { count: colorableIds.length })
+                    : t('editorsStory.multiEditor.colorUniformDesc', { count: colorableIds.length })}
                 </div>
               </div>
               <div className="multiselect-color-dots">
@@ -836,7 +843,7 @@ export const MultiEditor = memo(function MultiEditor({
                 <button
                   type="button"
                   className={`ctx-color-clear${currentColor === null ? ' is-active' : ''}`}
-                  title={currentColor === '__mixed__' ? 'Couleurs différentes — cliquer pour effacer' : 'Aucune couleur'}
+                  title={currentColor === '__mixed__' ? t('editorsStory.multiEditor.colorMixedClearTitle') : t('editorsStory.multiEditor.colorNoneTitle')}
                   onClick={() => handleSetColor(null)}
                 >
                   ×
@@ -853,14 +860,16 @@ export const MultiEditor = memo(function MultiEditor({
             className="card-danger-trash"
             type="button"
             onClick={() => onBulkDeleteItems?.(ids)}
-            aria-label="Supprimer la sélection"
-            title="Supprimer la sélection"
+            aria-label={t('editorsStory.multiEditor.deleteSelectionAria')}
+            title={t('editorsStory.multiEditor.deleteSelectionTitle')}
           >
             <Trash2 className="card-danger-icon" />
           </button>
-          <span className="card-danger-title">Supprimer la sélection</span>
+          <span className="card-danger-title">{t('editorsStory.multiEditor.deleteSelectionTitle')}</span>
           <p className="card-danger-desc">
-            Supprime {nodes.length} élément{nodes.length > 1 ? 's' : ''} du projet : {bannerParts.join(', ')}.
+            {nodes.length === 1
+              ? t('editorsStory.multiEditor.deleteSelectionDescOne', { count: nodes.length, parts: bannerParts.join(', ') })
+              : t('editorsStory.multiEditor.deleteSelectionDescOther', { count: nodes.length, parts: bannerParts.join(', ') })}
           </p>
         </div>
       </div>

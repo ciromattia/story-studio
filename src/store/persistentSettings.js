@@ -27,6 +27,7 @@ export const KEYS = Object.freeze({
   RECENT_PROJECTS: 'recentProjects',
   MEDIA_TAGS_VERSION: 'mediaTagsVersion',
   THEME: 'storyStudioThemePreference',
+  LANGUAGE: 'storyStudioLanguagePreference',
   VERBOSE_LOGGING: 'storyStudio.verboseLogging',
   ALLOW_UNSUPPORTED_PACK_EXTRACTION: 'storyStudio.allowUnsupportedPackExtraction',
   PACK_LEADING_SILENCE_SECONDS: 'storyStudio.packLeadingSilenceSeconds',

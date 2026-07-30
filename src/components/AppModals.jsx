@@ -1,5 +1,6 @@
 import { lazy } from 'react';
 import { renderDeferred } from './renderDeferred';
+import { useTranslation } from '../i18n/I18nContext';
 import { SaveProgressModal } from './common/SaveProgressModal';
 import { GenerateProgressModal } from './GenerateModal/GenerateProgressModal';
 import { ImportNoticeToast } from './common/ImportNoticeToast';
@@ -88,6 +89,7 @@ export function AppModals({
   setImportNotice,
   onToolbarRecordSaved,
 }) {
+  const { t } = useTranslation();
   return (
     <>
       {modals.isOpen('prefs') && renderDeferred(
@@ -112,7 +114,7 @@ export function AppModals({
         <GenerateVoiceModal
           savePath={savePath}
           xttsSettings={xttsSettings}
-          label="Nouvelle histoire"
+          label={t('common.voiceModal.newStoryLabel')}
           initialText=""
           filenameHint="histoire-tts"
           target={{ kind: 'newStory', menuId: toolbarTtsTargetMenuId }}
@@ -199,8 +201,20 @@ export function AppModals({
         />,
       )}
 
-      {saveAsProgress && <SaveProgressModal data={saveAsProgress} title="Enregistrement sous..." doneTitle="Copie terminée" />}
-      {saveProgress && <SaveProgressModal data={saveProgress} title="Enregistrement..." doneTitle="Projet enregistré" />}
+      {saveAsProgress && (
+        <SaveProgressModal
+          data={saveAsProgress}
+          title={t('common.saveProgress.savingAsTitle')}
+          doneTitle={t('common.saveProgress.copyDoneTitle')}
+        />
+      )}
+      {saveProgress && (
+        <SaveProgressModal
+          data={saveProgress}
+          title={t('common.saveProgress.savingTitle')}
+          doneTitle={t('common.saveProgress.projectSavedTitle')}
+        />
+      )}
       {triageRequest && (
         <SessionMediaTriageModal items={triageRequest.items} onResolve={triageRequest.resolve} />
       )}
@@ -214,20 +228,22 @@ export function AppModals({
       )}
 
       {unpacking && (
-        <GenerateProgressModal title="Extraction en cours...">
+        <GenerateProgressModal title={t('common.unpack.title')}>
           <div className="gen-progress-name">{unpacking.name}</div>
           <div className="gen-progress-desc">
-            Story Studio analyse le pack et extrait les éléments éditables.
+            {t('common.unpack.description')}
           </div>
         </GenerateProgressModal>
       )}
 
       {importing && (
-        <GenerateProgressModal title="Import en cours...">
+        <GenerateProgressModal title={t('common.import.title')}>
           <div className="gen-progress-name">{importing.name}</div>
           <div className="gen-progress-desc">{importing.phase}</div>
           <div className="gen-progress-meta">
-            {importing.total > 1 ? `Fichier ${Math.max(importing.index, 1)} sur ${importing.total}` : 'Traitement du fichier importé'}
+            {importing.total > 1
+              ? t('common.import.fileOfTotal', { index: Math.max(importing.index, 1), total: importing.total })
+              : t('common.import.processingFile')}
           </div>
         </GenerateProgressModal>
       )}

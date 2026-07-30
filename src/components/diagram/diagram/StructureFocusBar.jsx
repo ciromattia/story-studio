@@ -1,4 +1,7 @@
+import { useTranslation } from '../../../i18n/I18nContext';
+
 export function StructureFocusBar({ focus, pinned, onClear }) {
+  const { t } = useTranslation();
   if (!focus) return null;
   return (
     <div className={`fd-structure-focus-bar ${pinned ? 'is-pinned' : ''}`} role="status">
@@ -14,11 +17,11 @@ export function StructureFocusBar({ focus, pinned, onClear }) {
         {focus.breadcrumb.join(' › ')}
       </div>
       {pinned ? (
-        <button type="button" className="fd-structure-focus-clear" onClick={onClear} title="Libérer la structure (Échap)">
+        <button type="button" className="fd-structure-focus-clear" onClick={onClear} title={t('diagram.structure.focusClearTitle')}>
           ×
         </button>
       ) : (
-        <span className="fd-structure-focus-hint">Cliquer pour épingler</span>
+        <span className="fd-structure-focus-hint">{t('diagram.structure.focusPinHint')}</span>
       )}
     </div>
   );

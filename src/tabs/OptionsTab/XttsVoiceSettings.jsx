@@ -1,6 +1,6 @@
 import { Button } from '../../components/common/Button';
 import { Toggle } from '../../components/common/Toggle';
-import { formatFrenchCount } from '../../utils/frenchText.js';
+import { useTranslation } from '../../i18n/I18nContext';
 
 const LANGUAGE_OPTIONS = [
   { value: 'fr', label: 'Français' },
@@ -27,31 +27,33 @@ export function XttsVoiceSettings({
   updateAutoStart,
   updateForceCpu,
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="xtts-settings">
       <div className="xtts-grid">
         <label className="xtts-label">
-          URL du serveur XTTS
+          {t('options.voice.xtts.serverUrlLabel')}
           <input
             className="xtts-input"
             value={xttsSettings.serverUrl}
             onChange={(e) => updateServerUrl(e.target.value)}
-            placeholder="http://127.0.0.1:8020"
+            placeholder={t('options.voice.xtts.serverUrlPlaceholder')}
           />
         </label>
 
         <label className="xtts-label">
-          Dossier XTTS
+          {t('options.voice.xtts.dirLabel')}
           <input
             className="xtts-input"
             value={xttsSettings.xttsDir}
             onChange={(e) => updateXttsDir(e.target.value)}
-            placeholder="Dossier contenant server.py, venv, models et voices"
+            placeholder={t('options.voice.xtts.dirPlaceholder')}
           />
         </label>
 
         <label className="xtts-label">
-          Langue par défaut
+          {t('options.voice.xtts.defaultLanguageLabel')}
           <select
             className="xtts-input"
             value={xttsSettings.language}
@@ -66,9 +68,9 @@ export function XttsVoiceSettings({
 
       <div className="opts-row opts-row--pt">
         <div className="opts-row-info">
-          <div className="opts-row-label">Démarrer XTTS automatiquement si le serveur est arrêté</div>
+          <div className="opts-row-label">{t('options.voice.xtts.autoStartLabel')}</div>
           <div className="opts-row-sub">
-            Story Studio lancera `server.py` depuis ton dossier XTTS si besoin.
+            {t('options.voice.xtts.autoStartSub')}
           </div>
         </div>
         <Toggle on={xttsSettings.autoStart} onChange={updateAutoStart} />
@@ -76,9 +78,9 @@ export function XttsVoiceSettings({
 
       <div className="opts-row opts-row--pt">
         <div className="opts-row-info">
-          <div className="opts-row-label">Forcer le CPU (compatible ComfyUI simultané)</div>
+          <div className="opts-row-label">{t('options.voice.xtts.forceCpuLabel')}</div>
           <div className="opts-row-sub">
-            XTTS s'exécute sur CPU — plus lent (~3×) mais libère le GPU pour ComfyUI.
+            {t('options.voice.xtts.forceCpuSub')}
           </div>
         </div>
         <Toggle on={xttsSettings.forceCpu} onChange={updateForceCpu} />
@@ -86,16 +88,17 @@ export function XttsVoiceSettings({
 
       <div className="xtts-actions">
         <Button onClick={testXtts} disabled={xttsProbe.state === 'loading'}>
-          {xttsProbe.state === 'loading' ? 'Test en cours…' : 'Tester et actualiser les voix'}
+          {xttsProbe.state === 'loading' ? t('options.voice.xtts.testingButton') : t('options.voice.xtts.testButton')}
         </Button>
         <span className="opts-row-sub">
           {favoriteVoices.length > 0
-            ? `${formatFrenchCount(
-              favoriteVoices.length,
-              'voix favorite affichée dans la modale',
-              'voix favorites affichées dans la modale',
-            )}.`
-            : 'Aucune voix favorite : toutes les voix XTTS détectées seront proposées.'}
+            ? t(
+              favoriteVoices.length === 1
+                ? 'options.voice.xtts.favoriteCountOne'
+                : 'options.voice.xtts.favoriteCountOther',
+              { count: favoriteVoices.length },
+            )
+            : t('options.voice.xtts.noFavorites')}
         </span>
       </div>
 
@@ -106,7 +109,7 @@ export function XttsVoiceSettings({
       )}
 
       {xttsLogs.length > 0 && (
-        <div className="xtts-log-panel" aria-label="Journal XTTS">
+        <div className="xtts-log-panel" aria-label={t('options.voice.xtts.logsAriaLabel')}>
           {xttsLogs.map((line, index) => (
             <div key={`${index}-${line}`} className="xtts-log-line">{line}</div>
           ))}
@@ -116,23 +119,23 @@ export function XttsVoiceSettings({
       <div className="xtts-voices-panel">
         <div className="xtts-voices-header">
           <div>
-            <div className="opts-row-label">Voix favorites</div>
+            <div className="opts-row-label">{t('options.voice.xtts.favoritesTitle')}</div>
             <div className="opts-row-sub">
-              Coche uniquement les voix que tu veux voir dans la modale de génération.
+              {t('options.voice.xtts.favoritesSub')}
             </div>
           </div>
           <Button onClick={clearXttsFavorites} disabled={favoriteVoices.length === 0}>
-            Tout afficher
+            {t('options.voice.xtts.showAllButton')}
           </Button>
         </div>
 
         {!xttsVoicesLoaded ? (
           <div className="xtts-voices-empty">
-            Actualise les voix XTTS pour choisir tes favorites.
+            {t('options.voice.xtts.refreshHint')}
           </div>
         ) : xttsVoices.length === 0 ? (
           <div className="xtts-voices-empty">
-            Aucune voix retournée par XTTS.
+            {t('options.voice.xtts.noVoicesReturned')}
           </div>
         ) : (
           <div className="xtts-voice-list">

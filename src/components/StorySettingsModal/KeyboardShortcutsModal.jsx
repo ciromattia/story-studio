@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Button } from '../common/Button';
+import { useTranslation } from '../../i18n/I18nContext';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import {
   DEFAULT_SHORTCUTS,
@@ -29,6 +30,7 @@ export function KeyboardShortcutsModal({
   onChange,
   onClose,
 }) {
+  const { t } = useTranslation();
   const [captureId, setCaptureId] = useState(null);
   const [message, setMessage] = useState('');
   const [query, setQuery] = useState('');
@@ -61,7 +63,7 @@ export function KeyboardShortcutsModal({
     const conflict = findShortcutConflict(shortcuts, definition.id, nextShortcut);
     if (conflict) {
       const scopeLabel = SHORTCUT_SCOPES.find((s) => s.id === conflict.scope)?.label || conflict.scope;
-      setMessage(`Déjà utilisé par « ${conflict.label} » dans ${scopeLabel}.`);
+      setMessage(t('storySettings.shortcuts.conflictMessage', { label: conflict.label, scope: scopeLabel }));
       return;
     }
 
@@ -108,25 +110,25 @@ export function KeyboardShortcutsModal({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="modal-header">
-          <span>Raccourcis clavier</span>
+          <span>{t('storySettings.shortcuts.title')}</span>
           <Button variant="icon" className="modal-close" onClick={onClose}>✕</Button>
         </div>
 
         <div className="keyboard-shortcuts-body">
           <div className="keyboard-shortcuts-lead">
-            Clique sur un raccourci puis presse la nouvelle combinaison. Échap annule la capture.
+            {t('storySettings.shortcuts.lead')}
           </div>
 
           <input
             type="search"
             className="keyboard-shortcuts-search"
-            placeholder="Rechercher un raccourci…"
+            placeholder={t('storySettings.shortcuts.searchPlaceholder')}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
 
           {sections.length === 0 ? (
-            <div className="keyboard-shortcuts-empty">Aucun raccourci ne correspond à « {query} ».</div>
+            <div className="keyboard-shortcuts-empty">{t('storySettings.shortcuts.noResultsMessage', { query })}</div>
           ) : null}
 
           {sections.map(({ scope, items }) => {
@@ -137,7 +139,7 @@ export function KeyboardShortcutsModal({
                   <div className="keyboard-shortcuts-section-title">
                     {scope.label}
                     {scope.id === 'a11y' ? (
-                      <span className="keyboard-shortcuts-fixed-badge">lecture seule</span>
+                      <span className="keyboard-shortcuts-fixed-badge">{t('storySettings.shortcuts.readOnlyBadge')}</span>
                     ) : null}
                   </div>
                   {editableInScope ? (
@@ -145,9 +147,9 @@ export function KeyboardShortcutsModal({
                       type="button"
                       className="keyboard-shortcuts-section-reset"
                       onClick={() => handleResetScope(scope.id)}
-                      title={`Restaurer les valeurs par défaut pour « ${scope.label} »`}
+                      title={t('storySettings.shortcuts.resetScopeTitle', { scope: scope.label })}
                     >
-                      Réinitialiser
+                      {t('storySettings.shortcuts.resetScopeButton')}
                     </button>
                   ) : null}
                 </div>
@@ -180,7 +182,7 @@ export function KeyboardShortcutsModal({
                         <div className="keyboard-shortcut-info">
                           <div className="opts-row-label">{definition.label}</div>
                           <div className="opts-row-sub">
-                            Défaut : {formatShortcut(DEFAULT_SHORTCUTS[definition.id] ?? definition.defaultShortcut)}
+                            {t('storySettings.shortcuts.defaultLabel', { shortcut: formatShortcut(DEFAULT_SHORTCUTS[definition.id] ?? definition.defaultShortcut) })}
                           </div>
                         </div>
                         <button
@@ -192,7 +194,7 @@ export function KeyboardShortcutsModal({
                           }}
                           onKeyDown={(event) => captureId === definition.id && handleKeyDown(event, definition)}
                         >
-                          {captureId === definition.id ? 'Appuie sur un raccourci…' : formatShortcut(currentShortcut)}
+                          {captureId === definition.id ? t('storySettings.shortcuts.capturingLabel') : formatShortcut(currentShortcut)}
                         </button>
                       </div>
                     );
@@ -205,8 +207,8 @@ export function KeyboardShortcutsModal({
           {message ? <div className="keyboard-shortcuts-message">{message}</div> : null}
 
           <div className="keyboard-shortcuts-actions">
-            <Button onClick={handleResetAll}>Tout réinitialiser</Button>
-            <Button variant="primary-violet" onClick={onClose}>Fermer</Button>
+            <Button onClick={handleResetAll}>{t('storySettings.shortcuts.resetAllButton')}</Button>
+            <Button variant="primary-violet" onClick={onClose}>{t('storySettings.shortcuts.closeButton')}</Button>
           </div>
         </div>
       </div>

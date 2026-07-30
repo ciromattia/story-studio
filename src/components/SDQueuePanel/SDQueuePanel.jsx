@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalFile } from '../../hooks/useLocalFile';
 import { createAudioPlayer, disposeAudioPlayerRef } from '../../utils/audioPlayer';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { useTranslation } from '../../i18n/I18nContext';
 import { Tooltip } from '../common/Tooltip';
 import { Button } from '../common/Button';
 import { basename } from '../../utils/fileUtils';
@@ -9,14 +10,6 @@ import { mediaDrag } from '../../store/dragState';
 import { Image as ImageIcon, Music, Pause, Play, RotateCcw, X } from '../icons/LucideLocal';
 import { QUEUE_COLUMNS, resolveQueueGrid, useQueueColumnWidths } from './useQueueColumnWidths';
 import './SDQueuePanel.css';
-
-const STATUS_LABEL = {
-  pending: 'En attente',
-  submitting: 'Envoi...',
-  running: 'Génération...',
-  done: 'Terminé',
-  error: 'Erreur',
-};
 
 let activeQueueAudioStopper = null;
 
@@ -99,18 +92,21 @@ function startQueueMediaDrag(event, { kind, path, label, onDragStart = null }) {
 }
 
 function ProgressRing({ progress }) {
+  const { t } = useTranslation();
   const percent = progressPercent(progress);
 
   if (percent == null) {
     return <span className="sd-progress-ring sd-progress-ring-spin" aria-hidden="true" />;
   }
 
+  const progressText = t('generation.sdQueue.progressTooltip', { percent });
+
   return (
-    <Tooltip text={`Progression ${percent}%`}>
+    <Tooltip text={progressText}>
       <span
         className="sd-progress-ring"
         style={{ '--progress': `${percent}%` }}
-        aria-label={`Progression ${percent}%`}
+        aria-label={progressText}
       />
     </Tooltip>
   );
@@ -128,9 +124,10 @@ function UsageBadge({ usage }) {
 }
 
 function StatusBadge({ job }) {
+  const { t } = useTranslation();
   const percent = progressPercent(job.progress);
   const active = isActiveJob(job);
-  const label = active && percent != null ? `${percent}%` : (STATUS_LABEL[job.status] ?? job.status);
+  const label = active && percent != null ? `${percent}%` : (t(`generation.sdQueue.status.${job.status}`) ?? job.status);
 
   return (
     <span className={`sd-job-badge sd-badge-${job.status}`}>
@@ -141,16 +138,18 @@ function StatusBadge({ job }) {
 }
 
 function JobKind({ isImageJob }) {
+  const { t } = useTranslation();
   const Icon = isImageJob ? ImageIcon : Music;
   return (
     <span className={`sd-kind-pill${isImageJob ? ' is-image' : ' is-audio'}`}>
       <Icon className="sd-kind-icon" strokeWidth={2} absoluteStrokeWidth />
-      {isImageJob ? 'Image' : 'Audio'}
+      {isImageJob ? t('generation.sdQueue.kind.image') : t('generation.sdQueue.kind.audio')}
     </span>
   );
 }
 
 function JobResultThumb({ path, onPreview }) {
+  const { t } = useTranslation();
   const url = useLocalFile(path);
   const draggedRef = useRef(false);
 
@@ -164,7 +163,7 @@ function JobResultThumb({ path, onPreview }) {
   }
 
   return (
-    <Tooltip text="Glisser vers un placeholder image, cliquer pour prévisualiser">
+    <Tooltip text={t('generation.sdQueue.previewTooltip')}>
       <button
         className="sd-result-thumb"
         onPointerDown={(event) => startQueueMediaDrag(event, {
@@ -174,7 +173,7 @@ function JobResultThumb({ path, onPreview }) {
           onDragStart: () => { draggedRef.current = true; },
         })}
         onClick={handleClick}
-        aria-label={`Prévisualiser ${basename(path)}`}
+        aria-label={t('generation.sdQueue.previewAria', { filename: basename(path) })}
       >
         {url ? (
           <img src={url} alt="" className="sd-result-img" />
@@ -187,6 +186,7 @@ function JobResultThumb({ path, onPreview }) {
 }
 
 function ImagePreviewModal({ path, onClose }) {
+  const { t } = useTranslation();
   const url = useLocalFile(path);
   const filename = basename(path);
   useEscapeKey(true, () => onClose?.());
@@ -194,8 +194,8 @@ function ImagePreviewModal({ path, onClose }) {
     <div className="modal-overlay sd-preview-overlay" onMouseDown={onClose}>
       <div className="modal-box sd-preview-box" onMouseDown={e => e.stopPropagation()}>
         <div className="modal-header">
-          <span>{filename || 'Image générée'}</span>
-          <Button variant="icon" className="modal-close" onClick={onClose} aria-label="Fermer">
+          <span>{filename || t('generation.sdQueue.previewFallbackTitle')}</span>
+          <Button variant="icon" className="modal-close" onClick={onClose} aria-label={t('generation.sdQueue.closeAria')}>
             <X className="sd-modal-close-icon" strokeWidth={2} absoluteStrokeWidth />
           </Button>
         </div>
@@ -208,6 +208,7 @@ function ImagePreviewModal({ path, onClose }) {
 }
 
 function QueueAudioButton({ path, filename }) {
+  const { t } = useTranslation();
   const url = useLocalFile(path);
   const audioRef = useRef(null);
   const stopRef = useRef(null);
@@ -262,6 +263,7 @@ function QueueAudioButton({ path, filename }) {
   }
 
   const Icon = playing ? Pause : Play;
+  const actionLabel = playing ? t('generation.sdQueue.stopAction') : t('generation.sdQueue.playAction');
 
   return (
     <>
@@ -270,8 +272,8 @@ function QueueAudioButton({ path, filename }) {
         size="sm"
         className={`sd-result-play${playing ? ' is-playing' : ''}`}
         onClick={togglePlayback}
-        aria-label={`${playing ? 'Arrêter' : 'Lire'} ${filename}`}
-        title={playing ? 'Arrêter' : 'Lire'}
+        aria-label={t('generation.sdQueue.playAria', { action: actionLabel, filename })}
+        title={actionLabel}
         disabled={!url}
       >
         <Icon className="sd-row-icon" strokeWidth={2} absoluteStrokeWidth />
@@ -281,10 +283,12 @@ function QueueAudioButton({ path, filename }) {
 }
 
 function ResultCell({ job, isImageJob, onPreviewImage }) {
+  const { t } = useTranslation();
   if (job.status === 'error') {
+    const errorText = job.errorMessage || t('generation.sdQueue.genericError');
     return (
-      <Tooltip text={job.errorMessage || 'Erreur de génération'} wrap className="sd-result-error-wrap">
-        <span className="sd-result-error">{job.errorMessage || 'Erreur de génération'}</span>
+      <Tooltip text={errorText} wrap className="sd-result-error-wrap">
+        <span className="sd-result-error">{errorText}</span>
       </Tooltip>
     );
   }
@@ -295,7 +299,7 @@ function ResultCell({ job, isImageJob, onPreviewImage }) {
 
   if (isImageJob) {
     const paths = job.resultPaths ?? [];
-    if (paths.length === 0) return <span className="sd-cell-muted">Aucun fichier</span>;
+    if (paths.length === 0) return <span className="sd-cell-muted">{t('generation.sdQueue.noFile')}</span>;
     const visiblePaths = paths.slice(0, 2);
     return (
       <div className="sd-image-result-cell">
@@ -314,7 +318,7 @@ function ResultCell({ job, isImageJob, onPreviewImage }) {
     );
   }
 
-  if (!job.resultPath) return <span className="sd-cell-muted">Aucun fichier</span>;
+  if (!job.resultPath) return <span className="sd-cell-muted">{t('generation.sdQueue.noFile')}</span>;
   const filename = basename(job.resultPath);
   return (
     <div
@@ -334,8 +338,11 @@ function ResultCell({ job, isImageJob, onPreviewImage }) {
 }
 
 function QueueRow({ job, onRemove, onPreviewImage, onRegenerateImage, getAudioUsage, getImageUsage }) {
+  const { t } = useTranslation();
   const isImageJob = job.kind !== 'audio';
-  const title = isImageJob ? (job.workflowName || 'Image IA') : (job.label || 'Audio IA');
+  const title = isImageJob
+    ? (job.workflowName || t('generation.sdQueue.fallbackImageTitle'))
+    : (job.label || t('generation.sdQueue.fallbackAudioTitle'));
   const subtitle = isImageJob ? 'ComfyUI' : (job.voiceLabel || 'XTTS');
   const usage = job.status === 'done'
     ? (isImageJob ? getImageUsage?.(job) : getAudioUsage?.(job))
@@ -377,8 +384,8 @@ function QueueRow({ job, onRemove, onPreviewImage, onRegenerateImage, getAudioUs
             size="sm"
             className="sd-row-action"
             onClick={() => onRegenerateImage?.(job)}
-            aria-label="Régénérer l'image"
-            title="Régénérer"
+            aria-label={t('generation.sdQueue.regenerateAria')}
+            title={t('generation.sdQueue.regenerateTitle')}
           >
             <RotateCcw className="sd-row-icon" strokeWidth={2} absoluteStrokeWidth />
           </Button>
@@ -389,8 +396,8 @@ function QueueRow({ job, onRemove, onPreviewImage, onRegenerateImage, getAudioUs
             size="sm"
             className="sd-row-action"
             onClick={() => onRemove(job.id)}
-            aria-label="Retirer de la file"
-            title="Retirer"
+            aria-label={t('generation.sdQueue.removeAria')}
+            title={t('generation.sdQueue.removeTitle')}
           >
             <X className="sd-row-icon" strokeWidth={2} absoluteStrokeWidth />
           </Button>
@@ -412,6 +419,7 @@ export function SDQueuePanel({
   onClose,
   embedded = false,
 }) {
+  const { t } = useTranslation();
   const jobs = [...imageJobs, ...audioJobs].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
   const hasDone = jobs.some(j => j.status === 'done' || j.status === 'error');
   const [previewPath, setPreviewPath] = useState(null);
@@ -496,15 +504,15 @@ export function SDQueuePanel({
   const content = (
     <>
       <div className={embedded ? 'sd-queue-embedded-header' : 'modal-header'}>
-        <span>Générations IA</span>
+        <span>{t('generation.sdQueue.title')}</span>
         <div className="sd-queue-header-actions">
           {hasDone && (
             <Button size="sm" onClick={onClearDone}>
-              Effacer terminées
+              {t('generation.sdQueue.clearDoneButton')}
             </Button>
           )}
           {!embedded && (
-            <Button variant="icon" className="modal-close" onClick={onClose} aria-label="Fermer">
+            <Button variant="icon" className="modal-close" onClick={onClose} aria-label={t('generation.sdQueue.closeAria')}>
               <X className="sd-modal-close-icon" strokeWidth={2} absoluteStrokeWidth />
             </Button>
           )}
@@ -513,13 +521,13 @@ export function SDQueuePanel({
 
       <div className="sd-queue-body">
         {jobs.length === 0 ? (
-          <div className="sd-queue-empty">Aucune génération en cours.</div>
+          <div className="sd-queue-empty">{t('generation.sdQueue.emptyState')}</div>
         ) : (
           <div className="sd-queue-table" ref={tableRef} style={tableStyle}>
             <div className="sd-queue-table-header" ref={headerRef}>
               {QUEUE_COLUMNS.map((col) => (
                 <div key={col.id} className="sd-col-head">
-                  <span className="sd-col-label">{col.label}</span>
+                  <span className="sd-col-label">{t(`generation.sdQueue.columns.${col.id}`)}</span>
                   {col.id !== 'actions' && (
                     <span
                       className="sd-col-resize"

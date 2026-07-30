@@ -1,5 +1,6 @@
 import { Tooltip } from '../../components/common/Tooltip';
 import { formatPlaybackTime } from './navigationResolvers';
+import { useTranslation } from '../../i18n/I18nContext';
 import '../EmulatorTab.css';
 
 export function LuniiShell({
@@ -19,17 +20,18 @@ export function LuniiShell({
   onClose,
   dragHandleProps = null,
 }) {
+  const { t } = useTranslation();
   return (
     <div className={`lunii-sim${chromeControls?.transparentPreview ? ' is-transparent-preview' : ''}`}>
       {(chromeControls || onClose) && (
         <div className="lunii-top-controls">
           <div className="lunii-top-controls-left">
             {dragHandleProps && (
-              <Tooltip text="Déplacer le simulateur">
+              <Tooltip text={t('simulator.shell.dragTooltip')}>
                 <button
                   type="button"
                   className="lunii-drag-handle"
-                  aria-label="Déplacer le simulateur"
+                  aria-label={t('simulator.shell.dragAriaLabel')}
                   {...dragHandleProps}
                 >
                   ⋮⋮
@@ -38,29 +40,29 @@ export function LuniiShell({
             )}
             {chromeControls && (
               <>
-                <Tooltip text={chromeControls.autoPlaybackEnabled ? "Désactiver les transitions automatiques dans le simulateur" : "Réactiver les transitions automatiques dans le simulateur"}>
+                <Tooltip text={chromeControls.autoPlaybackEnabled ? t('simulator.shell.disableAutoTooltip') : t('simulator.shell.enableAutoTooltip')}>
                   <button
                     type="button"
                     className={`lunii-chip-btn${chromeControls.autoPlaybackEnabled ? ' is-active' : ''}`}
                     onClick={chromeControls.toggleAutoPlayback}
                   >
-                    Auto
+                    {t('simulator.shell.autoButton')}
                   </button>
                 </Tooltip>
-                <Tooltip text={chromeControls.transparentPreview ? "Rendre l'aperçu opaque" : "Rendre l'aperçu transparent"}>
+                <Tooltip text={chromeControls.transparentPreview ? t('simulator.shell.opaqueTooltip') : t('simulator.shell.transparentTooltip')}>
                   <button
                     type="button"
                     className={`lunii-chip-btn${chromeControls.transparentPreview ? ' is-active' : ''}`}
                     onClick={chromeControls.toggleTransparentPreview}
                   >
-                    Transparence
+                    {t('simulator.shell.transparencyButton')}
                   </button>
                 </Tooltip>
               </>
             )}
           </div>
           {onClose && (
-            <button type="button" className="lunii-close-btn" onClick={onClose} aria-label="Fermer le simulateur">
+            <button type="button" className="lunii-close-btn" onClick={onClose} aria-label={t('simulator.shell.closeAriaLabel')}>
               ×
             </button>
           )}
@@ -68,7 +70,7 @@ export function LuniiShell({
       )}
       {playbackControls?.visible && (
         <div className="lunii-playback-bar">
-          <Tooltip text="Reculer de 10 secondes">
+          <Tooltip text={t('simulator.shell.rewindTooltip')}>
             <button
               className="lunii-playback-jump"
               type="button"
@@ -89,7 +91,7 @@ export function LuniiShell({
             disabled={playbackControls.duration <= 0}
           />
           <span className="lunii-playback-time">{formatPlaybackTime(playbackControls.duration)}</span>
-          <Tooltip text="Avancer de 10 secondes">
+          <Tooltip text={t('simulator.shell.forwardTooltip')}>
             <button
               className="lunii-playback-jump"
               type="button"
@@ -117,16 +119,16 @@ export function LuniiShell({
           </div>
         </div>
         <div className="lunii-buttons">
-          <Tooltip text="Accueil">
+          <Tooltip text={t('simulator.shell.homeTooltip')}>
             <button className="lunii-btn-round" onClick={onHome} disabled={homeDisabled}>⌂</button>
           </Tooltip>
-          <Tooltip text={paused ? 'Reprendre' : 'Pause'}>
+          <Tooltip text={paused ? t('simulator.shell.resumeTooltip') : t('simulator.shell.pauseTooltip')}>
             <button className="lunii-btn-round" onClick={onPause}>
               {paused ? '▶' : '⏸'}
             </button>
           </Tooltip>
-          <Tooltip text="OK">
-            <button className="lunii-btn-round lunii-btn-ok" onClick={onOk} disabled={okDisabled}>OK</button>
+          <Tooltip text={t('simulator.shell.okTooltip')}>
+            <button className="lunii-btn-round lunii-btn-ok" onClick={onOk} disabled={okDisabled}>{t('simulator.shell.okButton')}</button>
           </Tooltip>
         </div>
       </div>

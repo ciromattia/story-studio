@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { exists, readDir } from '@tauri-apps/plugin-fs';
 import { AppModalPortal } from '../common/AppModalPortal';
+import { useTranslation } from '../../i18n/I18nContext';
 import {
   Check,
   ChevronDown,
@@ -40,12 +41,16 @@ function splitFileName(fileName) {
   return [name.slice(0, dot), name.slice(dot)];
 }
 
-function rowMeta(row) {
-  if (isResolved(row)) return 'Relié · chemin mis à jour';
-  if (row.status === 'ambiguous') return `${row.matches.length} correspondances à départager`;
+function rowMeta(row, t) {
+  if (isResolved(row)) return t('storySettings.relink.statusResolved');
+  if (row.status === 'ambiguous') {
+    const count = row.matches.length;
+    return t(count === 1 ? 'storySettings.relink.statusAmbiguousOne' : 'storySettings.relink.statusAmbiguousOther', { count });
+  }
   const labels = row.labels ?? [];
-  if (labels.length === 0) return 'Introuvable';
-  return `${labels.slice(0, 2).join(' · ')}${labels.length > 2 ? ` +${labels.length - 2}` : ''}`;
+  if (labels.length === 0) return t('storySettings.relink.statusMissing');
+  const extra = labels.length > 2 ? t('storySettings.relink.extraLabelsSuffix', { count: labels.length - 2 }) : '';
+  return `${labels.slice(0, 2).join(' · ')}${extra}`;
 }
 
 async function findFirstExisting(candidates) {
@@ -139,6 +144,7 @@ function rowMatchesFilter(row, filter) {
 }
 
 export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApply, onClose }) {
+  const { t } = useTranslation();
   const [rows, setRows] = useState(() => buildInitialRows(missingMedia));
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
@@ -214,7 +220,7 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
     const folder = await openDialog({
       directory: true,
       multiple: false,
-      title: 'Choisir le dossier qui contient ces médias',
+      title: t('storySettings.relink.chooseGroupFolderDialogTitle'),
       defaultPath: group.dir || workspaceDir || dirname(group.rows[0]?.path),
     });
     if (!folder) return;
@@ -240,7 +246,7 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
     if (applying) return;
     const file = await openDialog({
       multiple: false,
-      title: `Relier ${row.fileName}`,
+      title: t('storySettings.relink.chooseFileDialogTitle', { fileName: row.fileName }),
       defaultPath: dirname(row.path) || workspaceDir,
     });
     if (!file) return;
@@ -282,15 +288,17 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
 
   return (
     <AppModalPortal>
-      <div className="relink-modal" role="dialog" aria-label="Médias introuvables" onClick={(event) => event.stopPropagation()}>
+      <div className="relink-modal" role="dialog" aria-label={t('storySettings.relink.ariaLabel')} onClick={(event) => event.stopPropagation()}>
         <header className="relink-head">
           <span className="relink-head-icon"><Link2 /></span>
-          <span className="relink-head-title">Médias introuvables</span>
+          <span className="relink-head-title">{t('storySettings.relink.title')}</span>
           <span className="relink-head-count">
-            {remainingCount > 0 ? `${remainingCount} fichier${remainingCount > 1 ? 's' : ''}` : 'Tout relié'}
+            {remainingCount > 0
+              ? t(remainingCount === 1 ? 'storySettings.relink.remainingCountOne' : 'storySettings.relink.remainingCountOther', { count: remainingCount })
+              : t('storySettings.relink.allLinked')}
           </span>
           <span className="relink-spacer" />
-          <button type="button" className="relink-icon-btn" aria-label="Fermer" onClick={onClose} disabled={applying}>
+          <button type="button" className="relink-icon-btn" aria-label={t('storySettings.relink.closeAriaLabel')} onClick={onClose} disabled={applying}>
             <X />
           </button>
         </header>
@@ -298,7 +306,7 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
         <div className="relink-subhead">
           <div className="relink-progress">
             <span className="relink-progress-label">
-              <b>{resolvedCount}</b> reliés sur <b>{total}</b>
+              <b>{resolvedCount}</b> {t('storySettings.relink.progressSeparator')} <b>{total}</b>
             </span>
             <div className="relink-bar"><div className="relink-bar-fill" style={{ width: `${progressPct}%` }} /></div>
           </div>
@@ -307,20 +315,20 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
               <Search />
               <input
                 type="text"
-                placeholder="Filtrer par nom de fichier ou dossier…"
+                placeholder={t('storySettings.relink.filterPlaceholder')}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
-            <div className="relink-segmented" role="group" aria-label="Filtre">
+            <div className="relink-segmented" role="group" aria-label={t('storySettings.relink.filterGroupAriaLabel')}>
               <button type="button" className="relink-seg" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
-                Tous <span className="relink-seg-n">{total}</span>
+                {t('storySettings.relink.filterAll')} <span className="relink-seg-n">{total}</span>
               </button>
               <button type="button" className="relink-seg" aria-pressed={filter === 'remaining'} onClick={() => setFilter('remaining')}>
-                Restants <span className="relink-seg-n">{remainingCount}</span>
+                {t('storySettings.relink.filterRemaining')} <span className="relink-seg-n">{remainingCount}</span>
               </button>
               <button type="button" className="relink-seg" aria-pressed={filter === 'resolved'} onClick={() => setFilter('resolved')}>
-                Reliés <span className="relink-seg-n">{resolvedCount}</span>
+                {t('storySettings.relink.filterResolved')} <span className="relink-seg-n">{resolvedCount}</span>
               </button>
             </div>
           </div>
@@ -330,7 +338,7 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
           {visibleGroups.length === 0 && (
             <div className="relink-empty">
               <Search />
-              <span>Aucun fichier ne correspond à ce filtre.</span>
+              <span>{t('storySettings.relink.emptyFilterMessage')}</span>
             </div>
           )}
 
@@ -349,7 +357,7 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
                   <button
                     type="button"
                     className="relink-ghead-chev"
-                    aria-label={isCollapsed ? 'Déplier' : 'Replier'}
+                    aria-label={isCollapsed ? t('storySettings.relink.expandAriaLabel') : t('storySettings.relink.collapseAriaLabel')}
                     onClick={() => toggleGroup(group.key)}
                   >
                     <ChevronDown />
@@ -359,8 +367,8 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
                     <div className="relink-ghead-path" title={group.dir}>{group.dir}</div>
                     <div className="relink-ghead-sub">
                       {groupResolved
-                        ? `${group.rows.length} fichier${group.rows.length > 1 ? 's' : ''} relié${group.rows.length > 1 ? 's' : ''}`
-                        : `${groupRemaining} fichier${groupRemaining > 1 ? 's' : ''} manquant${groupRemaining > 1 ? 's' : ''}`}
+                        ? t(group.rows.length === 1 ? 'storySettings.relink.groupResolvedCountOne' : 'storySettings.relink.groupResolvedCountOther', { count: group.rows.length })
+                        : t(groupRemaining === 1 ? 'storySettings.relink.groupMissingCountOne' : 'storySettings.relink.groupMissingCountOther', { count: groupRemaining })}
                       {groupRole && ` · ${groupRole}`}
                     </div>
                   </div>
@@ -372,7 +380,7 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
                       disabled={Boolean(scanningKey) || applying}
                     >
                       {isScanning ? <Loader2 className="relink-spin" /> : <FolderOpen />}
-                      {groupResolved ? 'Modifier le dossier' : 'Choisir le dossier'}
+                      {groupResolved ? t('storySettings.relink.editFolderButton') : t('storySettings.relink.chooseFolderButton')}
                     </button>
                   )}
                 </div>
@@ -392,7 +400,7 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
                           </div>
                           <div className="relink-row-meta">
                             <span className="relink-kind">{row.kind}</span>
-                            <span title={resolved ? row.replacementPath : undefined}>{rowMeta(row)}</span>
+                            <span title={resolved ? row.replacementPath : undefined}>{rowMeta(row, t)}</span>
                           </div>
                         </div>
                         {!resolved && (
@@ -404,7 +412,7 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
                                 onChange={(event) => handleAmbiguousChoice(row, event.target.value)}
                                 disabled={applying}
                               >
-                                <option value="">Choisir…</option>
+                                <option value="">{t('storySettings.relink.chooseOptionPlaceholder')}</option>
                                 {row.matches.map((match) => (
                                   <option key={match} value={match}>{match}</option>
                                 ))}
@@ -416,7 +424,7 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
                               onClick={() => handleChooseFile(row)}
                               disabled={applying}
                             >
-                              Choisir
+                              {t('storySettings.relink.chooseButton')}
                             </button>
                           </div>
                         )}
@@ -431,7 +439,7 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
 
         <footer className="relink-foot">
           <button type="button" className="relink-btn relink-btn-ghost" onClick={onClose} disabled={applying}>
-            Ignorer tout
+            {t('storySettings.relink.dismissAllButton')}
           </button>
           {workspaceDir && (
             <button
@@ -442,11 +450,11 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
               title={workspaceDir}
             >
               {scanningKey === '__workspace__' ? <Loader2 className="relink-spin" /> : <FolderOpen />}
-              Chercher dans le workspace
+              {t('storySettings.relink.searchWorkspaceButton')}
             </button>
           )}
           <span className="relink-spacer" />
-          <span className="relink-foot-status"><b>{resolvedCount}</b> / {total} prêts à appliquer</span>
+          <span className="relink-foot-status"><b>{resolvedCount}</b> / {total} {t('storySettings.relink.readyToApplyLabel')}</span>
           <button
             type="button"
             className="relink-btn relink-btn-primary"
@@ -454,7 +462,7 @@ export function MissingMediaRelinkModal({ missingMedia, workspaceDir = '', onApp
             disabled={resolvedCount === 0 || applying}
           >
             {applying && <Loader2 className="relink-spin" />}
-            {applying ? 'Application…' : 'Appliquer et enregistrer'}
+            {applying ? t('storySettings.relink.applyingButton') : t('storySettings.relink.applyButton')}
           </button>
         </footer>
       </div>

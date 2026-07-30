@@ -10,6 +10,7 @@ import {
 import { KEYS, read as readSetting } from '../store/persistentSettings';
 import { generateUuid } from '../utils/uuid';
 import { logger } from '../utils/logger';
+import { useTranslation } from '../i18n/I18nContext';
 
 // Grappe « générer le pack » extraite d'AppContent : étape métadonnées
 // (PackNameModal), gardes de validation (audit en cours puis erreurs bloquantes),
@@ -29,6 +30,7 @@ export function usePackGeneration({
   showErrorDialog,
   showChoiceDialog,
 }) {
+  const { t } = useTranslation();
   const [packMetadataOpen, setPackMetadataOpen] = useState(false);
 
   async function resolveDefaultExportDir() {
@@ -68,7 +70,7 @@ export function usePackGeneration({
       });
       return;
     }
-    const validationErrors = getGenerateErrors(projectForGeneration, pathAudit);
+    const validationErrors = getGenerateErrors(projectForGeneration, pathAudit, t);
     if (validationErrors.length > 0) {
       logger.warn(`generate:blocked count=${validationErrors.length}`);
       showErrorDialog({

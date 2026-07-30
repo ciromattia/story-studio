@@ -49,7 +49,9 @@ function projectEntry(entry, depth, options) {
       entry: {
         id: groupId,
         type: 'story-group',
-        name: `${stories.length} histoires`,
+        name: options.t
+          ? options.t('diagram.structure.storiesCount', { count: stories.length })
+          : `${stories.length} histoires`,
         storyCount: stories.length,
         storyIds: stories.map((story) => story.id),
         parentId: entry.id,
@@ -69,17 +71,19 @@ function projectEntry(entry, depth, options) {
 }
 
 export function buildStructureProjection(project, options = {}) {
+  const t = options.t ?? ((key) => key);
   return projectEntry({
     id: 'root',
     type: 'root',
     name: project.projectType === 'simple'
-      ? (project.projectName || 'Mon histoire')
-      : (project.rootName || 'Menu racine'),
+      ? (project.projectName || t('diagram.presentation.defaultStoryName'))
+      : (project.rootName || t('diagram.presentation.defaultRootMenuName')),
     treeColor: project.treeColor ?? null,
     children: project.rootEntries ?? [],
   }, 0, {
     expandedStoryGroupIds: options.expandedStoryGroupIds ?? new Set(),
     parentId: null,
+    t,
   });
 }
 

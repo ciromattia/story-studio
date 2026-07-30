@@ -1,6 +1,7 @@
 import { AppModalPortal } from '../common/AppModalPortal';
 import { X } from '../icons/LucideLocal';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { useTranslation } from '../../i18n/I18nContext';
 import './funnels.css';
 
 /**
@@ -40,6 +41,7 @@ export function FunnelShell({
   children,
 }) {
   useEscapeKey(true, onClose);
+  const { t } = useTranslation();
 
   return (
     <AppModalPortal>
@@ -56,7 +58,7 @@ export function FunnelShell({
             <span className="funnel-head-title">{title}</span>
             {subtitle ? <span className="funnel-head-subtitle">{subtitle}</span> : null}
           </span>
-          <button type="button" className="funnel-icon-btn" aria-label="Fermer" onClick={onClose}>
+          <button type="button" className="funnel-icon-btn" aria-label={t('funnels.shell.close')} onClick={onClose}>
             <X />
           </button>
         </header>

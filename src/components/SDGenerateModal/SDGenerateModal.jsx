@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { pickSdReferenceImage } from '../../hooks/useFileDialog';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { useTranslation } from '../../i18n/I18nContext';
 import { Tooltip } from '../common/Tooltip';
 import { Button } from '../common/Button';
 import { Dices } from '../icons/LucideLocal';
@@ -29,6 +30,7 @@ export function SDGenerateModal({
   rootImagePath = null,
   initialJob = null,
 }) {
+  const { t } = useTranslation();
   const [workflows, setWorkflows] = useState([]);
   const [loadingWorkflows, setLoadingWorkflows] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
@@ -64,7 +66,7 @@ export function SDGenerateModal({
           }
         }
         if (initialJob && !initialWorkflow) {
-          setError('Le workflow utilisé par cette génération n’est plus disponible.');
+          setError(t('generation.sdModal.errors.workflowUnavailable'));
         }
       })
       .catch(e => setError(String(e)))
@@ -127,7 +129,7 @@ export function SDGenerateModal({
   async function handleSubmit() {
     if (!selected) return;
     if (selected.requiresReferenceImage && !effectiveReferenceImagePath) {
-      setError('Une image de référence est requise pour ce workflow.');
+      setError(t('generation.sdModal.errors.referenceRequired'));
       return;
     }
     setSubmitting(true);
@@ -159,17 +161,17 @@ export function SDGenerateModal({
     <div className="modal-overlay">
       <div className="modal-box sd-generate-box">
         <div className="modal-header">
-          <span>Générer une image avec ComfyUI</span>
+          <span>{t('generation.sdModal.title')}</span>
           <Button variant="icon" className="modal-close" onClick={onClose}>✕</Button>
         </div>
 
         <div className="sd-generate-body">
           {/* Sélecteur de workflow */}
-          <div className="sd-section-label">Workflow</div>
+          <div className="sd-section-label">{t('generation.sdModal.workflowLabel')}</div>
           {loadingWorkflows ? (
-            <div className="sd-loading">Chargement des workflows…</div>
+            <div className="sd-loading">{t('generation.sdModal.loadingWorkflows')}</div>
           ) : workflows.length === 0 ? (
-            <div className="sd-empty">Aucun workflow disponible.</div>
+            <div className="sd-empty">{t('generation.sdModal.noWorkflows')}</div>
           ) : (
             <div className="sd-workflow-cards">
               {workflows.map(wf => (
@@ -181,7 +183,7 @@ export function SDGenerateModal({
                   <div className="sd-workflow-name">{wf.name}</div>
                   <div className="sd-workflow-desc">{wf.description}</div>
                   {wf.requiresReferenceImage && (
-                    <div className="sd-workflow-tag">Image requise</div>
+                    <div className="sd-workflow-tag">{t('generation.sdModal.imageRequiredTag')}</div>
                   )}
                 </button>
               ))}
@@ -191,7 +193,7 @@ export function SDGenerateModal({
           {/* Image de référence */}
           {selected?.requiresReferenceImage && (
             <div className="sd-field">
-              <div className="sd-section-label">Image de référence</div>
+              <div className="sd-section-label">{t('generation.sdModal.referenceImageLabel')}</div>
               {canUseRootImage && (
                 <label className="sd-ref-toggle">
                   <input
@@ -202,7 +204,7 @@ export function SDGenerateModal({
                       if (e.target.checked) { setUseCurrentImageAsReference(false); setReferenceImagePath(null); }
                     }}
                   />
-                  <span>Utiliser l'image de couverture du menu racine</span>
+                  <span>{t('generation.sdModal.useRootImageOption')}</span>
                 </label>
               )}
               {canUseCurrentImage && (
@@ -215,7 +217,7 @@ export function SDGenerateModal({
                       if (e.target.checked) { setUseRootImageAsReference(false); setReferenceImagePath(null); }
                     }}
                   />
-                  <span>Utiliser l'image déjà présente dans {currentImageLabel || 'ce champ'}</span>
+                  <span>{t('generation.sdModal.useCurrentImageOption', { label: currentImageLabel || t('generation.sdModal.useCurrentImageDefaultLabel') })}</span>
                 </label>
               )}
               <div className="sd-ref-row">
@@ -225,7 +227,7 @@ export function SDGenerateModal({
                   onClick={handlePickReference}
                   disabled={useCurrentImageAsReference || useRootImageAsReference}
                 >
-                  Choisir une image…
+                  {t('generation.sdModal.chooseImageButton')}
                 </Button>
                 {refName && <span className="sd-ref-name">{refName}</span>}
               </div>
@@ -234,33 +236,33 @@ export function SDGenerateModal({
 
           {/* Prompt positif */}
           <div className="sd-field">
-            <div className="sd-section-label">Prompt</div>
+            <div className="sd-section-label">{t('generation.sdModal.promptLabel')}</div>
             <textarea
               className="sd-textarea"
               value={params.positivePrompt}
               onChange={e => setParams(p => ({ ...p, positivePrompt: e.target.value }))}
               rows={7}
-              placeholder="lunii_style, simple illustration…"
+              placeholder={t('generation.sdModal.promptPlaceholder')}
             />
           </div>
 
           {/* Prompt négatif */}
           {hasNegativeSlot && (
             <div className="sd-field">
-              <div className="sd-section-label">Prompt négatif</div>
+              <div className="sd-section-label">{t('generation.sdModal.negativePromptLabel')}</div>
               <textarea
                 className="sd-textarea"
                 value={params.negativePrompt}
                 onChange={e => setParams(p => ({ ...p, negativePrompt: e.target.value }))}
                 rows={3}
-                placeholder="color, photo, realistic…"
+                placeholder={t('generation.sdModal.negativePromptPlaceholder')}
               />
             </div>
           )}
 
           {/* Variantes */}
           <div className="sd-field sd-variants-row">
-            <div className="sd-section-label">Variantes</div>
+            <div className="sd-section-label">{t('generation.sdModal.variantsLabel')}</div>
             <div className="sd-variants-toggle">
               {[1, 2].map(n => (
                 <Button
@@ -282,13 +284,13 @@ export function SDGenerateModal({
                 className="sd-advanced-toggle"
                 onClick={() => setShowAdvanced(v => !v)}
               >
-                {showAdvanced ? '▾' : '▸'} Paramètres avancés
+                {showAdvanced ? '▾' : '▸'} {t('generation.sdModal.advancedToggle')}
               </button>
               {showAdvanced && (
                 <div className="sd-advanced-body">
                   {hasSeedSlot && (
                     <div className="sd-param-row">
-                      <label className="sd-param-label">Seed</label>
+                      <label className="sd-param-label">{t('generation.sdModal.seedLabel')}</label>
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                         <input
                           type="number"
@@ -296,7 +298,7 @@ export function SDGenerateModal({
                           value={params.seed}
                           onChange={e => setParams(p => ({ ...p, seed: parseInt(e.target.value, 10) || 0 }))}
                         />
-                        <Tooltip text="Seed aléatoire">
+                        <Tooltip text={t('generation.sdModal.seedRandomTooltip')}>
                           <Button
                             size="sm"
                             variant="secondary-violet"
@@ -308,7 +310,7 @@ export function SDGenerateModal({
                   )}
                   {hasStepsSlot && (
                     <div className="sd-param-row">
-                      <label className="sd-param-label">Steps <span className="sd-param-value">{params.steps}</span></label>
+                      <label className="sd-param-label">{t('generation.sdModal.stepsLabel')} <span className="sd-param-value">{params.steps}</span></label>
                       <input
                         type="range" min={1} max={50}
                         value={params.steps}
@@ -319,7 +321,7 @@ export function SDGenerateModal({
                   )}
                   {hasCfgSlot && (
                     <div className="sd-param-row">
-                      <label className="sd-param-label">CFG <span className="sd-param-value">{params.cfg.toFixed(1)}</span></label>
+                      <label className="sd-param-label">{t('generation.sdModal.cfgLabel')} <span className="sd-param-value">{params.cfg.toFixed(1)}</span></label>
                       <input
                         type="range" min={0.1} max={20} step={0.1}
                         value={params.cfg}
@@ -330,7 +332,7 @@ export function SDGenerateModal({
                   )}
                   {hasLoraSlot && (
                     <div className="sd-param-row">
-                      <label className="sd-param-label">LoRA <span className="sd-param-value">{params.loraStrength.toFixed(2)}</span></label>
+                      <label className="sd-param-label">{t('generation.sdModal.loraLabel')} <span className="sd-param-value">{params.loraStrength.toFixed(2)}</span></label>
                       <input
                         type="range" min={0} max={2} step={0.05}
                         value={params.loraStrength}
@@ -349,14 +351,18 @@ export function SDGenerateModal({
 
         <div className="modal-footer">
           <Button size="sm" onClick={onClose} disabled={submitting}>
-            Annuler
+            {t('generation.sdModal.cancelButton')}
           </Button>
           <Button
             variant="primary-violet"
             onClick={handleSubmit}
             disabled={submitting || !selected || loadingWorkflows}
           >
-            {submitting ? 'Envoi…' : `Générer${variants > 1 ? ` ×${variants}` : ''}`}
+            {submitting
+              ? t('generation.sdModal.sendingButton')
+              : (variants > 1
+                ? t('generation.sdModal.generateButtonVariants', { count: variants })
+                : t('generation.sdModal.generateButton'))}
           </Button>
         </div>
       </div>

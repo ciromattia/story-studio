@@ -3,8 +3,7 @@ import { readImageEditMetadata } from '../../store/imageEditMetadata';
 import { getEditedImageTags } from '../../store/mediaLibrary';
 import { pathKey } from '../../utils/fileUtils';
 import { logger } from '../../utils/logger';
-
-const SUCCESS_MESSAGE = 'Image modifiée créée dans Médias';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function useMediaImageEdit({
   workspaceDir,
@@ -14,6 +13,7 @@ export function useMediaImageEdit({
   onCreated,
   showErrorDialog,
 }) {
+  const { t } = useTranslation();
   const [editSession, setEditSession] = useState(null);
   const [notice, setNotice] = useState('');
   const requestIdRef = useRef(0);
@@ -47,8 +47,8 @@ export function useMediaImageEdit({
     if (!item || item.kind !== 'image' || !item.exists) return;
     if (!workspaceDir?.trim() || !onMediaCreated) {
       showErrorDialog?.({
-        title: 'Création impossible',
-        message: 'Aucun dossier de projet durable n’est disponible. L’image source reste inchangée.',
+        title: t('mediaExplorer.errors.imageEditUnavailableTitle'),
+        message: t('mediaExplorer.errors.imageEditUnavailableMessage'),
         variant: 'warning',
       });
       return;
@@ -92,7 +92,7 @@ export function useMediaImageEdit({
       onAddMediaTag?.(path, tag);
     }
     onCreated?.(path);
-    setNotice(SUCCESS_MESSAGE);
+    setNotice(t('mediaExplorer.toolResult.imageEditedMessage'));
   }
 
   return {

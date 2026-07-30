@@ -23,20 +23,21 @@ import {
   structureConforming,
   titleConforming,
 } from './packCheckerMeasures';
+import { useTranslation } from '../../i18n/I18nContext';
 
 function IconFrame({ Icon }) {
   return <Icon className="checker-icon" aria-hidden="true" strokeWidth={2} absoluteStrokeWidth />;
 }
 
-function fileSummary(kind, item) {
+function fileSummary(t, kind, item) {
   if (kind === 'audio') {
-    return `Silence ${formatSeconds(item.leadingSilenceSecs)} / ${formatSeconds(item.trailingSilenceSecs)} · ${formatLufs(item.integratedLufs)}`;
+    return `${formatSeconds(t, item.leadingSilenceSecs)} / ${formatSeconds(t, item.trailingSilenceSecs)} · ${formatLufs(t, item.integratedLufs)}`;
   }
-  const dimensions = item.width && item.height ? `${item.width}×${item.height}` : 'dimensions ?';
-  return `${dimensions} · ${item.format || 'format ?'}`;
+  const dimensions = item.width && item.height ? `${item.width}×${item.height}` : t('packChecker.measures.dimensionsUnknown');
+  return `${dimensions} · ${item.format || t('packChecker.measures.formatUnknown')}`;
 }
 
-function buildConformingGroups(report) {
+function buildConformingGroups(t, report) {
   if (!report) return [];
   const groups = [];
 
@@ -44,14 +45,14 @@ function buildConformingGroups(report) {
   if (audioFiles.length) {
     groups.push({
       id: 'audio',
-      title: 'Audio conforme',
-      subtitle: 'Silence, volume, format et crête dans les clous.',
+      title: t('packChecker.conforming.audioTitle'),
+      subtitle: t('packChecker.conforming.audioSubtitle'),
       Icon: Music,
       mode: 'files',
       kind: 'audio',
       files: audioFiles,
       metricStrong: String(audioFiles.length),
-      metricSmall: audioFiles.length > 1 ? 'fichiers' : 'fichier',
+      metricSmall: audioFiles.length > 1 ? t('packChecker.common.fileOther') : t('packChecker.common.fileOne'),
     });
   }
 
@@ -59,30 +60,30 @@ function buildConformingGroups(report) {
   if (imageFiles.length) {
     groups.push({
       id: 'image',
-      title: 'Images conformes',
-      subtitle: 'Dimensions et format conformes.',
+      title: t('packChecker.conforming.imageTitle'),
+      subtitle: t('packChecker.conforming.imageSubtitle'),
       Icon: Image,
       mode: 'files',
       kind: 'image',
       files: imageFiles,
       metricStrong: String(imageFiles.length),
-      metricSmall: imageFiles.length > 1 ? 'fichiers' : 'fichier',
+      metricSmall: imageFiles.length > 1 ? t('packChecker.common.fileOther') : t('packChecker.common.fileOne'),
     });
   }
 
   if (titleConforming(report)) {
     groups.push({
       id: 'title',
-      title: 'Nom du pack',
-      subtitle: 'Nom et convention valides.',
+      title: t('packChecker.conforming.titleTitle'),
+      subtitle: t('packChecker.conforming.titleSubtitle'),
       Icon: FilePen,
       mode: 'facts',
-      metricStrong: 'Valide',
-      metricSmall: 'Convention OK',
+      metricStrong: t('packChecker.conforming.titleMetric'),
+      metricSmall: t('packChecker.conforming.titleMetricSmall'),
       facts: [
-        { key: 'name', label: 'Nom', value: report.packName || '—' },
-        { key: 'title', label: 'Titre', value: report.packTitle || '—' },
-        { key: 'version', label: 'Version', value: String(report.packVersion ?? '—') },
+        { key: 'name', label: t('packChecker.conforming.factName'), value: report.packName || '—' },
+        { key: 'title', label: t('packChecker.conforming.factTitle'), value: report.packTitle || '—' },
+        { key: 'version', label: t('packChecker.conforming.factVersion'), value: String(report.packVersion ?? '—') },
       ],
     });
   }
@@ -91,20 +92,20 @@ function buildConformingGroups(report) {
     const structure = report.structureSummary || {};
     groups.push({
       id: 'structure',
-      title: 'Structure',
-      subtitle: 'Navigation et références cohérentes.',
+      title: t('packChecker.conforming.structureTitle'),
+      subtitle: t('packChecker.conforming.structureSubtitle'),
       Icon: Network,
       mode: 'facts',
-      metricStrong: 'Correcte',
-      metricSmall: `${structure.stageCount ?? 0} étapes`,
+      metricStrong: t('packChecker.conforming.structureMetric'),
+      metricSmall: t('packChecker.tiles.stagesCount', { count: structure.stageCount ?? 0 }),
       facts: [
-        { key: 'lunii', label: 'Compatible Lunii', value: structure.luniiCompatible ? 'Oui' : 'Non' },
-        { key: 'editable', label: 'Éditable Story Studio', value: structure.storyStudioEditable ? 'Oui' : 'Non' },
-        { key: 'stories', label: 'Histoires', value: String(structure.storyCount ?? 0) },
-        { key: 'stages', label: 'Étapes', value: String(structure.stageCount ?? 0) },
-        { key: 'actions', label: 'Actions', value: String(structure.actionCount ?? 0) },
-        { key: 'refAudio', label: 'Audios référencés', value: String(structure.referencedAudioCount ?? 0) },
-        { key: 'refImage', label: 'Images référencées', value: String(structure.referencedImageCount ?? 0) },
+        { key: 'lunii', label: t('packChecker.conforming.factLunii'), value: structure.luniiCompatible ? t('packChecker.conforming.yes') : t('packChecker.conforming.no') },
+        { key: 'editable', label: t('packChecker.conforming.factEditable'), value: structure.storyStudioEditable ? t('packChecker.conforming.yes') : t('packChecker.conforming.no') },
+        { key: 'stories', label: t('packChecker.conforming.factStories'), value: String(structure.storyCount ?? 0) },
+        { key: 'stages', label: t('packChecker.conforming.factStages'), value: String(structure.stageCount ?? 0) },
+        { key: 'actions', label: t('packChecker.conforming.factActions'), value: String(structure.actionCount ?? 0) },
+        { key: 'refAudio', label: t('packChecker.conforming.factRefAudio'), value: String(structure.referencedAudioCount ?? 0) },
+        { key: 'refImage', label: t('packChecker.conforming.factRefImage'), value: String(structure.referencedImageCount ?? 0) },
       ],
     });
   }
@@ -112,22 +113,22 @@ function buildConformingGroups(report) {
   const nightDetected = Boolean(report.nightMode?.detected);
   groups.push({
     id: 'night',
-    title: 'Mode nuit',
-    subtitle: nightDetected ? 'Piste nuit détectée dans le pack.' : 'Aucune piste nuit (non requis).',
+    title: t('packChecker.conforming.nightTitle'),
+    subtitle: nightDetected ? t('packChecker.conforming.nightDetected') : t('packChecker.conforming.nightAbsent'),
     Icon: Moon,
     mode: 'facts',
-    metricStrong: nightDetected ? 'Disponible' : 'Absent',
-    metricSmall: 'Non bloquant',
+    metricStrong: nightDetected ? t('packChecker.conforming.nightMetricAvailable') : t('packChecker.conforming.nightMetricAbsent'),
+    metricSmall: t('packChecker.conforming.nightMetricSmall'),
     facts: [
-      { key: 'detected', label: 'Mode nuit', value: nightDetected ? 'Disponible' : 'Absent' },
-      { key: 'blocking', label: 'Bloquant', value: 'Non' },
+      { key: 'detected', label: t('packChecker.conforming.factNightMode'), value: nightDetected ? t('packChecker.conforming.nightMetricAvailable') : t('packChecker.conforming.nightMetricAbsent') },
+      { key: 'blocking', label: t('packChecker.conforming.factBlocking'), value: t('packChecker.conforming.no') },
     ],
   });
 
   return groups;
 }
 
-function ConformingMeasures({ rows, title = 'Mesures' }) {
+function ConformingMeasures({ rows, title }) {
   return (
     <div className="checker-tech-detail checker-tech-detail--facts">
       <div>
@@ -140,26 +141,26 @@ function ConformingMeasures({ rows, title = 'Mesures' }) {
   );
 }
 
-function ConformingFile({ kind, item, open, onToggle }) {
+function ConformingFile({ t, kind, item, open, onToggle }) {
   const rows = kind === 'audio'
-    ? audioMeasureRows(item)
-    : [...imageMeasureRows(item), { key: 'expected', label: 'Attendu', value: '320×240' }];
-  const summary = fileSummary(kind, item);
+    ? audioMeasureRows(t, item)
+    : [...imageMeasureRows(t, item), { key: 'expected', label: t('packChecker.measures.expected'), value: '320×240' }];
+  const summary = fileSummary(t, kind, item);
   return (
     <div className="checker-mini-file">
       <button type="button" className="checker-mini-file-button" onClick={onToggle}>
-        <span className="checker-role">{kind === 'audio' ? 'Audio' : 'Image'}</span>
-        <span className="checker-mini-name" title={item.filePath || item.label}>{cleanLabel(item.label)}</span>
+        <span className="checker-role">{kind === 'audio' ? t('packChecker.common.roleAudio') : t('packChecker.common.roleImage')}</span>
+        <span className="checker-mini-name" title={item.filePath || item.label}>{cleanLabel(t, item.label)}</span>
         <span className="checker-mini-problem" title={summary}>{summary}</span>
-        <span className="checker-mini-severity checker-mini-severity--ok">OK</span>
+        <span className="checker-mini-severity checker-mini-severity--ok">{t('packChecker.common.severityOk')}</span>
         <ChevronDown className={`checker-mini-chevron ${open ? 'is-open' : ''}`} aria-hidden="true" />
       </button>
-      {open ? <ConformingMeasures rows={rows} /> : null}
+      {open ? <ConformingMeasures rows={rows} title={t('packChecker.detail.measuresTitle')} /> : null}
     </div>
   );
 }
 
-function ConformingGroupCard({ group, expanded, onToggle }) {
+function ConformingGroupCard({ t, group, expanded, onToggle }) {
   const [openFile, setOpenFile] = useState(null);
   const Icon = group.Icon;
   return (
@@ -169,7 +170,7 @@ function ConformingGroupCard({ group, expanded, onToggle }) {
         <span className="checker-group-copy">
           <span className="checker-group-title-row">
             <strong>{group.title}</strong>
-            <span className="checker-group-badge">Conforme</span>
+            <span className="checker-group-badge">{t('packChecker.conforming.badge')}</span>
           </span>
           <span>{group.subtitle}</span>
         </span>
@@ -188,6 +189,7 @@ function ConformingGroupCard({ group, expanded, onToggle }) {
                 return (
                   <ConformingFile
                     key={fileId}
+                    t={t}
                     kind={group.kind}
                     item={item}
                     open={openFile === fileId}
@@ -197,7 +199,7 @@ function ConformingGroupCard({ group, expanded, onToggle }) {
               })}
             </div>
           ) : (
-            <ConformingMeasures rows={group.facts} title="Détails" />
+            <ConformingMeasures rows={group.facts} title={t('packChecker.detail.detailsTitle')} />
           )}
         </div>
       ) : null}
@@ -206,19 +208,21 @@ function ConformingGroupCard({ group, expanded, onToggle }) {
 }
 
 export function ConformingSection({ report }) {
-  const groups = useMemo(() => buildConformingGroups(report), [report]);
+  const { t } = useTranslation();
+  const groups = useMemo(() => buildConformingGroups(t, report), [t, report]);
   const [expanded, setExpanded] = useState(null);
   if (!groups.length) return null;
   return (
     <div className="checker-conform">
       <div className="checker-conform-head">
         <IconFrame Icon={Check} />
-        Ce qui est conforme
+        {t('packChecker.conforming.heading')}
       </div>
       <div className="checker-groups">
         {groups.map((group) => (
           <ConformingGroupCard
             key={group.id}
+            t={t}
             group={group}
             expanded={expanded === group.id}
             onToggle={() => setExpanded(expanded === group.id ? null : group.id)}

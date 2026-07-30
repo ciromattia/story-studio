@@ -5,6 +5,7 @@ import { drawTextImage, TEXT_IMG_W, TEXT_IMG_H } from './drawTextImage';
 import { Button } from '../common/Button';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { useProjectContext } from '../../store/ProjectContext';
+import { useTranslation } from '../../i18n/I18nContext';
 import './TextImagePromptModal.css';
 
 const OVERLAY_STYLE = {
@@ -19,6 +20,7 @@ const OVERLAY_STYLE = {
 };
 
 export function TextImagePromptModal({ defaultText, workspaceDir: workspaceOverride, onConfirm, onCancel }) {
+  const { t } = useTranslation();
   const [text, setText] = useState(defaultText || '');
   const [generating, setGenerating] = useState(false);
   const canvasRef = useRef(null);
@@ -33,16 +35,17 @@ export function TextImagePromptModal({ defaultText, workspaceDir: workspaceOverr
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    drawTextImage(canvas.getContext('2d'), text || 'Sans titre');
-  }, [text]);
+    drawTextImage(canvas.getContext('2d'), text, t);
+  }, [text, t]);
 
   async function handleGenerate() {
     if (generating) return;
     setGenerating(true);
     try {
       const path = await generateTextImage(
-        text || 'Sans titre',
+        text || t('imageEditor.textImage.untitledPlaceholder'),
         workspaceOverride || contextWorkspaceDir,
+        t,
       );
       onConfirm(path);
     } finally {
@@ -63,7 +66,7 @@ export function TextImagePromptModal({ defaultText, workspaceDir: workspaceOverr
     // raccourcis globaux (utils/modalSurfaces.js).
     <div style={OVERLAY_STYLE} data-modal-surface="" onClick={onCancel}>
       <div className="text-img-box" onClick={e => e.stopPropagation()}>
-        <div className="text-img-header">Générer une image-titre</div>
+        <div className="text-img-header">{t('imageEditor.textImage.header')}</div>
         <div className="text-img-body">
           <input
             ref={inputRef}
@@ -71,7 +74,7 @@ export function TextImagePromptModal({ defaultText, workspaceDir: workspaceOverr
             value={text}
             onChange={e => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Texte à afficher"
+            placeholder={t('imageEditor.textImage.inputPlaceholder')}
             maxLength={200}
           />
           <canvas
@@ -82,9 +85,9 @@ export function TextImagePromptModal({ defaultText, workspaceDir: workspaceOverr
           />
         </div>
         <div className="text-img-footer">
-          <Button variant="ghost" onClick={onCancel}>Annuler</Button>
+          <Button variant="ghost" onClick={onCancel}>{t('imageEditor.textImage.cancelButton')}</Button>
           <Button variant="primary-violet" onClick={handleGenerate} disabled={generating}>
-            {generating ? 'Génération…' : 'Générer'}
+            {generating ? t('imageEditor.textImage.generatingButton') : t('imageEditor.textImage.generateButton')}
           </Button>
         </div>
       </div>

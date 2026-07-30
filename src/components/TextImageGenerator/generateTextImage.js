@@ -3,11 +3,11 @@ import { appCacheDir, join } from '@tauri-apps/api/path';
 import { TEXT_IMG_W, TEXT_IMG_H, drawTextImage } from './drawTextImage';
 import { TEMP_IMAGES_DIR } from '../../utils/tempDirs';
 
-export async function generateTextImage(text, workspaceDir = '') {
+export async function generateTextImage(text, workspaceDir = '', t) {
   const canvas = document.createElement('canvas');
   canvas.width = TEXT_IMG_W;
   canvas.height = TEXT_IMG_H;
-  drawTextImage(canvas.getContext('2d'), text);
+  drawTextImage(canvas.getContext('2d'), text, t);
 
   const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
   const buf = await blob.arrayBuffer();

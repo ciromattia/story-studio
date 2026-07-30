@@ -32,11 +32,13 @@ export function waveHeights(name, bars = 18) {
   return heights;
 }
 
-export function kindLabel(kind) {
-  if (kind === 'image') return 'Image';
-  if (kind === 'audio') return 'Son';
-  if (kind === 'archive') return 'Archive';
-  return 'Fichier';
+// helpers.js is a plain module (no React context), so callers must pass the
+// `t()` function from their own useTranslation() call.
+export function kindLabel(t, kind) {
+  if (kind === 'image') return t('mediaExplorer.kindLabel.image');
+  if (kind === 'audio') return t('mediaExplorer.kindLabel.audio');
+  if (kind === 'archive') return t('mediaExplorer.kindLabel.archive');
+  return t('mediaExplorer.kindLabel.file');
 }
 
 export function getMetaDisplay(item, m, duration) {

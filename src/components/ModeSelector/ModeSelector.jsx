@@ -4,21 +4,22 @@ import { FilePen, FolderOpen, Layers, Package, Rss, ShieldCheck, SlidersHorizont
 import { Tooltip } from '../common/Tooltip';
 import { useLocalFile } from '../../hooks/useLocalFile';
 import { loadProjectFromPath } from '../../store/projectIO';
+import { useTranslation } from '../../i18n/I18nContext';
 
-function formatRecentDate(updatedAt) {
+function formatRecentDate(updatedAt, t) {
   if (!updatedAt) return '';
   const date = new Date(updatedAt);
   if (Number.isNaN(date.getTime())) return '';
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
-  if (date.toDateString() === today.toDateString()) return 'Aujourd’hui';
-  if (date.toDateString() === yesterday.toDateString()) return 'Hier';
+  if (date.toDateString() === today.toDateString()) return t('shell.modeSelector.today');
+  if (date.toDateString() === yesterday.toDateString()) return t('shell.modeSelector.yesterday');
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
-function projectTypeLabel(type) {
-  return type === 'simple' ? 'Histoire' : 'Pack';
+function projectTypeLabel(type, t) {
+  return type === 'simple' ? t('shell.modeSelector.projectTypeStory') : t('shell.modeSelector.projectTypePack');
 }
 
 function ProjectThumb({ project, index, loadedThumbnail = null }) {
@@ -51,6 +52,7 @@ export function ModeSelector({
   onRecoverSession,
   onIgnoreSessionRecovery,
 }) {
+  const { t } = useTranslation();
   const [loadedThumbnails, setLoadedThumbnails] = useState({});
   const visibleRecentProjects = useMemo(() => recentProjects.slice(0, 6), [recentProjects]);
   const visibleRecoveries = useMemo(() => sessionRecoveries.slice(0, 2), [sessionRecoveries]);
@@ -60,15 +62,15 @@ export function ModeSelector({
     {
       key: 'pack',
       Icon: SwatchBook,
-      name: 'Éditeur libre',
-      desc: 'Menus multiples, agrégation de ZIP et navigation personnalisée',
+      name: t('shell.modeSelector.editorFreeName'),
+      desc: t('shell.modeSelector.editorFreeDesc'),
       onClick: () => onSelect('pack'),
     },
     {
       key: 'simple',
       Icon: FilePen,
-      name: 'Éditeur simplifié',
-      desc: 'Un menu, une histoire',
+      name: t('shell.modeSelector.editorSimpleName'),
+      desc: t('shell.modeSelector.editorSimpleDesc'),
       onClick: () => onSelect('simple'),
     },
   ];
@@ -77,43 +79,43 @@ export function ModeSelector({
     onEditPack && {
       key: 'edit',
       Icon: Package,
-      name: 'Modifier un pack existant',
-      desc: 'Modifie un .zip / .7z ou un dossier d’histoire',
+      name: t('shell.modeSelector.actionEditName'),
+      desc: t('shell.modeSelector.actionEditDesc'),
       onClick: onEditPack,
     },
     onPodcastFunnel && {
       key: 'podcast',
       Icon: Rss,
-      name: 'Créer un pack depuis un podcast',
-      desc: 'Importe les épisodes d’un flux RSS',
+      name: t('shell.modeSelector.actionPodcastName'),
+      desc: t('shell.modeSelector.actionPodcastDesc'),
       onClick: onPodcastFunnel,
     },
     onYoutubeFunnel && {
       key: 'youtube',
       Icon: Youtube,
-      name: 'Créer un pack depuis YouTube',
-      desc: 'Importe l’audio d’une URL, playlist ou chaîne',
+      name: t('shell.modeSelector.actionYoutubeName'),
+      desc: t('shell.modeSelector.actionYoutubeDesc'),
       onClick: onYoutubeFunnel,
     },
     onAggregatePacks && {
       key: 'aggregate',
       Icon: Layers,
-      name: 'Agréger des packs',
-      desc: 'Fusionne plusieurs .zip ou .7z',
+      name: t('shell.modeSelector.actionAggregateName'),
+      desc: t('shell.modeSelector.actionAggregateDesc'),
       onClick: onAggregatePacks,
     },
     onCheckPack && {
       key: 'check',
       Icon: ShieldCheck,
-      name: 'Vérifier un pack',
-      desc: 'Repère et corrige les erreurs d’un pack existant.',
+      name: t('shell.modeSelector.actionCheckName'),
+      desc: t('shell.modeSelector.actionCheckDesc'),
       onClick: onCheckPack,
     },
     {
       key: 'open',
       Icon: FolderOpen,
-      name: 'Ouvrir un projet',
-      desc: 'Reprends un projet enregistré',
+      name: t('shell.modeSelector.actionOpenName'),
+      desc: t('shell.modeSelector.actionOpenDesc'),
       onClick: onOpen,
     },
   ].filter(Boolean);
@@ -148,13 +150,13 @@ export function ModeSelector({
     <div className="mode-selector">
       <div className="mode-home">
         <header className="mode-home-header">
-          <Tooltip text="Créé pour Armand, pour que les histoires prennent vie." placement="below">
+          <Tooltip text={t('shell.modeSelector.headerTooltip')} placement="below">
             <span className="mode-home-mark" role="img" aria-label="Story Studio" />
           </Tooltip>
           <div className="mode-home-brand">
             <div className="mode-home-wordmark">Story Studio</div>
             <div className="mode-home-tagline">
-              Crée, organise et génère des histoires audio pour ta Boîte à Histoires Lunii.
+              {t('shell.modeSelector.tagline')}
             </div>
           </div>
         </header>
@@ -196,14 +198,14 @@ export function ModeSelector({
             <div className="mode-home-prefs">
               <button type="button" className="mode-ghost-button" onClick={onOpenPreferences}>
                 <SlidersHorizontal className="mode-ghost-icon" strokeWidth={1.9} />
-                <span>Préférences</span>
+                <span>{t('shell.modeSelector.preferencesButton')}</span>
               </button>
             </div>
           </div>
 
           {hasProjects && (
             <aside className="mode-projects-pane">
-              <div className="mode-projects-eyebrow">Projets récents</div>
+              <div className="mode-projects-eyebrow">{t('shell.modeSelector.recentProjectsLabel')}</div>
               <div className="mode-projects-list">
                 {visibleRecoveries.map((recovery, index) => (
                   <div
@@ -220,19 +222,19 @@ export function ModeSelector({
                         index={index}
                       />
                       <span className="mode-proj-copy">
-                        <span className="mode-proj-name">{recovery.projectName || 'Projet récupérable'}</span>
-                        <span className="mode-proj-sub">Projet non enregistré · {formatRecentDate(recovery.modifiedAtMs)}</span>
+                        <span className="mode-proj-name">{recovery.projectName || t('shell.modeSelector.recoverableProjectName')}</span>
+                        <span className="mode-proj-sub">{t('shell.modeSelector.unsavedProjectLabel', { date: formatRecentDate(recovery.modifiedAtMs, t) })}</span>
                       </span>
                     </button>
                     <Tooltip
-                      text="Ignorer cette reprise"
+                      text={t('shell.modeSelector.dismissRecoveryTooltip')}
                       placement="above"
                       className="mode-proj-dismiss-tooltip"
                     >
                       <button
                         type="button"
                         className="mode-proj-dismiss"
-                        aria-label="Ignorer cette reprise"
+                        aria-label={t('shell.modeSelector.dismissRecoveryTooltip')}
                         onClick={() => onIgnoreSessionRecovery?.(recovery)}
                       >
                         <X className="mode-proj-dismiss-icon" strokeWidth={2} />
@@ -255,9 +257,9 @@ export function ModeSelector({
                       />
                       <span className="mode-proj-copy">
                         <span className="mode-proj-name">{project.projectName || project.name}</span>
-                        <span className="mode-proj-sub">{projectTypeLabel(project.projectType)}</span>
+                        <span className="mode-proj-sub">{projectTypeLabel(project.projectType, t)}</span>
                       </span>
-                      <span className="mode-proj-date">{formatRecentDate(project.updatedAt)}</span>
+                      <span className="mode-proj-date">{formatRecentDate(project.updatedAt, t)}</span>
                     </button>
                   </Tooltip>
                 ))}

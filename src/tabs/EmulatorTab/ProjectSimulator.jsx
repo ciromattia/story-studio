@@ -22,6 +22,7 @@ import {
 import { END_HOME_NONE, resolveEndHomeTarget } from '../../store/endMessageHome';
 import { toPackAssetName } from '../../utils/zipAssetName';
 import { createAudioPlayer, disposeAudioPlayerRef } from '../../utils/audioPlayer';
+import { useTranslation } from '../../i18n/I18nContext';
 
 const END_NODE_ID = 'end-node';
 
@@ -33,6 +34,7 @@ export function ProjectSimulator({
   onClose = null,
   dragHandleProps = null,
 }) {
+  const { t } = useTranslation();
   const audioRef = useRef(null);
   const mountedRef = useRef(true);
   const playSeqRef = useRef(0);
@@ -667,27 +669,27 @@ export function ProjectSimulator({
     state === 'cover' ? (
       project.packMetadata?.title
         ? getExportPackName(project.packMetadata)
-        : (project.projectName || 'Pack sans nom')
+        : (project.projectName || t('simulator.emulator.noNameProject'))
     ) :
-    state === 'endnode' ? `${project.endNodeName || 'Message de fin'}${project.globalOptions?.nightMode ? ' (mode nuit)' : ''}` :
-    state === 'sequence' ? (activeSequenceStep?.name || activeStory?.name || 'Fin de lecture') :
+    state === 'endnode' ? `${project.endNodeName || t('simulator.emulator.endMessageDefault')}${project.globalOptions?.nightMode ? ` ${t('simulator.emulator.nightModeSuffix')}` : ''}` :
+    state === 'sequence' ? (activeSequenceStep?.name || activeStory?.name || t('simulator.emulator.endOfPlaybackFallback')) :
     isSimple ? (simpleStory?.name || '—') :
     currentEntry?.type === 'ref'
       ? (currentEntry.label?.trim()
-        || `→ ${findEntryLocation(rootEntries, refTargetEntryId(currentEntry.target))?.entry?.name || 'lien'}`)
-    : (currentEntry?.name || (state === 'browse' && currentEntries.length === 0 ? 'Dossier vide' : '—'));
+        || `→ ${findEntryLocation(rootEntries, refTargetEntryId(currentEntry.target))?.entry?.name || t('simulator.emulator.linkFallback')}`)
+    : (currentEntry?.name || (state === 'browse' && currentEntries.length === 0 ? t('simulator.emulator.emptyFolder') : '—'));
 
   const displaySub =
-    state === 'cover' ? 'Appuie sur OK' :
+    state === 'cover' ? t('simulator.emulator.pressOk') :
     state === 'browse' ? (
       currentEntries.length === 0
         ? `0 / 0${currentMenu ? ` · ${currentMenu.name}` : ''}`
         : `${Math.min(entryIdx + 1, currentEntries.length)} / ${currentEntries.length}${currentMenu ? ` · ${currentMenu.name}` : ''}`
     ) :
-    state === 'sequence' ? `▶ Sequence de fin ${Math.min(sequenceIndex + 1, Math.max(activeSequence.length, 1))} / ${Math.max(activeSequence.length, 1)}` :
-    state === 'postplay' ? '▶ Fin de lecture...' :
-    state === 'endnode' ? '▶ Message de fin...' :
-    '▶ Lecture en cours...';
+    state === 'sequence' ? `▶ ${t('simulator.emulator.endSequenceLabel')} ${Math.min(sequenceIndex + 1, Math.max(activeSequence.length, 1))} / ${Math.max(activeSequence.length, 1)}` :
+    state === 'postplay' ? `▶ ${t('simulator.emulator.postplayStatus')}` :
+    state === 'endnode' ? `▶ ${t('simulator.emulator.endMessageStatus')}` :
+    `▶ ${t('simulator.emulator.playingStatus')}`;
 
   const imageFile =
     (state === 'playing' || state === 'postplay' || state === 'sequence' || state === 'endnode') ? null :

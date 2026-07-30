@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AppModalPortal } from '../common/AppModalPortal';
 import { Button } from '../common/Button';
+import { useTranslation } from '../../i18n/I18nContext';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { pathKey } from '../../utils/fileUtils';
 import './SessionMediaTriageModal.css';
@@ -19,6 +20,7 @@ function parentFolderHint(path) {
  * Escape et clic hors de la boîte valent « Conserver la sélection » (choix sûr).
  */
 export function SessionMediaTriageModal({ items, onResolve }) {
+  const { t } = useTranslation();
   const [checkedKeys, setCheckedKeys] = useState(() => new Set(items.map((item) => pathKey(item.path))));
 
   function toggle(path) {
@@ -42,14 +44,14 @@ export function SessionMediaTriageModal({ items, onResolve }) {
       <div className="session-triage-backdrop" onClick={confirmKeepSelection}>
         <div className="modal-box session-triage-box" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
-            <span>Médias non utilisés</span>
+            <span>{t('storySettings.triage.title')}</span>
           </div>
           <div className="session-triage-body">
             <p className="session-triage-intro">
               {items.length === 1
-                ? '1 média de ta session n’est utilisé par aucune histoire.'
-                : `${items.length} médias de ta session ne sont utilisés par aucune histoire.`}
-              {' '}Coche ceux à conserver avec le projet ; les autres seront supprimés avec la session.
+                ? t('storySettings.triage.introOne')
+                : t('storySettings.triage.introOther', { count: items.length })}
+              {' '}{t('storySettings.triage.introSuffix')}
             </p>
             <ul className="session-triage-list">
               {items.map((item) => (
@@ -71,10 +73,10 @@ export function SessionMediaTriageModal({ items, onResolve }) {
           </div>
           <div className="session-triage-footer">
             <Button variant="danger-outline" onClick={() => onResolve({ keptPaths: [] })}>
-              Tout abandonner
+              {t('storySettings.triage.discardAllButton')}
             </Button>
             <Button variant="primary" onClick={confirmKeepSelection}>
-              Conserver la sélection
+              {t('storySettings.triage.keepSelectionButton')}
             </Button>
           </div>
         </div>

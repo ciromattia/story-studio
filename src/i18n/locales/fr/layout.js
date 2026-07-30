@@ -1,0 +1,185 @@
+export default {
+  toolbar: {
+    projectMenu: {
+      title: 'Actions du projet',
+      label: 'Projet',
+    },
+    panels: {
+      groupAria: 'Panneaux visibles et réorganisables',
+      toggleTree: 'Afficher/masquer l’arbre',
+      toggleSettings: 'Afficher/masquer les réglages',
+      toggleDiagram: 'Afficher/masquer le diagramme',
+    },
+    packOptions: {
+      title: 'Options',
+      label: 'Options',
+    },
+    successToast: 'Pack prêt à générer',
+    generate: {
+      label: 'Générer le pack',
+      blockedTooltip: 'Passe par « à corriger » avant de générer ({{shortcut}})',
+    },
+  },
+  projectMenuPopover: {
+    head: {
+      title: 'Projet',
+      subtitleSaved: 'Enregistré',
+      subtitleDefault: 'Fichier et enregistrement',
+    },
+    items: {
+      backHome: 'Retour à l’accueil',
+      openProject: 'Ouvrir un projet',
+      saveProject: 'Enregistrer',
+      saveAs: 'Enregistrer sous...',
+    },
+  },
+  packNameModal: {
+    emptyTitleHint: 'Titre requis pour générer le nom exporté',
+    title: 'Métadonnées du pack',
+    close: 'Fermer',
+    cover: {
+      label: 'Couverture',
+      defined: 'Définie dans la bibliothèque',
+      empty: 'Aucune image racine définie',
+      notEditable: 'non éditable ici',
+    },
+    fields: {
+      title: {
+        label: 'Titre du pack',
+        placeholder: 'Titre de mon pack',
+      },
+      age: {
+        label: 'Âge minimum',
+        groupAria: 'Âges minimum prédéfinis',
+        customLabel: 'Autre :',
+        customAria: 'Âge minimum personnalisé',
+        customPlaceholder: '5',
+      },
+      author: {
+        label: 'Auteur',
+        placeholder: 'Nom de l’auteur',
+      },
+      version: {
+        label: 'Version',
+      },
+      producer: {
+        label: 'Producteur',
+        placeholder: 'RTL, France Inter... (facultatif)',
+      },
+      bonus: {
+        label: 'Bonus',
+        tag: 'facultatif',
+        placeholder: 'ex. 8 chapitres',
+      },
+      description: {
+        label: 'Description',
+        tag: 'changelog',
+        placeholder: 'Public visé, contenu, changements depuis la version précédente...',
+      },
+      uuid: {
+        label: 'UUID',
+        placeholder: 'UUID du pack',
+        regenerate: 'Générer un nouvel UUID',
+        importedHint: 'UUID importé du pack. Tu peux le régénérer si tu le souhaites.',
+      },
+    },
+    preview: {
+      label: 'Nom exporté',
+      collision: 'Un ZIP du même nom existe déjà dans le dossier d’export',
+      free: 'Nom disponible dans le dossier d’export',
+      checking: 'Statut du nom en cours de vérification',
+      noFolder: "Aucun dossier d'export disponible",
+    },
+    footer: {
+      storiesOne: 'histoire',
+      storiesMany: 'histoires',
+      mediaOne: 'média lié',
+      mediaMany: 'médias liés',
+    },
+    actions: {
+      cancel: 'Annuler',
+      apply: 'Appliquer',
+      applying: 'Application...',
+      applyAndGenerate: 'Appliquer & générer',
+      preparing: 'Préparation...',
+      tooltipBusy: 'Une action est déjà en cours.',
+      tooltipNeedTitle: 'Renseigne le titre du pack avant de générer.',
+      tooltipBlocked: 'Passe par « à corriger » avant de pouvoir générer le pack.',
+      tooltipReady: 'Appliquer les métadonnées et générer le pack.',
+    },
+  },
+  packOptionsPopover: {
+    dialogAria: 'Options du pack',
+    audioTitle: 'Traitement audio du pack',
+    harmonize: {
+      label: 'Harmoniser le volume',
+      toggleAria: 'Harmoniser le volume des audios vers -14 LUFS à la génération.',
+      help: "Aligne le volume de toutes les histoires sur un même niveau (-14 LUFS) à la génération (recommandé si tes fichiers audio ne sont pas déjà préparés pour la Lunii). Un son quasi-muet ou impossible à corriger sans saturer bloque la génération. Si désactivé : le volume d'origine de chaque fichier est conservé.",
+    },
+    silence: {
+      title: 'Silence début / fin',
+      groupAria: 'Mode de silence début et fin',
+      durationSame: '{{leading}} au début et à la fin',
+      durationDiff: '{{leading}} au début · {{trailing}} à la fin',
+      normalize: {
+        label: 'Ajuster',
+        aria: 'Mesurer et ajuster les silences de début et de fin',
+        help: 'Recommandé : mesure les silences et les ramène à exactement {{leading}} au début et {{trailing}} à la fin (coupe si trop long, complète si trop court).',
+      },
+      add: {
+        label: 'Ajouter',
+        aria: 'Ajouter {{leading}} au début et {{trailing}} à la fin',
+        help: "Ajoute {{leading}} au début et {{trailing}} à la fin sans mesurer l'existant — le silence déjà présent s'additionne.",
+      },
+      off: {
+        label: 'Ne rien faire',
+        aria: 'Ne pas modifier les silences de début et de fin',
+        help: 'Ne touche pas aux silences de début et de fin.',
+      },
+    },
+    playback: {
+      title: 'Lecture',
+      scopeTag: '· global',
+    },
+    autoNext: {
+      label: 'Auto-next',
+      hint: 'Enchaîne la lecture des nœuds',
+      help: "Enchaîne automatiquement les histoires et ignore les messages, scénarios et retours de fin tant que l'option est active.",
+      toggleAria: 'Auto-next. Enchaîne automatiquement les histoires et ignore les fins configurées.',
+    },
+    preferences: {
+      title: 'Préférences de l’application',
+      subtitle: 'Thème, dossiers de travail, audio, raccourcis.',
+    },
+  },
+  titleBar: {
+    defaultProjectName: 'Nouveau projet',
+    unsavedProject: 'Projet non enregistré',
+    packFallbackTitle: 'Métadonnées du pack',
+    projectTooltip: 'Nom du projet : « {{name}} »',
+    packTooltipDefined: '« {{name}} » — Modifier le nom et les métadonnées du pack',
+    packTooltipEmpty: 'Renseigner le nom et les métadonnées du pack',
+    saveStatus: {
+      notSaved: 'Projet pas encore enregistré',
+      unsavedChanges: 'Modifications non enregistrées',
+      saved: 'Projet enregistré',
+    },
+    about: 'À propos',
+    minimize: 'Réduire',
+    maximize: 'Agrandir ou restaurer',
+    close: 'Fermer',
+  },
+  validationPill: {
+    packGroupLabel: 'Pack',
+    ready: 'Pack prêt',
+    verifying: 'Vérification des fichiers en cours…',
+    verifyingShort: 'Vérification…',
+    toFix: 'à corriger',
+    dropdownTitle: 'À corriger',
+    listAria: 'Liste des éléments à corriger',
+    issuesOne: '{{count}} élément à corriger avant génération',
+    issuesMany: '{{count}} éléments à corriger avant génération',
+    subtitleOne: '{{count}} élément à corriger avant de générer le pack.',
+    subtitleMany: '{{count}} éléments à corriger avant de générer le pack.',
+  },
+};

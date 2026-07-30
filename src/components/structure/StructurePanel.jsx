@@ -6,6 +6,7 @@ import { Search } from '../icons/LucideLocal';
 import { KEYS } from '../../store/persistentSettings';
 import { useProjectActions } from '../../store/ProjectActionsContext';
 import { usePersistentState } from '../../hooks/usePersistentState';
+import { useTranslation } from '../../i18n/I18nContext';
 import { StructureActionsBar } from './StructureActionsBar';
 
 const BOOL_CODEC = {
@@ -52,6 +53,7 @@ export function StructurePanel({
   onSimulateRoot,
   headerDragHandleProps = {},
 }) {
+  const { t } = useTranslation();
   const {
     onSelect, onReorder, onMoveToMenu,
     onAddMenu, onAddStoryToMenu, onImportFolder, onUnpackZip,
@@ -100,11 +102,11 @@ export function StructurePanel({
             onLaunchSimulator={onSimulateRoot}
             trailing={(
               <>
-                <Tooltip text="Rechercher dans la structure (Ctrl+F)" placement="below">
+                <Tooltip text={t('shell.structurePanel.searchTooltip')} placement="below">
                   <button
                     type="button"
                     className="tree-display-trigger tree-search-trigger"
-                    aria-label="Rechercher dans la structure"
+                    aria-label={t('shell.structurePanel.searchAriaLabel')}
                     onClick={() => {
                       setTreeDisplayOpen(false);
                       onFocusTreeSearch?.();

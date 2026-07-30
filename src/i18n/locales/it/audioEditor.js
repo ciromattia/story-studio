@@ -1,0 +1,66 @@
+export default {
+  header: {
+    title: 'Modifica audio — {{filename}}',
+  },
+  loading: {
+    waveform: "Analisi della forma d'onda…",
+    file: 'Caricamento del file…',
+  },
+  errors: {
+    loadFailed: 'Impossibile caricare il file audio.',
+  },
+  zoom: {
+    label: 'Zoom',
+    hint: 'Ctrl+rotellina / +/- · ← → 50ms · Home/Fine',
+  },
+  selection: {
+    in: 'Inizio',
+    out: 'Fine',
+    duration: 'Durata',
+    preview: 'Anteprima estratto',
+  },
+  restore: {
+    tooltip: "Ripristina il file com'era prima della modifica",
+    button: 'Ripristina originale',
+  },
+  preview: {
+    generating: "Generazione dell'anteprima audio…",
+  },
+  footer: {
+    cancel: 'Annulla',
+    pendingTooltip: "L'anteprima dell'ultima modifica è in corso",
+    validate: 'Applica le modifiche',
+    noChangesTooltip: 'Nessuna modifica da applicare',
+    generatingPreview: "Generazione dell'anteprima…",
+    applying: 'Applicazione…',
+    noChanges: 'Nessuna modifica',
+  },
+  transport: {
+    fadeInActive: 'Dissolvenza in entrata {{time}}',
+    fadeInAdd: 'Aggiungi una dissolvenza in entrata',
+    fadeOutActive: 'Dissolvenza in uscita {{time}}',
+    fadeOutAdd: 'Aggiungi una dissolvenza in uscita',
+    markIn: 'Segna il punto di inizio alla posizione del cursore (i)',
+    markOut: 'Segna il punto di fine alla posizione del cursore (o)',
+    pause: 'Pausa (Spazio)',
+    playPause: 'Play / Pausa (Spazio)',
+    stop: 'Stop',
+    skipBack: 'Indietro di 5s',
+    skipForward: 'Avanti di 5s',
+    goToIn: 'Vai al punto di inizio (Shift+I)',
+    goToOut: 'Vai al punto di fine (Shift+O)',
+    keepSelection: 'Mantieni la selezione (Ctrl+K)',
+    deleteSelection: 'Elimina la selezione (Ctrl+X)',
+  },
+  fade: {
+    edit: 'Modifica dissolvenza',
+    addIn: 'Aggiungi una dissolvenza in entrata',
+    addOut: 'Aggiungi una dissolvenza in uscita',
+    addGeneric: 'Aggiungi una dissolvenza',
+    remove: 'Rimuovi',
+    ok: 'OK',
+    labelIn: 'Dissolvenza in entrata',
+    labelOut: 'Dissolvenza in uscita',
+    labelCut: 'Dissolvenza di taglio',
+  },
+};

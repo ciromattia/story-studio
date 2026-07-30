@@ -1,35 +1,42 @@
-const OPTION_GROUPS = [
-  {
-    label: 'Général',
-    items: [
-      { id: 'save', label: 'Enregistrement' },
-      { id: 'interface', label: 'Interface' },
-      { id: 'projects-media', label: 'Projets et médias' },
-    ],
-  },
-  {
-    label: 'Intelligence artificielle',
-    items: [
-      { id: 'xtts', label: 'Voix locale' },
-      { id: 'comfyui', label: 'Images IA' },
-    ],
-  },
-  {
-    label: 'Avancé',
-    items: [
-      { id: 'advanced', label: 'Import et audio' },
-      { id: 'youtube', label: 'YouTube (yt-dlp)' },
-      { id: 'diagnostic', label: 'Diagnostic' },
-    ],
-  },
-];
+import { useTranslation } from '../../i18n/I18nContext';
 
-export const OPTION_SECTION_IDS = OPTION_GROUPS.flatMap((group) => group.items.map((item) => item.id));
+function useOptionGroups(t) {
+  return [
+    {
+      label: t('options.nav.groupGeneral'),
+      items: [
+        { id: 'save', label: t('options.nav.save') },
+        { id: 'interface', label: t('options.nav.interface') },
+        { id: 'projects-media', label: t('options.nav.projectsMedia') },
+      ],
+    },
+    {
+      label: t('options.nav.groupAi'),
+      items: [
+        { id: 'xtts', label: t('options.nav.voice') },
+        { id: 'comfyui', label: t('options.nav.aiImages') },
+      ],
+    },
+    {
+      label: t('options.nav.groupAdvanced'),
+      items: [
+        { id: 'advanced', label: t('options.nav.advanced') },
+        { id: 'youtube', label: t('options.nav.youtube') },
+        { id: 'diagnostic', label: t('options.nav.diagnostic') },
+      ],
+    },
+  ];
+}
+
+export const OPTION_SECTION_IDS = ['save', 'interface', 'projects-media', 'xtts', 'comfyui', 'advanced', 'youtube', 'diagnostic'];
 
 export function OptionsSectionNav({ activeSectionId, onNavigate }) {
+  const { t } = useTranslation();
+  const optionGroups = useOptionGroups(t);
+
   return (
-    <nav className="opts-nav" aria-label="Sections des préférences">
-      {OPTION_GROUPS.map((group) => (
+    <nav className="opts-nav" aria-label={t('options.nav.ariaLabel')}>
+      {optionGroups.map((group) => (
         <div className="opts-nav-group" key={group.label}>
           <div className="opts-nav-group-title">{group.label}</div>
           <div className="opts-nav-items">

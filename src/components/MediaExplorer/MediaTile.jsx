@@ -5,6 +5,7 @@ import { mediaDrag } from '../../store/dragState';
 import { Tooltip } from '../common/Tooltip';
 import { ContextMenu } from '../TreePanel/ContextMenu';
 import { Copy, FilePen, FolderOpen, Link2, Scissors, Trash2 } from '../icons/LucideLocal';
+import { useTranslation } from '../../i18n/I18nContext';
 import { cleanPath, formatDate, getMetaDisplay, kindLabel, tagStyle } from './helpers';
 import { useAudioDuration } from './useAudioDuration';
 import { MediaThumb } from './MediaThumb';
@@ -19,6 +20,7 @@ export function MediaTile({
   isSelected, selectedItems, selectedAudioItems, onSelect, onContextMenuSelect,
   visibleCols, dropOnNode,
 }) {
+  const { t } = useTranslation();
   const usage = item.usages[0];
   const className = view === 'list' ? 'me-list-row' : 'media-tile';
   const [ctxMenu, setCtxMenu] = useState(null);
@@ -59,30 +61,30 @@ export function MediaTile({
 
   const ctxActions = [
     ...(mediaClipboard ? [
-      { icon: <Copy />, label: clipboardPaths.length > 1 ? `Copier ${clipboardPaths.length} sons` : 'Copier le média', fn: () => mediaClipboard.set(clipboardPaths) },
+      { icon: <Copy />, label: clipboardPaths.length > 1 ? t('mediaExplorer.contextMenu.copySoundOther', { count: clipboardPaths.length }) : t('mediaExplorer.contextMenu.copyMedia'), fn: () => mediaClipboard.set(clipboardPaths) },
       'sep',
     ] : []),
-    { icon: <FolderOpen />, label: "Révéler dans l'explorateur", fn: () => revealItemInDir(item.path) },
-    { icon: <Copy />, label: 'Copier le chemin', fn: () => navigator.clipboard.writeText(item.path).catch(() => {}) },
+    { icon: <FolderOpen />, label: t('mediaExplorer.contextMenu.revealInExplorer'), fn: () => revealItemInDir(item.path) },
+    { icon: <Copy />, label: t('mediaExplorer.contextMenu.copyPath'), fn: () => navigator.clipboard.writeText(item.path).catch(() => {}) },
     ...(onAssemble && contextAudioItems.length >= 2 ? [
       'sep',
-      { icon: <Link2 />, label: `Assembler ${contextAudioItems.length} sons`, fn: () => onAssemble() },
+      { icon: <Link2 />, label: t('mediaExplorer.contextMenu.assembleSounds', { count: contextAudioItems.length }), fn: () => onAssemble() },
     ] : []),
     ...(onSplit && item.kind === 'audio' && item.exists ? [
       'sep',
-      { icon: <Scissors />, label: 'Découper un audio', fn: () => onSplit(item) },
+      { icon: <Scissors />, label: t('mediaExplorer.contextMenu.splitAudio'), fn: () => onSplit(item) },
     ] : []),
     ...(onEditImage && item.kind === 'image' && item.exists ? [
       'sep',
-      { icon: <FilePen />, label: 'Modifier l’image…', fn: () => onEditImage(item) },
+      { icon: <FilePen />, label: t('mediaExplorer.contextMenu.editImage'), fn: () => onEditImage(item) },
     ] : []),
     ...(onDeleteRequest ? [
       'sep',
       {
         icon: <Trash2 />,
         label: contextItems.length > 1
-          ? `Retirer ${contextItems.length} fichiers de la médiathèque`
-          : 'Retirer de la médiathèque',
+          ? t('mediaExplorer.contextMenu.removeFilesOther', { count: contextItems.length })
+          : t('mediaExplorer.contextMenu.removeFromLibrary'),
         fn: () => onDeleteRequest(contextItems),
         danger: true,
       },
@@ -137,7 +139,7 @@ export function MediaTile({
         mediaDrag.start(item.kind, item.path);
         ghost = document.createElement('div');
         ghost.className = 'media-drag-ghost';
-        ghost.textContent = dragPaths.length > 1 ? `${dragPaths.length} sons` : item.name;
+        ghost.textContent = dragPaths.length > 1 ? t('mediaExplorer.dragGhost.soundsCount', { count: dragPaths.length }) : item.name;
         document.body.appendChild(ghost);
       }
       ghost.style.left = `${ev.clientX + 14}px`;
@@ -192,7 +194,7 @@ export function MediaTile({
   }
 
   const { size: sizeDisp, dim: dimDisp, dur: durDisp, fmt: fmtDisp } = getMetaDisplay(item, m, duration);
-  const usageText = `${kindLabel(item.kind)} · ${usage?.label || item.source}${item.usedCount > 1 ? ` ×${item.usedCount}` : ''}`;
+  const usageText = `${kindLabel(t, item.kind)} · ${usage?.label || item.source}${item.usedCount > 1 ? ` ×${item.usedCount}` : ''}`;
 
   return (
     <>
@@ -224,7 +226,7 @@ export function MediaTile({
           {!item.exists && (
             <span
               className="media-missing-badge"
-              title={`Fichier introuvable :\n${cleanPath(item.path)}`}
+              title={t('mediaExplorer.errors.fileNotFoundTitle', { path: cleanPath(item.path) })}
             >!</span>
           )}
           {duration && view !== 'list' && (

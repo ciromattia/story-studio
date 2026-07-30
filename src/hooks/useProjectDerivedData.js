@@ -1,12 +1,15 @@
 import { useMemo } from 'react';
 import { buildProjectIndex, buildSelectedNode, collectAllMenus } from '../store/projectModel';
 import { getProjectValidationIssues } from '../store/projectValidation';
+import { useTranslation } from '../i18n/I18nContext';
 
 export function useProjectDerivedData(project, {
   selectedId = 'root',
   fileAudit = {},
   projectIndex: providedProjectIndex = null,
 } = {}) {
+  const { t } = useTranslation();
+
   const projectIndex = useMemo(
     () => providedProjectIndex ?? buildProjectIndex(project),
     [project, providedProjectIndex],
@@ -23,8 +26,8 @@ export function useProjectDerivedData(project, {
   );
 
   const validationIssues = useMemo(
-    () => getProjectValidationIssues(project, fileAudit, projectIndex),
-    [project, fileAudit, projectIndex],
+    () => getProjectValidationIssues(project, fileAudit, projectIndex, t),
+    [project, fileAudit, projectIndex, t],
   );
 
   return {

@@ -4,7 +4,7 @@ import { listen } from '@tauri-apps/api/event';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { KEYS, read, write } from '../../store/persistentSettings';
 import { PIPER_DEFAULT_VOICE } from '../../store/xttsSettings';
-import { formatFrenchCount } from '../../utils/frenchText.js';
+import { useTranslation } from '../../i18n/I18nContext';
 import { Button } from '../common/Button';
 import './GenerateVoiceModal.css';
 
@@ -41,12 +41,13 @@ function VoiceModalShell({
   onClose,
   children,
 }) {
+  const { t } = useTranslation();
   const textLength = text.trim().length;
   return (
     <div className="modal-overlay">
       <div className="modal-box tts-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <span>Générer une voix</span>
+          <span>{t('generation.voiceModal.title')}</span>
           <Button variant="icon" className="modal-close" onClick={onClose} disabled={submitting}>×</Button>
         </div>
 
@@ -60,20 +61,20 @@ function VoiceModalShell({
           </div>
 
           <label className="tts-field">
-            <span>Texte à lire</span>
+            <span>{t('generation.voiceModal.textLabel')}</span>
             <textarea
               className="tts-textarea"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Tape ici le texte à transformer en voix…"
+              placeholder={t('generation.voiceModal.textareaPlaceholder')}
               disabled={submitting}
             />
             <div className="tts-field-row">
               <span className="tts-helper">
-                {initialText ? 'Le texte est prérempli d’après le champ audio actuel.' : 'Saisis le texte exact à lire par la voix.'}
+                {initialText ? t('generation.voiceModal.prefilledHelper') : t('generation.voiceModal.emptyHelper')}
               </span>
               <span className="tts-count">
-                {formatFrenchCount(textLength, 'caractère', 'caractères')}
+                {t(textLength === 1 ? 'generation.voiceModal.charCountOne' : 'generation.voiceModal.charCountOther', { count: textLength })}
               </span>
             </div>
           </label>
@@ -106,6 +107,7 @@ function PiperVoiceModal({
   onQueueGenerate,
   onClose,
 }) {
+  const { t } = useTranslation();
   const [text, setText] = useState(initialText);
   const [voices, setVoices] = useState([]);
   const [binaryInstalled, setBinaryInstalled] = useState(false);
@@ -118,7 +120,7 @@ function PiperVoiceModal({
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [statusMessage, setStatusMessage] = useState('Voix prête à l’emploi, sans configuration.');
+  const [statusMessage, setStatusMessage] = useState(t('generation.voiceModal.piper.statusReady'));
 
   const selectedVoiceInfo = useMemo(
     () => voices.find((voice) => voice.id === selectedVoice) || null,
@@ -164,12 +166,12 @@ function PiperVoiceModal({
   useEscapeKey(true, () => { if (!submitting) onClose?.(); });
 
   async function handleGenerate() {
-    if (!text.trim()) { setError('Le texte à générer est vide.'); return; }
+    if (!text.trim()) { setError(t('generation.voiceModal.errors.emptyText')); return; }
     if (text.trim().length > PIPER_MAX_TEXT_CHARS) {
-      setError(`Le texte est trop long pour Piper (${text.trim().length} caractères, maximum ${PIPER_MAX_TEXT_CHARS}).`);
+      setError(t('generation.voiceModal.errors.textTooLong', { length: text.trim().length, max: PIPER_MAX_TEXT_CHARS }));
       return;
     }
-    if (!selectedVoice) { setError('Choisis une voix.'); return; }
+    if (!selectedVoice) { setError(t('generation.voiceModal.errors.chooseVoice')); return; }
 
     setSubmitting(true);
     setError('');
@@ -178,7 +180,7 @@ function PiperVoiceModal({
       // feedback discret « Préparation de la voix… » au 1er usage. Idempotent :
       // sans effet si déjà installé.
       if (needsProvision) {
-        setStatusMessage('Préparation de la voix… (téléchargement unique)');
+        setStatusMessage(t('generation.voiceModal.piper.statusPreparing'));
         await invoke('piper_ensure_voice', { voice: selectedVoice });
         setBinaryInstalled(true);
         setVoices((prev) => prev.map((voice) => (
@@ -195,14 +197,14 @@ function PiperVoiceModal({
       onUpdateXttsSettings?.({ piperVoice: selectedVoice, piperSpeed: speed });
       onClose();
     } catch (e) {
-      setError(`${e}\nRéessaie, ou passe à XTTS dans les Préférences si le problème persiste.`);
+      setError(t('generation.voiceModal.errors.generateFailedRetry', { error: String(e) }));
       setStatusMessage('');
     } finally {
       setSubmitting(false);
     }
   }
 
-  const badges = <span className="tts-badge gpu">Piper</span>;
+  const badges = <span className="tts-badge gpu">{t('generation.voiceModal.piper.badge')}</span>;
 
   return (
     <VoiceModalShell
@@ -214,17 +216,23 @@ function PiperVoiceModal({
       statusMessage={statusMessage}
       error={error}
       label={label}
-      contextSub={<>Le fichier sera stocké dans <strong>voix-générées/</strong> dans l’emplacement de travail.</>}
+      contextSub={(
+        <>
+          {t('generation.voiceModal.storageNotePrefix')} <strong>{t('generation.voiceModal.storageNoteFolder')}</strong> {t('generation.voiceModal.storageNoteSuffix')}
+        </>
+      )}
       onClose={onClose}
       footerActions={(
         <Button variant="primary-violet" onClick={handleGenerate} disabled={submitting || voices.length === 0}>
-          {submitting ? (needsProvision ? 'Préparation…' : 'Ajout…') : 'Générer'}
+          {submitting
+            ? (needsProvision ? t('generation.voiceModal.piper.preparingButton') : t('generation.voiceModal.piper.addingButton'))
+            : t('generation.voiceModal.piper.generateButton')}
         </Button>
       )}
     >
       <div className="tts-grid">
         <label className="tts-field">
-          <span>Voix</span>
+          <span>{t('generation.voiceModal.piper.voiceLabel')}</span>
           <select
             className="tts-input"
             value={selectedVoice}
@@ -235,17 +243,17 @@ function PiperVoiceModal({
             }}
             disabled={submitting || voices.length === 0}
           >
-            {voices.length === 0 && <option value="">Chargement des voix…</option>}
+            {voices.length === 0 && <option value="">{t('generation.voiceModal.piper.loadingVoices')}</option>}
             {voices.map((voice) => (
               <option key={voice.id} value={voice.id}>
-                {voice.label}{voice.installed ? '' : ' — à télécharger'}
+                {voice.label}{voice.installed ? '' : t('generation.voiceModal.piper.notInstalledSuffix')}
               </option>
             ))}
           </select>
         </label>
 
         <label className="tts-field">
-          <span>Vitesse · {speed.toFixed(2)}×</span>
+          <span>{t('generation.voiceModal.piper.speedLabel', { speed: speed.toFixed(2) })}</span>
           <input
             className="tts-input"
             type="range"
@@ -259,7 +267,7 @@ function PiperVoiceModal({
         </label>
       </div>
       <span className="tts-helper">
-        Piper fonctionne sans serveur ni configuration. La voix est téléchargée automatiquement au premier usage.
+        {t('generation.voiceModal.piper.helper')}
       </span>
     </VoiceModalShell>
   );
@@ -277,6 +285,7 @@ function XttsVoiceModal({
   onQueueGenerate,
   onClose,
 }) {
+  const { t } = useTranslation();
   const [text, setText] = useState(initialText);
   const [language, setLanguage] = useState(xttsSettings.language || 'fr');
   const [availableVoices, setAvailableVoices] = useState([]);
@@ -286,7 +295,7 @@ function XttsVoiceModal({
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [device, setDevice] = useState(null);
-  const [statusMessage, setStatusMessage] = useState('Connexion à XTTS…');
+  const [statusMessage, setStatusMessage] = useState(t('generation.voiceModal.xtts.connecting'));
   const [error, setError] = useState('');
   const favoriteVoices = Array.isArray(xttsSettings.favoriteVoices) ? xttsSettings.favoriteVoices : [];
   const visibleVoices = useMemo(() => {
@@ -298,12 +307,12 @@ function XttsVoiceModal({
   const favoritesUnavailable = favoriteVoices.length > 0
     && availableVoices.length > 0
     && favoriteVoices.every((voice) => !availableVoices.includes(voice));
-  const selectedVoiceLabel = selectedVoice || 'Aucune voix disponible';
+  const selectedVoiceLabel = selectedVoice || t('generation.voiceModal.xtts.noVoiceAvailable');
 
   async function loadStatus() {
     setLoading(true);
     setError('');
-    setStatusMessage('Connexion à XTTS…');
+    setStatusMessage(t('generation.voiceModal.xtts.connecting'));
     try {
       const status = await invoke('xtts_get_status', { settings: xttsSettings });
       const voices = status.voices || [];
@@ -319,7 +328,7 @@ function XttsVoiceModal({
         if (fallbackVoices.includes(lastVoice)) return lastVoice;
         return fallbackVoices[0] || '';
       });
-      setStatusMessage(voices.length > 0 ? 'XTTS est prêt.' : 'XTTS est prêt, mais aucune voix n’a été retournée.');
+      setStatusMessage(voices.length > 0 ? t('generation.voiceModal.xtts.ready') : t('generation.voiceModal.xtts.readyNoVoices'));
     } catch (e) {
       setError(String(e));
       setStatusMessage('');
@@ -337,8 +346,8 @@ function XttsVoiceModal({
   useEscapeKey(true, () => { if (!submitting) onClose?.(); });
 
   async function handleGenerate() {
-    if (!text.trim()) { setError('Le texte à générer est vide.'); return; }
-    if (!selectedVoice) { setError('Choisis une voix XTTS.'); return; }
+    if (!text.trim()) { setError(t('generation.voiceModal.errors.emptyText')); return; }
+    if (!selectedVoice) { setError(t('generation.voiceModal.errors.chooseVoiceXtts')); return; }
 
     setSubmitting(true);
     setError('');
@@ -362,9 +371,11 @@ function XttsVoiceModal({
   const badges = (
     <>
       <span className={`tts-badge ${loading ? '' : device === 'cuda' ? 'gpu' : 'cpu'}`}>
-        {loading ? 'Initialisation…' : device === 'cuda' ? 'GPU CUDA' : device === 'cpu' ? 'CPU' : 'XTTS'}
+        {loading
+          ? t('generation.voiceModal.xtts.initializing')
+          : device === 'cuda' ? t('generation.voiceModal.xtts.deviceGpu') : device === 'cpu' ? t('generation.voiceModal.xtts.deviceCpu') : t('generation.voiceModal.xtts.badge')}
       </span>
-      <span className="tts-badge">Voix XTTS</span>
+      <span className="tts-badge">{t('generation.voiceModal.xtts.voiceBadge')}</span>
     </>
   );
 
@@ -378,11 +389,15 @@ function XttsVoiceModal({
       statusMessage={statusMessage}
       error={error}
       label={label}
-      contextSub={<>Le fichier sera stocké dans <strong>voix-générées/</strong> dans l’emplacement de travail.</>}
+      contextSub={(
+        <>
+          {t('generation.voiceModal.storageNotePrefix')} <strong>{t('generation.voiceModal.storageNoteFolder')}</strong> {t('generation.voiceModal.storageNoteSuffix')}
+        </>
+      )}
       onClose={onClose}
       footerLeft={(
         <Button variant="secondary-violet" onClick={loadStatus} disabled={loading || submitting}>
-          Actualiser XTTS
+          {t('generation.voiceModal.xtts.refreshButton')}
         </Button>
       )}
       footerActions={(
@@ -391,13 +406,13 @@ function XttsVoiceModal({
           onClick={handleGenerate}
           disabled={loading || submitting || visibleVoices.length === 0}
         >
-          {submitting ? 'Ajout…' : 'Générer'}
+          {submitting ? t('generation.voiceModal.xtts.addingButton') : t('generation.voiceModal.xtts.generateButton')}
         </Button>
       )}
     >
       <div className="tts-grid">
         <label className="tts-field">
-          <span>Langue</span>
+          <span>{t('generation.voiceModal.xtts.languageLabel')}</span>
           <select
             className="tts-input"
             value={language}
@@ -411,13 +426,13 @@ function XttsVoiceModal({
         </label>
 
         <div className="tts-field">
-          <span>Voix sélectionnée</span>
+          <span>{t('generation.voiceModal.xtts.selectedVoiceLabel')}</span>
           <div className="tts-device">{selectedVoiceLabel}</div>
         </div>
       </div>
 
       <label className="tts-field">
-        <span>Voix</span>
+        <span>{t('generation.voiceModal.xtts.voiceLabel')}</span>
         <select
           className="tts-input"
           value={selectedVoice}
@@ -428,17 +443,17 @@ function XttsVoiceModal({
           }}
           disabled={submitting || visibleVoices.length === 0}
         >
-          {visibleVoices.length === 0 && <option value="">Aucune voix détectée par XTTS</option>}
+          {visibleVoices.length === 0 && <option value="">{t('generation.voiceModal.xtts.noVoiceDetected')}</option>}
           {visibleVoices.map((voiceName) => (
             <option key={voiceName} value={voiceName}>{voiceName}</option>
           ))}
         </select>
         <span className="tts-helper">
           {favoriteVoices.length > 0 && !favoritesUnavailable
-            ? 'Liste limitée aux voix favorites configurées dans les préférences.'
+            ? t('generation.voiceModal.xtts.helperFavorites')
             : favoritesUnavailable
-              ? 'Les voix favorites sont indisponibles ; toutes les voix XTTS détectées sont affichées.'
-              : 'Toutes les voix retournées par XTTS sont disponibles. Ajoute des favorites dans les préférences pour réduire cette liste.'}
+              ? t('generation.voiceModal.xtts.helperFavoritesUnavailable')
+              : t('generation.voiceModal.xtts.helperAllVoices')}
         </span>
       </label>
     </VoiceModalShell>

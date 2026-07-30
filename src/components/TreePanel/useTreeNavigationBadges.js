@@ -7,6 +7,7 @@ import {
   hasVisibleEndNode,
 } from '../../store/generatedNavigation';
 import { EMPTY_BADGES } from './treePanelConstants';
+import { useTranslation } from '../../i18n/I18nContext';
 
 // Badges de navigation de l'arbre : calcul par entry (avec cache par référence)
 // et badges du message de fin.
@@ -17,6 +18,7 @@ export function useTreeNavigationBadges({
   showNavigationBadges,
   validationIssues,
 }) {
+  const { t } = useTranslation();
   const rootEntries = project.rootEntries ?? [];
   const issuesById = useMemo(() => {
     const map = new Map();
@@ -96,7 +98,7 @@ export function useTreeNavigationBadges({
       }
 
       if (data.length > 0) {
-        badgesById.set(entry.id, data.map((d) => formatBadgeTitle(d, projectIndex)).filter(Boolean));
+        badgesById.set(entry.id, data.map((d) => formatBadgeTitle(d, projectIndex, t)).filter(Boolean));
       }
     }
 
@@ -114,6 +116,7 @@ export function useTreeNavigationBadges({
     navigationBadgeProjectKey,
     rootEntries,
     showNavigationBadges,
+    t,
   ]);
 
   const hasEndNode = projectType === 'pack' && hasVisibleEndNode(project);
@@ -122,28 +125,28 @@ export function useTreeNavigationBadges({
     const badges = [];
     const returnNavigation = getPresentedEndNodeReturnNavigation(project);
     if (hasEndNode && returnNavigation) {
-      const nightSuffix = project.globalOptions?.nightMode ? ' (mode nuit)' : '';
+      const nightSuffix = project.globalOptions?.nightMode ? t('tree.common.nightModeSuffix') : '';
       const isNightMode = !!project.globalOptions?.nightMode;
       const returnName = returnNavigation.targetId
         ? getGeneratedNavigationTargetName(returnNavigation.targetId, projectIndex)
-        : "destination de fin de l'histoire source";
+        : t('tree.badges.endNodeContextualTarget');
       badges.push({
         key: `end-node-return:${returnNavigation.targetId || 'contextual'}:${returnName}`,
         kind: isNightMode ? 'end-night' : 'end-node',
         label: isNightMode ? '☾' : '■',
-        title: `À la fin du message de fin${nightSuffix} → « ${returnName} »`,
+        title: t('tree.badges.endNodeReturnTitle', { suffix: nightSuffix, target: returnName }),
       });
     }
 
     const homeNavigation = getPresentedEndNodeHomeNavigation(project);
     if (hasEndNode && homeNavigation?.targetId) {
       const homeName = getGeneratedNavigationTargetName(homeNavigation.targetId, projectIndex);
-      const nightSuffix = homeNavigation.isNightMode ? ' (mode nuit)' : '';
+      const nightSuffix = homeNavigation.isNightMode ? t('tree.common.nightModeSuffix') : '';
       badges.push({
         key: `end-node-home:${homeNavigation.targetId}:${homeName}`,
         kind: homeNavigation.isNightMode ? 'end-night-home' : 'end-node-home',
         label: '⌂',
-        title: `Appuie sur le bouton Accueil du message de fin${nightSuffix} → « ${homeName} »`,
+        title: t('tree.badges.endNodeHomeTitle', { suffix: nightSuffix, target: homeName }),
       });
     }
 

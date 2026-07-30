@@ -1,0 +1,66 @@
+export default {
+  header: {
+    title: "Éditer l'audio — {{filename}}",
+  },
+  loading: {
+    waveform: "Analyse de la forme d'onde…",
+    file: 'Chargement du fichier…',
+  },
+  errors: {
+    loadFailed: 'Impossible de charger le fichier audio.',
+  },
+  zoom: {
+    label: 'Zoom',
+    hint: 'Ctrl+molette / +/- · ← → 50ms · Début/Fin',
+  },
+  selection: {
+    in: 'Entrée',
+    out: 'Sortie',
+    duration: 'Durée',
+    preview: "Prévisualiser l'extrait",
+  },
+  restore: {
+    tooltip: 'Restaurer le fichier avant édition',
+    button: "Restaurer l'original",
+  },
+  preview: {
+    generating: "Génération de l'aperçu audio…",
+  },
+  footer: {
+    cancel: 'Annuler',
+    pendingTooltip: "L'aperçu du dernier réglage est en cours",
+    validate: 'Valider les modifications',
+    noChangesTooltip: 'Aucune modification à valider',
+    generatingPreview: "Génération de l'aperçu…",
+    applying: 'Application…',
+    noChanges: 'Aucune modification',
+  },
+  transport: {
+    fadeInActive: 'Fondu entrée {{time}}',
+    fadeInAdd: 'Ajouter un fondu en entrée',
+    fadeOutActive: 'Fondu sortie {{time}}',
+    fadeOutAdd: 'Ajouter un fondu en sortie',
+    markIn: "Marquer le point d'entrée à la position du curseur (i)",
+    markOut: 'Marquer le point de sortie à la position du curseur (o)',
+    pause: 'Pause (Espace)',
+    playPause: 'Play / Pause (Espace)',
+    stop: 'Stop',
+    skipBack: 'Reculer de 5s',
+    skipForward: 'Avancer de 5s',
+    goToIn: "Aller au point d'entrée (Shift+I)",
+    goToOut: 'Aller au point de sortie (Shift+O)',
+    keepSelection: 'Garder la sélection (Ctrl+K)',
+    deleteSelection: 'Supprimer la sélection (Ctrl+X)',
+  },
+  fade: {
+    edit: 'Modifier le fondu',
+    addIn: 'Ajouter un fondu en entrée',
+    addOut: 'Ajouter un fondu en sortie',
+    addGeneric: 'Ajouter un fondu',
+    remove: 'Retirer',
+    ok: 'OK',
+    labelIn: 'Fondu entrée',
+    labelOut: 'Fondu sortie',
+    labelCut: 'Fondu de coupe',
+  },
+};

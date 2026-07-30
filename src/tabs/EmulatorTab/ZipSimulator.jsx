@@ -8,8 +8,10 @@ import { useAudioTimeline } from './useAudioTimeline';
 import { useLuniiChromeControls } from './useLuniiChromeControls';
 import { toPackAssetName } from '../../utils/zipAssetName';
 import { createAudioPlayer, disposeAudioPlayerRef } from '../../utils/audioPlayer';
+import { useTranslation } from '../../i18n/I18nContext';
 
 export function ZipSimulator({ zipPath, fromProject, onExit, onClose = null, dragHandleProps = null }) {
+  const { t } = useTranslation();
   const [graph, setGraph] = useState(null);   // { stageNodes: Map, actionNodes: Map, squareOneId, title }
   const [loadError, setLoadError] = useState(null);
   const [stageId, setStageId] = useState(null);
@@ -40,7 +42,7 @@ export function ZipSimulator({ zipPath, fromProject, onExit, onClose = null, dra
         const stageNodes = new Map(nodes.map(n => [n.uuid || n.id, n]));
         const actionNodes = new Map((story.actionNodes || []).map(n => [n.id, n]));
         const squareOne = nodes.find(n => n.squareOne === true);
-        if (!squareOne) throw new Error('Nœud de départ (squareOne) introuvable');
+        if (!squareOne) throw new Error(t('simulator.zip.entryNodeNotFound'));
         const squareOneId = squareOne.uuid || squareOne.id;
 
         // En simulation directe (fromProject=false) : démarrer sur le squareOne.
@@ -232,14 +234,14 @@ export function ZipSimulator({ zipPath, fromProject, onExit, onClose = null, dra
   // ── Affichage ──
   if (loadError) return (
     <div style={{ padding: 24, color: '#E24B4A', fontSize: 13, lineHeight: 1.6 }}>
-      <div style={{ fontWeight: 600, marginBottom: 8 }}>Erreur de chargement</div>
+      <div style={{ fontWeight: 600, marginBottom: 8 }}>{t('simulator.zip.loadErrorTitle')}</div>
       <div>{loadError}</div>
       <div style={{ marginTop: 8, color: 'var(--muted)', fontSize: 11 }}>{zipPath}</div>
     </div>
   );
   if (!graph) return (
     <div style={{ padding: 24, color: 'var(--muted)', fontSize: 13 }}>
-      Chargement du pack…
+      {t('simulator.zip.loadingPack')}
     </div>
   );
 
@@ -258,7 +260,7 @@ export function ZipSimulator({ zipPath, fromProject, onExit, onClose = null, dra
 
   const posLabel = siblings.length > 1
     ? `${context.optionIdx + 1} / ${siblings.length}`
-    : (currentStage?.squareOne ? graph.title ? 'Couverture' : '' : '▶');
+    : (currentStage?.squareOne ? graph.title ? t('simulator.zip.coverLabel') : '' : '▶');
 
   return (
     <LuniiShell
